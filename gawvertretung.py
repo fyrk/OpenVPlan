@@ -3,6 +3,9 @@
 import base64
 import sys
 import os
+
+import bot_listener
+
 dir = os.path.dirname(__file__)
 os.chdir(dir)
 sys.path.append(os.path.join(dir, "sitepackages/"))
@@ -10,16 +13,14 @@ import json
 import logging
 import time
 import hashlib
-from collections import OrderedDict
-
 import re
 import datetime
+import threading
 import urllib.request
 import urllib.error
 import urllib.parse
 from html.parser import HTMLParser
-
-import telebot
+from collections import OrderedDict
 
 
 class Snippets:
@@ -447,7 +448,7 @@ def create_site_and_send_notifications(new_data, status_string):
         bot_users = json.load(f)
     with open("data/sent_substitutions.json", "r") as f:
         sent_substitutions = json.load(f)
-    new_sent_substitutions = []
+    new_sent_substitutions = set()
 
     containers = ""
     current_timestamp = create_date_timestamp(datetime.datetime.now().strftime("%d.%m.%Y"))
@@ -490,14 +491,13 @@ def send_substitution_notification(bot_users, day_timestamp, day, class_name, su
                 selected_classes_split = [split_class_name(name) for name in user_data["selected-classes"]]
                 substitutions_for_sending = []
                 for substitution in substitutions:
-                    # substitution_hash = hash((day_timestamp, class_name, *substitution))
                     substitution_hash = hashlib.sha1(
                         ".".join((str(day_timestamp), class_name, *substitution)).encode()).hexdigest()
-                    if (substitution_hash not in sent_substitutions) and \
-                            any(do_class_names_match(class_name, selected_name)
+                    if substitution_hash not in sent_substitutions:
+                        new_sent_substitutions.add(substitution_hash)
+                        if any(do_class_names_match(class_name, selected_name)
                                 for selected_name in selected_classes_split):
-                        substitutions_for_sending.append(substitution)
-                        new_sent_substitutions.append(substitution_hash)
+                            substitutions_for_sending.append(substitution)
                 if substitutions_for_sending:
                     message = '''Vertretungen für {}, {}, Woche {}: 
 Klasse {}: \n'''.format(day["day_name"], day["date"], day["week"], class_name)
@@ -649,7 +649,7 @@ data = {}
 index_site = ""
 status_string = ""
 sent_substitutions = []
-new_sent_substitutions = []
+new_sent_substitutions = set()
 
 
 def get_main_page(storage):
@@ -717,5 +717,9 @@ stdout_logger = logging.StreamHandler(sys.stdout)
 stdout_logger.setFormatter(log_formatter)
 logger.addHandler(stdout_logger)
 
+logger.info("Starting bot")
 with open("data/secret.json", "r") as f:
-    bot = telebot.TeleBot(json.load(f)["token"])
+    bot = bot_listener.start_bot(json.load(f)["token"])
+logger.info("Bot started")
+bot_thread = threading.Thread(target=bot.infinity_polling, daemon=True)
+bot_thread.start()
