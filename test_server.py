@@ -1,5 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
+import os
+import sys
 import time
 import logging
 import urllib.parse
@@ -24,6 +26,17 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
                 gawvertretung.get_main_page(storage)
                 content = gawvertretung.status_string
                 content_type = "text/text"
+            elif parsed_url.path == "/quit":
+                gawvertretung.logger.info("Shutting down")
+                self.send_response(200)
+                bytes_data = "Quit server".encode("utf-8")
+                self.send_header("Content-type", "text/html;charset=utf-8")
+                self.send_header("Content-length", str(len(bytes_data)))
+                self.end_headers()
+                self.wfile.write(bytes_data)
+                logging.shutdown()
+                os._exit(1)
+                quit()
             else:
                 self.path = "/static" + self.path
                 return super().do_GET()
@@ -46,6 +59,5 @@ if __name__ == "__main__":
     try:
         httpd.serve_forever()
     finally:
-        httpd.shutdown()
         logging.shutdown()
         gawvertretung.logger.error("Error occurred, shutting down")

@@ -713,13 +713,10 @@ log_formatter = logging.Formatter("{asctime} [{levelname:^8}]: {message}", "%Y.%
 file_logger = logging.FileHandler(time.strftime("logs/log-%Y.%m.%e_%H-%M-%S.txt"))
 file_logger.setFormatter(log_formatter)
 logger.addHandler(file_logger)
-stdout_logger = logging.StreamHandler(sys.stdout)
-stdout_logger.setFormatter(log_formatter)
-logger.addHandler(stdout_logger)
 
 logger.info("Starting bot")
 with open("data/secret.json", "r") as f:
     bot = bot_listener.start_bot(json.load(f)["token"])
 logger.info("Bot started")
-bot_thread = threading.Thread(target=bot.infinity_polling, daemon=True)
+bot_thread = threading.Thread(target=bot.infinity_polling, kwargs={"none_stop": True, "timeout": 60*5}, daemon=True)
 bot_thread.start()
