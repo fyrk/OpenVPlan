@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import os.path
+from functools import partial
 
 dir = os.path.dirname(__file__)
 os.chdir(dir)
@@ -11,6 +12,13 @@ import base64
 
 import telebot
 from telebot import types
+
+
+INFO_NAME_TO_GERMAN = {
+    "news": "Nachrichten",
+    "absent-classes": "abwesende Klassen",
+    "absent-teachers": "abwesende Lehrer"
+}
 
 
 class BotUsers:
@@ -23,14 +31,14 @@ class BotUsers:
         with open(self._file, "w") as f:
             json.dump(self.data, f)
 
-    def set(self, user_id, property_name, selected_classes):
+    def set(self, user_id, property_name, value):
         user_id = str(user_id)
         try:
             user_data = self.data[user_id]
         except KeyError:
-            self.data[user_id] = {property_name: selected_classes}
+            self.data[user_id] = {property_name: value}
         else:
-            user_data[property_name] = selected_classes
+            user_data[property_name] = value
 
     def get(self, user_id, property_name, default=None):
         user_id = str(user_id)
@@ -45,7 +53,7 @@ class BotUsers:
 
 
 def start_bot(token):
-    bot = telebot.TeleBot(token)
+    bot = telebot.AsyncTeleBot(token)
     bot_users = BotUsers("data/bot_users.json")
 
     @bot.message_handler(commands=["start"])
@@ -81,11 +89,14 @@ def start_bot(token):
     def help_(message):
         bot_users.set(message.chat.id, "status", "")
         bot.send_message(message.chat.id,
-"""Ich verschicke Nachrichten, wenn es neue Vertretungen auf dem Vertretungsplan des Gymnasiums am Wall Verden gibt. 
+                         """Ich verschicke Nachrichten, wenn es neue Vertretungen auf dem Vertretungsplan des Gymnasiums am Wall Verden gibt. 
 Folgende Befehle stehen zur Verfügung: 
 
 /klassen - Klassen setzen, für die du benachrichtigt werden willst. Die Klassen müssen gesetzt werden, damit der Bot Nachrichten an dich verschicken kann. 
-/auswahl - Zeigt die gewählten Klassen
+/nachrichten - Einstellen, ob du über Nachrichten informiert werden willst. 
+/abwesendeklassen - Einstellen, ob du über abwesende Klassen informiert werden willst. 
+/abwesendelehrer - Einstellen, ob du über abwesende Lehrer informiert werden willst. 
+/auswahl - Zeigt die Einstellungen: Die gewählten Klassen und ob über Nachrichten, abwesende Lehrer oder abwesende Klassen informiert werden soll. 
 /format - Einstellen, ob Vertretungen als Tabelle oder Text gesendet werden sollen
 /reset - Löscht alle Daten, die diesem Chat zugeordnet sind
 
@@ -104,11 +115,29 @@ Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. """)
         bot_users.set(message.chat.id, "status", "")
         selected_classes = bot_users.get(message.chat.id, "selected-classes")
         if selected_classes:
-            bot.send_message(message.chat.id, 'Du hast die Klassen <i>{}</i> '
-                                              'ausgewählt. '.format(", ".join(selected_classes)), parse_mode="html")
+            message_text = "Du hast die Klassen <i>{}</i> ausgewählt. ".format(", ".join(selected_classes))
         else:
-            bot.send_message(message.chat.id, 'Du hast noch keine Klassen ausgewählt. '
-                                              'Wähle Klassen mit dem /klassen-Befehl aus. ')
+            message_text = "Du hast noch keine Klassen ausgewählt. Wähle Klassen mit dem /klassen-Befehl aus. "
+        selected_infos = []
+        not_selected_infos = []
+        for name in ("news", "absent-classes", "absent-teachers"):
+            if bot_users.get(message.chat.id, "send-" + name, True):
+                selected_infos.append(name)
+            else:
+                not_selected_infos.append(name)
+        if selected_infos:
+            message_text += "\nDu wirst über {} auf dem Vertretungsplan informiert. ".format(
+                (", ".join(INFO_NAME_TO_GERMAN[name] for name in selected_infos[:-1]) + " und " +
+                 INFO_NAME_TO_GERMAN[selected_infos[-1]]
+                 if len(selected_infos) > 1 else INFO_NAME_TO_GERMAN[selected_infos[0]])
+            )
+        if not_selected_infos:
+            message_text += "\nDu wirst nicht über {} auf dem Vertretungsplan informiert. ".format(
+                (", ".join(INFO_NAME_TO_GERMAN[name] for name in not_selected_infos[:-1]) + " und " +
+                 INFO_NAME_TO_GERMAN[not_selected_infos[-1]]
+                 if len(not_selected_infos) > 1 else INFO_NAME_TO_GERMAN[not_selected_infos[0]])
+            )
+        bot.send_message(message.chat.id, message_text, parse_mode="html")
 
     @bot.message_handler(commands=["reset"])
     def reset(message):
@@ -121,11 +150,35 @@ Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. """)
     def set_send_type(message):
         bot_users.set(message.chat.id, "status", "")
         markup = types.InlineKeyboardMarkup(2)
-        table_btn = types.InlineKeyboardButton("Tabelle", callback_data="settext-table")
-        text_btn = types.InlineKeyboardButton("Text", callback_data="settext-text")
+        table_btn = types.InlineKeyboardButton("Tabelle", callback_data="set-format-table")
+        text_btn = types.InlineKeyboardButton("Text", callback_data="set-format-text")
         markup.add(table_btn, text_btn)
         bot.send_message(message.chat.id, "Sollen Vertretungen als Text oder Tabelle gesendet werden? "
                                           "Tabellen sind auf kleinen Displays schwerer zu lesen. ", reply_markup=markup)
+
+    def set_send_base(message, name, name_german):
+        bot_users.set(message.chat.id, "status", "")
+        if bot_users.get(message.chat.id, "send-{}".format(name), True):
+            markup = types.InlineKeyboardMarkup(2)
+            markup.add(types.InlineKeyboardButton(name_german + " nicht mehr senden",
+                                                  callback_data="set-send-{}-n".format(name)))
+            bot.send_message(message.chat.id,
+                             "Im Moment informiere ich über {} auf dem Vertretungsplan. ".format(name_german),
+                             reply_markup=markup)
+        else:
+            markup = types.InlineKeyboardMarkup(2)
+            markup.add(types.InlineKeyboardButton("{} wieder senden".format(name_german.capitalize()),
+                                                  callback_data="set-send-{}-y".format(name)))
+            bot.send_message(message.chat.id,
+                             "Im Moment informiere ich nicht über {} auf dem Vertretungsplan. ".format(name_german),
+                             reply_markup=markup)
+
+    set_send_news = bot.message_handler(
+        commands=["nachrichten"])(partial(set_send_base, name="news", name_german="Nachrichten"))
+    set_send_absent_classes = bot.message_handler(
+        commands=["abwesendeklassen"])(partial(set_send_base, name="absent-classes", name_german="abwesende Klassen"))
+    set_send_absent_teachers = bot.message_handler(
+        commands=["abwesendelehrer"])(partial(set_send_base, name="absent-teachers", name_german="abwesende Lehrer"))
 
     @bot.message_handler(func=lambda m: True)
     def all_messages(message):
@@ -155,13 +208,26 @@ Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. """)
 
     @bot.callback_query_handler(func=lambda call: True)
     def all_callbacks(callback):
-        if callback.data == "settext-table":
+        if callback.data == "set-format-table":
             bot_users.set(callback.message.chat.id, "send-type", "table")
             bot.send_message(callback.message.chat.id, "Vertretungen werden als Tabelle verschickt. ")
             bot_users.save()
-        elif callback.data == "settext-text":
+        elif callback.data == "set-format-text":
             bot_users.set(callback.message.chat.id, "send-type", "text")
             bot.send_message(callback.message.chat.id, "Vertretungen werden als Text verschickt. ")
             bot_users.save()
+        elif callback.data.startswith("set-send-"):
+            name = callback.data[9:-2]
+            value = callback.data[-1] == "y"
+            name_german = INFO_NAME_TO_GERMAN[name]
+            if value != bot_users.get(callback.message.chat.id, "send-" + name, True):
+                bot_users.set(callback.message.chat.id, "send-" + name, value)
+                bot.send_message(callback.message.chat.id, "Du wirst {}über {} informiert. ".format(
+                                                                         ("nicht " if not value else ""), name_german))
+                bot_users.save()
+            else:
+                bot.send_message(callback.message.chat.id,
+                                 "Du wirst bereits {}über {} informiert. ".format(("nicht " if not value else ""),
+                                                                                  name_german))
 
     return bot

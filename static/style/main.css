@@ -240,6 +240,7 @@ h1 {
 }
 
 #telegram-info:before {
+    margin-right: 4px;
     display: inline-block;
     vertical-align: middle;
     content: ' ';

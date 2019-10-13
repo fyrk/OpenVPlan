@@ -20,7 +20,7 @@ import urllib.request
 import urllib.error
 import urllib.parse
 from html.parser import HTMLParser
-from collections import OrderedDict
+from collections import OrderedDict, deque
 
 
 class Snippets:
@@ -89,8 +89,7 @@ class Snippets:
 {}
 </div>
 <footer>
-<p id="telegram-info">
-    Der Telegram-Bot <a href="https://t.me/GaWVertretungBot{telegram_link}" target="_blank">@GaWVertretungBot</a> informiert automatisch über Vertretungen. 
+<p id="telegram-info">Der Telegram-Bot <a href="https://t.me/GaWVertretungBot{telegram_link}" target="_blank">@GaWVertretungBot</a> informiert automatisch über Vertretungen. 
 </p>
 <p>
 	Dies ist eine Alternative zum originalen Vertretungsplan unter <a href="https://gaw-verden.de/images/vertretung/klassen/subst_001.htm" target="_blank">gaw-verden.de</a>. Alle Angaben ohne Gewähr.
@@ -338,9 +337,9 @@ class SubstitutionParser(HTMLParser):
                     if not self.current_day_info:
                         if "Nachrichten zum Tag" not in data:
                             if "Abwesende Lehrer" in data:
-                                self.current_day_info = "absent_teachers"
+                                self.current_day_info = "absent-teachers"
                             elif "Abwesende Klassen" in data:
-                                self.current_day_info = "absent_classes"
+                                self.current_day_info = "absent-classes"
                             else:
                                 if "news" in self.day_data:
                                     self.day_data["news"] += "<br>" + data
@@ -403,10 +402,10 @@ def create_data(first_site):
 
 
 def create_day_container(day, substitutions):
-    absent_teachers = (Snippets.ABSENT_TEACHERS.format(", ".join(sorted(day["absent_teachers"])))
-                       if "absent_teachers" in day else "")
-    absent_classes = (Snippets.ABSENT_CLASSES.format(", ".join(sorted(day["absent_classes"])))
-                      if "absent_classes" in day else "")
+    absent_teachers = (Snippets.ABSENT_TEACHERS.format(", ".join(sorted(day["absent-teachers"])))
+                       if "absent-teachers" in day else "")
+    absent_classes = (Snippets.ABSENT_CLASSES.format(", ".join(sorted(day["absent-classes"])))
+                      if "absent-classes" in day else "")
     if "news" in day:
         day_info = Snippets.DAY_INFO_ALL.format(
             day_name=day["day_name"],
@@ -443,12 +442,14 @@ def get_lesson_num(lesson_string):
 
 
 def create_site_and_send_notifications(new_data, status_string):
-    global sent_substitutions, new_sent_substitutions
     with open("data/bot_users.json", "r") as f:
         bot_users = json.load(f)
-    with open("data/sent_substitutions.json", "r") as f:
-        sent_substitutions = json.load(f)
-    new_sent_substitutions = set()
+    with open("data/sent_messages.json", "r") as f:
+        sent_messages = json.load(f)
+    sent_substitutions = deque(sent_messages["substitutions"], maxlen=200)
+    sent_news = deque(sent_messages["news"], maxlen=20)
+    sent_absent_classes = deque(sent_messages["absent-classes"], maxlen=20)
+    sent_absent_teachers = deque(sent_messages["absent-teachers"], maxlen=20)
 
     containers = ""
     current_timestamp = create_date_timestamp(datetime.datetime.now().strftime("%d.%m.%Y"))
@@ -457,6 +458,7 @@ def create_site_and_send_notifications(new_data, status_string):
         print(day_timestamp, day)
         if day_timestamp >= current_timestamp:
             i += 1
+            send_day_news(bot_users, sent_news, sent_absent_classes, sent_absent_teachers, day_timestamp, day)
             day["substitutions"] = OrderedDict(sorted(day["substitutions"].items(), key=lambda s: sort_classes(s[0])))
             substitution_rows = ""
             for class_name, class_substitutions in day["substitutions"].items():
@@ -465,7 +467,8 @@ def create_site_and_send_notifications(new_data, status_string):
                                                                             lesson_num=get_lesson_num(
                                                                                 class_substitutions[0][
                                                                                     2]) if i == 1 else "")
-                send_substitution_notification(bot_users, day_timestamp, day, class_name, class_substitutions)
+                send_substitution_notification(bot_users, sent_substitutions, day_timestamp, day, class_name,
+                                               class_substitutions)
                 for substitution in class_substitutions[1:]:
                     substitution_rows += Snippets.SUBSTITUTION_ROW.format(*substitution,
                                                                           lesson_num=get_lesson_num(
@@ -475,103 +478,170 @@ def create_site_and_send_notifications(new_data, status_string):
             else:
                 substitutions = Snippets.NO_SUBSTITUTIONS
             containers += create_day_container(day, substitutions)
-    sent_substitutions.extend(new_sent_substitutions)
-    if len(sent_substitutions) > 200:
-        sent_substitutions = sent_substitutions[(len(sent_substitutions) - 200):]
-    with open("data/sent_substitutions.json", "w") as f:
-        json.dump(sent_substitutions, f)
+    with open("data/sent_messages.json", "w") as f:
+        json.dump({
+            "substitutions": list(sent_substitutions), 
+            "news": list(sent_news), 
+            "absent-classes": list(sent_absent_classes), 
+            "absent-teachers": list(sent_absent_teachers)
+        }, f)
     return Snippets.INDEX.format(Snippets.SELECT_CLASSES, containers, status=status_string, telegram_link="")
 
 
-def send_substitution_notification(bot_users, day_timestamp, day, class_name, substitutions):
-    try:
-        global bot, data, sent_substitutions, new_sent_substitutions
-        for user_id, user_data in bot_users.items():
-            if "selected-classes" in user_data:
-                selected_classes_split = [split_class_name(name) for name in user_data["selected-classes"]]
-                substitutions_for_sending = []
-                for substitution in substitutions:
-                    substitution_hash = hashlib.sha1(
-                        ".".join((str(day_timestamp), class_name, *substitution)).encode()).hexdigest()
-                    if substitution_hash not in sent_substitutions:
-                        new_sent_substitutions.add(substitution_hash)
-                        if any(do_class_names_match(class_name, selected_name)
-                                for selected_name in selected_classes_split):
-                            substitutions_for_sending.append(substitution)
-                if substitutions_for_sending:
-                    message = '''Vertretungen für {}, {}, Woche {}: 
-Klasse {}: \n'''.format(day["day_name"], day["date"], day["week"], class_name)
-                    if "send-type" not in user_data or user_data["send-type"] == "text":
-                        for substitution in substitutions_for_sending:
-                            if "---" in substitution[1] and "---" in substitution[3] and "---" in substitution[4]:
-                                if substitution[0].strip():
-                                    lehrer = "bei {} ".format(substitution[0])
-                                else:
-                                    lehrer = ""
-                                message += "Die {}. Stunde {}fällt aus".format(substitution[2], lehrer)
-                            elif substitution[0] == substitution[1]:
-                                if substitution[0].strip():
-                                    lehrer = "bei {} ".format(substitution[0])
-                                else:
-                                    lehrer = ""
-                                if substitution[3].strip():
-                                    fach = "{} ".format(substitution[3])
-                                else:
-                                    fach = ""
-                                message += "Die {}. Stunde {}{}findet in {} statt".format(substitution[2], fach, lehrer,
-                                                                                          substitution[4])
-                            else:
-                                if substitution[0].strip():
-                                    lehrer = "von {} ".format(substitution[0])
-                                else:
-                                    lehrer = ""
-                                if substitution[3].strip():
-                                    fach = "{} ".format(substitution[3])
-                                else:
-                                    fach = ""
-                                if substitution[1].strip():
-                                    vertreter = "durch {} ".format(substitution[1])
-                                else:
-                                    vertreter = ""
-                                message += "Die {}. Stunde {}{}wird {}in {} vertreten".format(substitution[2], fach,
-                                                                                              lehrer, vertreter,
-                                                                                              substitution[4])
-                            if substitution[5].strip() and substitution[5].strip() != "&nbsp;":
-                                if substitution[6].strip() and substitution[6].strip() != "&nbsp;":
-                                    message += " (Vertr. von {}, {})".format(substitution[5], substitution[6])
-                                else:
-                                    message += " (Vertr. von {})".format(substitution[5])
-                            else:
-                                if substitution[6].strip() and substitution[6].strip() != "&nbsp;":
-                                    message += " ({})".format(substitution[6])
-                            message += ".\n"
-                    else:
-                        lengths = [1, 1, 1, 1, 1, 2, 1]
-                        for s in substitutions_for_sending:
-                            for i in range(7):
-                                length = len(s[i])
-                                if length > lengths[i]:
-                                    lengths[i] = length
+def send_day_news(bot_users, sent_news, sent_absent_classes, sent_absent_teachers, day_timestamp, day):
+    def check_selection(user_data, name):
+        return name not in user_data or not user_data[name]
 
-                        message += '<pre>| {:^{}} | {:^{}} | {:^{}} | ' \
+    global data
+    
+    if "news" in day or "absent-classes" in day or "absent-teachers" in day:
+        message_base = " für {}, {}, Woche {}: \n".format(day["day_name"], day["date"], day["week"])
+        texts = {}
+        if "news" in day: 
+            news_hash = hashlib.sha1((day["date"] + "-" + day["news"]).encode()).hexdigest()
+            if news_hash not in sent_news: 
+                texts["news"] = day["news"]
+                sent_news.append(news_hash)
+        if "absent-classes" in day:
+            absent_classes =  ", ".join(day["absent-classes"])
+            news_hash = hashlib.sha1((day["date"] + "-" + absent_classes).encode()).hexdigest()
+            if news_hash not in sent_news: 
+                texts["absent-classes"] = absent_classes
+                sent_absent_classes.append(news_hash)
+        if "absent-teachers" in day:
+            absent_teachers = ", ".join(day["absent-teachers"])
+            news_hash = hashlib.sha1((day["date"] + "-" + absent_teachers).encode()).hexdigest()
+            if news_hash not in sent_news: 
+                texts["absent-teachers"] = absent_teachers
+                sent_absent_teachers.append(news_hash)
+        
+        name2text = {
+            "news": "Nachrichten",
+            "absent-classes": "Abwesende Klassen",
+            "absent-teachers": "Abwesende Lehrer"
+        }
+        for user_id, user_data in bot_users.items():
+            selected_information = [name for name in ("news", "absent-classes", "absent-teachers")
+                                    if check_selection(user_data, "send-" + name)]
+            if selected_information:
+                if len(selected_information) == 1:
+                    if selected_information[0] in texts:
+                        bot.send_message(int(user_id), name2text[selected_information[0]] + message_base +
+                                         texts[selected_information[0]])
+                else:
+                    message = "Informationen" + message_base
+                    added_info = False
+                    for info in selected_information:
+                        if info in texts:
+                            added_info = True
+                            message += name2text[info] + ": " + texts[info] + "\n\n"
+                    if added_info:
+                        bot.send_message(int(user_id), message.rstrip(), parse_mode="html")
+
+
+def create_substitution_messages(day, class_name, substitutions):
+    message_base = "Vertretungen für {}, {}, Woche {}: \nKlasse {}: \n".format(day["day_name"],
+                                                                               day["date"],
+                                                                               day["week"],
+                                                                               class_name)
+    message_text = message_base
+    table_row_lengths = [1, 1, 1, 1, 1, 2, 1]
+    for s in substitutions:
+        for i in range(7):
+            length = len(s[i])
+            if length > table_row_lengths[i]:
+                table_row_lengths[i] = length
+
+    message_table = message_base + '<pre>| {:^{}} | {:^{}} | {:^{}} | ' \
                                    '{:^{}} | {:^{}} | {:^{}} | ' \
-                                   '{:^{}} |\n'.format("L", lengths[0], "V", lengths[1], "S", lengths[2],
-                                                                    "F", lengths[3], "R", lengths[4], "Vv", lengths[5],
-                                                                    "H", lengths[6])
-                        for substitution in substitutions_for_sending:
-                            message += "| {:^{}} | {:^{}} | " \
-                                       "{:^{}} | {:^{}} | " \
-                                       "{:^{}} | {:^{}} | " \
-                                       "{:^{}} |\n".format(substitution[0], lengths[0],
-                                                           substitution[1], lengths[1],
-                                                           substitution[2], lengths[2],
-                                                           substitution[3], lengths[3],
-                                                           substitution[4], lengths[4],
-                                                           substitution[5], lengths[5],
-                                                           substitution[6], lengths[6],
-                                                           )
-                        message += "</pre>"
-                    bot.send_message(int(user_id), message.strip(), parse_mode="html")
+                                   '{:^{}} |\n'.format("L", table_row_lengths[0], "V", table_row_lengths[1],
+                                                       "S", table_row_lengths[2], "F", table_row_lengths[3],
+                                                       "R", table_row_lengths[4], "Vv", table_row_lengths[5],
+                                                       "H", table_row_lengths[6])
+
+    for substitution in substitutions:
+        # MESSAGE TEXT
+        if "---" in substitution[1] and "---" in substitution[3] and "---" in substitution[4]:
+            if substitution[0].strip():
+                lehrer = "bei {} ".format(substitution[0])
+            else:
+                lehrer = ""
+            message_text += "Die {}. Stunde {}fällt aus".format(substitution[2], lehrer)
+        elif substitution[0] == substitution[1]:
+            if substitution[0].strip():
+                lehrer = "bei {} ".format(substitution[0])
+            else:
+                lehrer = ""
+            if substitution[3].strip():
+                fach = "{} ".format(substitution[3])
+            else:
+                fach = ""
+            message_text += "Die {}. Stunde {}{}findet in {} statt".format(substitution[2], fach, lehrer,
+                                                                           substitution[4])
+        else:
+            if substitution[0].strip():
+                lehrer = "von {} ".format(substitution[0])
+            else:
+                lehrer = ""
+            if substitution[3].strip():
+                fach = "{} ".format(substitution[3])
+            else:
+                fach = ""
+            if substitution[1].strip():
+                vertreter = "durch {} ".format(substitution[1])
+            else:
+                vertreter = ""
+            message_text += "Die {}. Stunde {}{}wird {}in {} vertreten".format(substitution[2], fach,
+                                                                               lehrer, vertreter,
+                                                                               substitution[4])
+        if substitution[5].strip() and substitution[5].strip() != "&nbsp;":
+            if substitution[6].strip() and substitution[6].strip() != "&nbsp;":
+                message_text += " (Vertr. von {}, {})".format(substitution[5], substitution[6])
+            else:
+                message_text += " (Vertr. von {})".format(substitution[5])
+        else:
+            if substitution[6].strip() and substitution[6].strip() != "&nbsp;":
+                message_text += " ({})".format(substitution[6])
+        message_text += ".\n"
+
+        # MESSAGE TABLE
+        message_table += "| {:^{}} | {:^{}} | " \
+                         "{:^{}} | {:^{}} | " \
+                         "{:^{}} | {:^{}} | " \
+                         "{:^{}} |\n".format(substitution[0], table_row_lengths[0],
+                                             substitution[1], table_row_lengths[1],
+                                             substitution[2], table_row_lengths[2],
+                                             substitution[3], table_row_lengths[3],
+                                             substitution[4], table_row_lengths[4],
+                                             substitution[5], table_row_lengths[5],
+                                             substitution[6], table_row_lengths[6]
+                                             )
+    message_table += "</pre>"
+    return message_text, message_table
+
+
+def send_substitution_notification(bot_users, sent_substitutions, day_timestamp, day, class_name, substitutions):
+    try:
+        global bot, data
+        new_substitutions = []
+        for substitution in substitutions:
+            substitution_hash = hashlib.sha1(".".join((str(day_timestamp), class_name, *substitution)).encode()
+                                             ).hexdigest()
+            if substitution_hash not in sent_substitutions:
+                sent_substitutions.append(substitution_hash)
+                new_substitutions.append(substitution)
+
+        if new_substitutions:
+            message_text, message_table = create_substitution_messages(day, class_name, new_substitutions)
+
+            for user_id, user_data in bot_users.items():
+                if "selected-classes" in user_data:
+                    if any(do_class_names_match(class_name, split_class_name(selected_class_name))
+                           for selected_class_name in user_data["selected-classes"]):
+                        if "send-type" not in user_data or user_data["send-type"] == "text":
+                            bot.send_message(int(user_id), message_text.strip(), parse_mode="html")
+                        else:
+                            bot.send_message(int(user_id), message_table.strip(), parse_mode="html")
     except Exception:
         logger.exception("Sending substitution notifications failed")
 
@@ -648,12 +718,10 @@ last_status = datetime.datetime.fromtimestamp(0)
 data = {}
 index_site = ""
 status_string = ""
-sent_substitutions = []
-new_sent_substitutions = set()
 
 
 def get_main_page(storage):
-    global last_status, data, index_site, status_string, sent_substitutions
+    global last_status, data, index_site, status_string
     logger.debug("Requesting subst_001.htm ...")
     t1 = time.perf_counter()
     with urllib.request.urlopen("https://gaw-verden.de/images/vertretung/klassen/subst_001.htm") as site:
@@ -718,5 +786,5 @@ logger.info("Starting bot")
 with open("data/secret.json", "r") as f:
     bot = bot_listener.start_bot(json.load(f)["token"])
 logger.info("Bot started")
-bot_thread = threading.Thread(target=bot.infinity_polling, kwargs={"none_stop": True, "timeout": 60*5}, daemon=True)
+bot_thread = threading.Thread(target=bot.infinity_polling, kwargs={"none_stop": True, "timeout": 20}, daemon=True)
 bot_thread.start()
