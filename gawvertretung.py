@@ -4,18 +4,17 @@ import base64
 import os
 import sys
 
-import bot_listener
+from bot_utils import CustomAsyncTeleBot
 
-dir = os.path.dirname(__file__)
-os.chdir(dir)
-sys.path.append(os.path.join(dir, "sitepackages/"))
+directory = os.path.dirname(__file__)
+os.chdir(directory)
+sys.path.append(os.path.join(directory, "sitepackages/"))
 import json
 import logging
 import time
 import hashlib
 import re
 import datetime
-import threading
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -442,7 +441,6 @@ def get_lesson_num(lesson_string):
 
 
 def create_site_and_send_notifications(new_data, status_string):
-    bot.chats.reload()
     with open("data/sent_messages.json", "r") as f:
         sent_messages = json.load(f)
     sent_substitutions = deque(sent_messages["substitutions"], maxlen=200)
@@ -489,49 +487,49 @@ def create_site_and_send_notifications(new_data, status_string):
 
 
 def send_day_news(sent_news, sent_absent_classes, sent_absent_teachers, day_timestamp, day):
-    def check_selection(user_data, name):
-        return name not in user_data or not user_data[name]
+    try:
+        global bot, data
 
-    global bot, data
-    
-    if "news" in day or "absent-classes" in day or "absent-teachers" in day:
-        texts = {}
-        if "news" in day: 
-            news_hash = hashlib.sha1((day["date"] + "-" + day["news"]).encode()).hexdigest()
-            if news_hash not in sent_news: 
-                texts["news"] = day["news"]
-                sent_news.append(news_hash)
-        if "absent-classes" in day:
-            absent_classes = ", ".join(day["absent-classes"])
-            absent_classes_hash = hashlib.sha1((day["date"] + "-" + absent_classes).encode()).hexdigest()
-            if absent_classes_hash not in sent_absent_classes:
-                texts["absent-classes"] = absent_classes
-                sent_absent_classes.append(absent_classes_hash)
-        if "absent-teachers" in day:
-            absent_teachers = ", ".join(day["absent-teachers"])
-            absent_teachers_hash = hashlib.sha1((day["date"] + "-" + absent_teachers).encode()).hexdigest()
-            if absent_teachers_hash not in sent_absent_teachers:
-                texts["absent-teachers"] = absent_teachers
-                sent_absent_teachers.append(absent_teachers_hash)
-        
-        name2text = {
-            "news": "Nachrichten",
-            "absent-classes": "Abwesende Klassen",
-            "absent-teachers": "Abwesende Lehrer"
-        }
-        message_base = " für {}, {}, Woche {}: \n".format(day["day_name"], day["date"], day["week"])
-        for chat in bot.chats:
-            selected_information = [(name, texts[name]) for name in ("news", "absent-classes", "absent-teachers")
-                                    if check_selection(chat, "send-" + name) and name in texts]
-            if selected_information:
-                if len(selected_information) == 1:
-                    chat.send_substitution(day_timestamp,
-                            name2text[selected_information[0][0]] + message_base + selected_information[0][1])
-                else:
-                    message = "Informationen" + message_base
-                    for name, info in selected_information:
-                        message += name2text[name] + ": " + info + "\n\n"
-                    chat.send_substitution(day_timestamp, message.rstrip(), parse_mode="html")
+        if "news" in day or "absent_classes" in day or "absent_teachers" in day:
+            texts = {}
+            if "news" in day:
+                news_hash = hashlib.sha1((day["date"] + "-" + day["news"]).encode()).hexdigest()
+                if news_hash not in sent_news:
+                    texts["news"] = day["news"]
+                    sent_news.append(news_hash)
+            if "absent_classes" in day:
+                absent_classes = ", ".join(day["absent_classes"])
+                absent_classes_hash = hashlib.sha1((day["date"] + "-" + absent_classes).encode()).hexdigest()
+                if absent_classes_hash not in sent_absent_classes:
+                    texts["absent_classes"] = absent_classes
+                    sent_absent_classes.append(absent_classes_hash)
+            if "absent_teachers" in day:
+                absent_teachers = ", ".join(day["absent_teachers"])
+                absent_teachers_hash = hashlib.sha1((day["date"] + "-" + absent_teachers).encode()).hexdigest()
+                if absent_teachers_hash not in sent_absent_teachers:
+                    texts["absent_teachers"] = absent_teachers
+                    sent_absent_teachers.append(absent_teachers_hash)
+
+            name2text = {
+                "news": "Nachrichten",
+                "absent_classes": "Abwesende Klassen",
+                "absent_teachers": "Abwesende Lehrer"
+            }
+            message_base = " für {}, {}, Woche {}: \n".format(day["day_name"], day["date"], day["week"])
+            for chat in bot.chats:
+                selected_information = [(name, texts[name]) for name in ("news", "absent_classes", "absent_teachers")
+                                        if chat.get("send_" + name) and name in texts]
+                if selected_information:
+                    if len(selected_information) == 1:
+                        chat.send_substitution(day_timestamp,
+                                name2text[selected_information[0][0]] + message_base + selected_information[0][1])
+                    else:
+                        message = "Informationen" + message_base
+                        for name, info in selected_information:
+                            message += name2text[name] + ": " + info + "\n\n"
+                        chat.send_substitution(day_timestamp, message.rstrip(), parse_mode="html")
+    except Exception:
+        logger.exception("Sending news failed")
 
 
 def create_substitution_messages(day, class_name, substitutions):
@@ -772,14 +770,13 @@ def app(environ, start_response):
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-log_formatter = logging.Formatter("{asctime} [{levelname:^8}]: {message}", "%Y.%m.%e %H:%M:%S", style="{")
-file_logger = logging.FileHandler(time.strftime("logs/log-%Y.%m.%e_%H-%M-%S.txt"))
-file_logger.setFormatter(log_formatter)
-logger.addHandler(file_logger)
+log_formatter = logging.Formatter("{asctime}.{msecs:03f} [{levelname:^8}]: {message}", "%Y.%m.%e %H:%M:%S", style="{")
+#file_logger = logging.FileHandler(time.strftime("logs/log-%Y.%m.%e_%H-%M-%S.txt"))
+#file_logger.setFormatter(log_formatter)
+#logger.addHandler(file_logger)
+stdout_logger = logging.StreamHandler(sys.stdout)
+stdout_logger.setFormatter(log_formatter)
+logger.addHandler(stdout_logger)
 
-logger.info("Starting bot")
-with open("data/secret.json", "r") as f:
-    bot = bot_listener.start_bot(json.load(f)["token"])
-logger.info("Bot started")
-bot_thread = threading.Thread(target=bot.infinity_polling, kwargs={"none_stop": True, "timeout": 20}, daemon=True)
-bot_thread.start()
+with open("secret.json", "r") as f:
+    bot = CustomAsyncTeleBot(json.load(f)["token"], "data/chats.sqlite3")

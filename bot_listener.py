@@ -6,22 +6,22 @@ from functools import partial
 
 from bot_utils import CustomAsyncTeleBot
 
-dir = os.path.dirname(__file__)
-os.chdir(dir)
-sys.path.append(os.path.join(dir, "sitepackages/"))
+directory = os.path.dirname(__file__)
+os.chdir(directory)
+sys.path.append(os.path.join(directory, "sitepackages/"))
 import base64
 
 import telebot
 
 INFO_NAME_TO_GERMAN = {
     "news": "Nachrichten",
-    "absent-classes": "abwesende Klassen",
-    "absent-teachers": "abwesende Lehrer"
+    "absent_classes": "abwesende Klassen",
+    "absent_teachers": "abwesende Lehrer"
 }
 
 
 def start_bot(token):
-    bot = CustomAsyncTeleBot(token, "data/chats.json")
+    bot = CustomAsyncTeleBot(token, "data/chats.sqlite3", threaded=False)
 
     @bot.message_handler(commands=["start"])
     def start(message):
@@ -36,19 +36,18 @@ def start_bot(token):
                 if selected_class and selected_class not in selected_classes:
                     selected_classes.append(selected_class)
             if selected_classes:
-                bot.chats.get(message.chat.id).selected_classes = selected_classes
+                chat = bot.chats.get_from_msg(message)
+                chat.selected_classes = selected_classes
                 bot.chats.save()
                 if len(selected_classes) == 1:
-                    bot.send_message(message.chat.id, 'Die von dir auf der Webseite ausgewählte Klasse '
-                                                      '<i>{}</i> wurde automatisch ausgewählt. Du kannst '
-                                                      'die Auswahl mit dem /klassen-Befehl anpassen. '.format(
-                        selected_classes[0]), parse_mode="html")
+                    chat.send('Die von dir auf der Webseite ausgewählte Klasse <i>{}</i> wurde automatisch ausgewählt. '
+                              'Du kannst die Auswahl mit dem /klassen-Befehl anpassen. '.format(selected_classes[0]),
+                              parse_mode="html")
                 else:
-                    bot.send_message(message.chat.id, 'Die von dir auf der Webseite ausgewählte Klassen '
-                                                      '<i>{}</i> wurden automatisch ausgewählt. Du '
-                                                      'kannst die Auswahl mit dem /klassen-Befehl anpassen. '.format(
-                        ", ".join(selected_classes)),
-                                     parse_mode="html")
+                    chat.send('Die von dir auf der Webseite ausgewählte Klassen <i>{}</i> wurden automatisch '
+                              'ausgewählt. Du kannst die Auswahl mit dem /klassen-Befehl anpassen. '.format(
+                                                                                           ", ".join(selected_classes)),
+                              parse_mode="html")
         except Exception:
             pass
 
@@ -57,7 +56,7 @@ def start_bot(token):
         chat = bot.chats.get_from_msg(message)
         chat.reset_status()
         chat.send("Ich verschicke Nachrichten, wenn es neue Vertretungen auf dem Vertretungsplan des Gymnasiums am "
-                  "Wall Verden gibt.\n "
+                  "Wall Verden gibt.\n"
                   "Folgende Befehle stehen zur Verfügung:\n"
                   "\n"
                   "/klassen - Klassen setzen, für die du benachrichtigt werden willst. Die Klassen müssen gesetzt "
@@ -73,7 +72,7 @@ def start_bot(token):
                   "/reset - Löscht alle Daten, die diesem Chat zugeordnet sind\n"
                   "\n"
                   "Dieser Bot gehört zum Vertretungsplan unter gawvertretung.florianraediker.de und ist nicht "
-                  "offiziell.\n "
+                  "offiziell.\n"
                   "Alle Angaben ohne Gewähr. Es gibt keine Garantie, dass Benachrichtigungen zuverlässig verschickt "
                   "werden.\n")
 
@@ -81,12 +80,13 @@ def start_bot(token):
     def select_classes(message):
         chat = bot.chats.get_from_msg(message)
         chat.status = "select-classes"
+        bot.chats.save()
         chat.send('Schicke mir alle Klassen, für die du benachrichtigt werden willst, durch Kommata getrennt (z.B. '
                   '"6A, 11C").\n'
                   "Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. ")
 
     @bot.message_handler(commands=["auswahl"])
-    def show_selected_classes(message):
+    def show_settings(message):
         chat = bot.chats.get(message.chat.id)
         chat.reset_status()
         if chat.selected_classes:
@@ -95,8 +95,8 @@ def start_bot(token):
             message_text = "Du hast noch keine Klassen ausgewählt. Wähle Klassen mit dem /klassen-Befehl aus. "
         selected_infos = []
         not_selected_infos = []
-        for name in ("news", "absent-classes", "absent-teachers"):
-            if chat.get("send-" + name, True):
+        for name in ("news", "absent_classes", "absent_teachers"):
+            if chat.get("send_" + name):
                 selected_infos.append(name)
             else:
                 not_selected_infos.append(name)
@@ -124,6 +124,7 @@ def start_bot(token):
     def set_send_type(message):
         chat = bot.chats.get_from_msg(message)
         chat.reset_status()
+        bot.chats.save()
         markup = telebot.types.InlineKeyboardMarkup(2)
         table_btn = telebot.types.InlineKeyboardButton("Tabelle", callback_data="set-format-table")
         text_btn = telebot.types.InlineKeyboardButton("Text", callback_data="set-format-text")
@@ -134,31 +135,30 @@ def start_bot(token):
     def set_send_base(message, name, name_german):
         chat = bot.chats.get_from_msg(message)
         chat.reset_status()
-        if chat.get("send-{}".format(name), True):
+        if chat.get("send_{}".format(name), True):
             markup = telebot.types.InlineKeyboardMarkup(2)
             markup.add(telebot.types.InlineKeyboardButton(name_german + " nicht mehr senden",
                                                           callback_data="set-send-{}-n".format(name)))
-            bot.send_message(message.chat.id,
-                             "Im Moment informiere ich über {} auf dem Vertretungsplan. ".format(name_german),
-                             reply_markup=markup)
+            chat.send("Im Moment informiere ich über {} auf dem Vertretungsplan. ".format(name_german),
+                      reply_markup=markup)
         else:
             markup = telebot.types.InlineKeyboardMarkup(2)
             markup.add(telebot.types.InlineKeyboardButton("{} wieder senden".format(name_german.capitalize()),
                                                           callback_data="set-send-{}-y".format(name)))
-            bot.send_message(message.chat.id,
-                             "Im Moment informiere ich nicht über {} auf dem Vertretungsplan. ".format(name_german),
-                             reply_markup=markup)
+            chat.send("Im Moment informiere ich nicht über {} auf dem Vertretungsplan. ".format(name_german),
+                      reply_markup=markup)
 
     set_send_news = bot.message_handler(
         commands=["nachrichten"])(partial(set_send_base, name="news", name_german="Nachrichten"))
     set_send_absent_classes = bot.message_handler(
-        commands=["abwesendeklassen"])(partial(set_send_base, name="absent-classes", name_german="abwesende Klassen"))
+        commands=["abwesendeklassen"])(partial(set_send_base, name="absent_classes", name_german="abwesende Klassen"))
     set_send_absent_teachers = bot.message_handler(
-        commands=["abwesendelehrer"])(partial(set_send_base, name="absent-teachers", name_german="abwesende Lehrer"))
+        commands=["abwesendelehrer"])(partial(set_send_base, name="absent_teachers", name_german="abwesende Lehrer"))
 
     @bot.message_handler(func=lambda m: True)
     def all_messages(message):
         chat = bot.chats.get_from_msg(message)
+        print(chat)
         if chat.status == "select-classes":
             chat.reset_status()
             selected_classes = []
@@ -195,7 +195,7 @@ def start_bot(token):
             name = callback.data[9:-2]
             value = callback.data[-1] == "y"
             name_german = INFO_NAME_TO_GERMAN[name]
-            if value != chat.get("send-" + name, True):
+            if value != chat.get("send_" + name):
                 chat.set("send-" + name, value)
                 bot.send_message(callback.message.chat.id, "Du wirst {}über {} informiert. ".format(
                     ("nicht " if not value else ""), name_german))
@@ -206,3 +206,27 @@ def start_bot(token):
                                                                                   name_german))
 
     return bot
+
+
+if __name__ == "__main__":
+    import json
+    import logging
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    log_formatter = logging.Formatter("{asctime} [{levelname:^8}]: {message}", "%Y.%m.%e %H:%M:%S", style="{")
+    # file_logger = logging.FileHandler(time.strftime("logs/log-%Y.%m.%e_%H-%M-%S.txt"))
+    # file_logger.setFormatter(log_formatter)
+    # logger.addHandler(file_logger)
+    stdout_logger = logging.StreamHandler(sys.stdout)
+    stdout_logger.setFormatter(log_formatter)
+    logger.addHandler(stdout_logger)
+
+    with open("secret.json") as f:
+        bot = start_bot(json.load(f)["token"])
+    try:
+        bot.infinity_polling(none_stop=True)
+    finally:
+        logger.info("Error occured, saving and closing")
+        bot.chats.save()
+        bot.chats.close()

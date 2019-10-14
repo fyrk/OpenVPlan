@@ -1,9 +1,8 @@
 #!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
-import os
-import sys
-import time
 import logging
+import os
+import time
 import urllib.parse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
