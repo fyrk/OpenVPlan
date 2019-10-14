@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import base64
-import sys
 import os
+import sys
 
 import bot_listener
 
@@ -442,8 +442,7 @@ def get_lesson_num(lesson_string):
 
 
 def create_site_and_send_notifications(new_data, status_string):
-    with open("data/bot_users.json", "r") as f:
-        bot_users = json.load(f)
+    bot.chats.reload()
     with open("data/sent_messages.json", "r") as f:
         sent_messages = json.load(f)
     sent_substitutions = deque(sent_messages["substitutions"], maxlen=200)
@@ -458,7 +457,7 @@ def create_site_and_send_notifications(new_data, status_string):
         print(day_timestamp, day)
         if day_timestamp >= current_timestamp:
             i += 1
-            send_day_news(bot_users, sent_news, sent_absent_classes, sent_absent_teachers, day_timestamp, day)
+            send_day_news(sent_news, sent_absent_classes, sent_absent_teachers, day_timestamp, day)
             day["substitutions"] = OrderedDict(sorted(day["substitutions"].items(), key=lambda s: sort_classes(s[0])))
             substitution_rows = ""
             for class_name, class_substitutions in day["substitutions"].items():
@@ -467,7 +466,7 @@ def create_site_and_send_notifications(new_data, status_string):
                                                                             lesson_num=get_lesson_num(
                                                                                 class_substitutions[0][
                                                                                     2]) if i == 1 else "")
-                send_substitution_notification(bot_users, sent_substitutions, day_timestamp, day, class_name,
+                send_substitution_notification(sent_substitutions, day_timestamp, day, class_name,
                                                class_substitutions)
                 for substitution in class_substitutions[1:]:
                     substitution_rows += Snippets.SUBSTITUTION_ROW.format(*substitution,
@@ -478,6 +477,7 @@ def create_site_and_send_notifications(new_data, status_string):
             else:
                 substitutions = Snippets.NO_SUBSTITUTIONS
             containers += create_day_container(day, substitutions)
+    bot.chats.save()
     with open("data/sent_messages.json", "w") as f:
         json.dump({
             "substitutions": list(sent_substitutions), 
@@ -488,14 +488,13 @@ def create_site_and_send_notifications(new_data, status_string):
     return Snippets.INDEX.format(Snippets.SELECT_CLASSES, containers, status=status_string, telegram_link="")
 
 
-def send_day_news(bot_users, sent_news, sent_absent_classes, sent_absent_teachers, day_timestamp, day):
+def send_day_news(sent_news, sent_absent_classes, sent_absent_teachers, day_timestamp, day):
     def check_selection(user_data, name):
         return name not in user_data or not user_data[name]
 
-    global data
+    global bot, data
     
     if "news" in day or "absent-classes" in day or "absent-teachers" in day:
-        message_base = " für {}, {}, Woche {}: \n".format(day["day_name"], day["date"], day["week"])
         texts = {}
         if "news" in day: 
             news_hash = hashlib.sha1((day["date"] + "-" + day["news"]).encode()).hexdigest()
@@ -503,40 +502,36 @@ def send_day_news(bot_users, sent_news, sent_absent_classes, sent_absent_teacher
                 texts["news"] = day["news"]
                 sent_news.append(news_hash)
         if "absent-classes" in day:
-            absent_classes =  ", ".join(day["absent-classes"])
-            news_hash = hashlib.sha1((day["date"] + "-" + absent_classes).encode()).hexdigest()
-            if news_hash not in sent_news: 
+            absent_classes = ", ".join(day["absent-classes"])
+            absent_classes_hash = hashlib.sha1((day["date"] + "-" + absent_classes).encode()).hexdigest()
+            if absent_classes_hash not in sent_absent_classes:
                 texts["absent-classes"] = absent_classes
-                sent_absent_classes.append(news_hash)
+                sent_absent_classes.append(absent_classes_hash)
         if "absent-teachers" in day:
             absent_teachers = ", ".join(day["absent-teachers"])
-            news_hash = hashlib.sha1((day["date"] + "-" + absent_teachers).encode()).hexdigest()
-            if news_hash not in sent_news: 
+            absent_teachers_hash = hashlib.sha1((day["date"] + "-" + absent_teachers).encode()).hexdigest()
+            if absent_teachers_hash not in sent_absent_teachers:
                 texts["absent-teachers"] = absent_teachers
-                sent_absent_teachers.append(news_hash)
+                sent_absent_teachers.append(absent_teachers_hash)
         
         name2text = {
             "news": "Nachrichten",
             "absent-classes": "Abwesende Klassen",
             "absent-teachers": "Abwesende Lehrer"
         }
-        for user_id, user_data in bot_users.items():
-            selected_information = [name for name in ("news", "absent-classes", "absent-teachers")
-                                    if check_selection(user_data, "send-" + name)]
+        message_base = " für {}, {}, Woche {}: \n".format(day["day_name"], day["date"], day["week"])
+        for chat in bot.chats:
+            selected_information = [(name, texts[name]) for name in ("news", "absent-classes", "absent-teachers")
+                                    if check_selection(chat, "send-" + name) and name in texts]
             if selected_information:
                 if len(selected_information) == 1:
-                    if selected_information[0] in texts:
-                        bot.send_message(int(user_id), name2text[selected_information[0]] + message_base +
-                                         texts[selected_information[0]])
+                    chat.send_substitution(day_timestamp,
+                            name2text[selected_information[0][0]] + message_base + selected_information[0][1])
                 else:
                     message = "Informationen" + message_base
-                    added_info = False
-                    for info in selected_information:
-                        if info in texts:
-                            added_info = True
-                            message += name2text[info] + ": " + texts[info] + "\n\n"
-                    if added_info:
-                        bot.send_message(int(user_id), message.rstrip(), parse_mode="html")
+                    for name, info in selected_information:
+                        message += name2text[name] + ": " + info + "\n\n"
+                    chat.send_substitution(day_timestamp, message.rstrip(), parse_mode="html")
 
 
 def create_substitution_messages(day, class_name, substitutions):
@@ -620,7 +615,7 @@ def create_substitution_messages(day, class_name, substitutions):
     return message_text, message_table
 
 
-def send_substitution_notification(bot_users, sent_substitutions, day_timestamp, day, class_name, substitutions):
+def send_substitution_notification(sent_substitutions, day_timestamp, day, class_name, substitutions):
     try:
         global bot, data
         new_substitutions = []
@@ -634,14 +629,14 @@ def send_substitution_notification(bot_users, sent_substitutions, day_timestamp,
         if new_substitutions:
             message_text, message_table = create_substitution_messages(day, class_name, new_substitutions)
 
-            for user_id, user_data in bot_users.items():
-                if "selected-classes" in user_data:
+            for chat in bot.chats:
+                if chat.selected_classes:
                     if any(do_class_names_match(class_name, split_class_name(selected_class_name))
-                           for selected_class_name in user_data["selected-classes"]):
-                        if "send-type" not in user_data or user_data["send-type"] == "text":
-                            bot.send_message(int(user_id), message_text.strip(), parse_mode="html")
+                           for selected_class_name in chat.selected_classes):
+                        if chat.send_format == "text":
+                            chat.send_substitution(day_timestamp, message_text.strip(), parse_mode="html")
                         else:
-                            bot.send_message(int(user_id), message_table.strip(), parse_mode="html")
+                            chat.send_substitution(day_timestamp, message_table.strip(), parse_mode="html")
     except Exception:
         logger.exception("Sending substitution notifications failed")
 
@@ -741,11 +736,11 @@ def get_main_page(storage):
                     selected_classes.append(selected_class)
 
     if status > last_status:
-        logger.debug("Creating new data...")
+        logger.debug("Creating new _data...")
         t1 = time.perf_counter()
         new_data = create_data(text)
         t2 = time.perf_counter()
-        logger.debug("New data created in {:.3f}".format(t2 - t1))
+        logger.debug("New _data created in {:.3f}".format(t2 - t1))
         logger.debug("Creating site and sending bot notifications...")
         t1 = time.perf_counter()
         index_site = create_site_and_send_notifications(new_data, status_string)
