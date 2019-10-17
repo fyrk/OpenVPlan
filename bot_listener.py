@@ -4,7 +4,7 @@ import os.path
 import sys
 from functools import partial
 
-from bot_utils import CustomAsyncTeleBot
+from bot_utils import CustomBot
 
 directory = os.path.dirname(__file__)
 os.chdir(directory)
@@ -21,9 +21,9 @@ INFO_NAME_TO_GERMAN = {
 
 
 def start_bot(token):
-    bot = CustomAsyncTeleBot(token, "data/chats.sqlite3", threaded=False)
+    bot = CustomBot(token, "data/chats.sqlite3")
 
-    @bot.message_handler(commands=["start"])
+    @bot.command(r"/start.*")
     def start(message):
         help_(message)
         try:
@@ -51,7 +51,7 @@ def start_bot(token):
         except Exception:
             pass
 
-    @bot.message_handler(commands=["help"])
+    @bot.command(r"/help")
     def help_(message):
         chat = bot.chats.get_from_msg(message)
         chat.reset_status()
@@ -76,7 +76,7 @@ def start_bot(token):
                   "Alle Angaben ohne Gewähr. Es gibt keine Garantie, dass Benachrichtigungen zuverlässig verschickt "
                   "werden.\n")
 
-    @bot.message_handler(commands=["klassen"])
+    @bot.command("/klassen")
     def select_classes(message):
         chat = bot.chats.get_from_msg(message)
         chat.status = "select-classes"
@@ -85,7 +85,7 @@ def start_bot(token):
                   '"6A, 11C").\n'
                   "Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. ")
 
-    @bot.message_handler(commands=["auswahl"])
+    @bot.command("/auswahl")
     def show_settings(message):
         chat = bot.chats.get(message.chat.id)
         chat.reset_status()

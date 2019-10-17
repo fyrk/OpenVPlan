@@ -145,6 +145,10 @@ a:hover {
     color: #b35e00;
 }
 
+footer a {
+    white-space: nowrap;
+}
+
 footer {
     max-width: 1000px;
     margin: 10px auto 10px;
@@ -249,4 +253,21 @@ h1 {
     height: 28px;
     width: 28px;
     transform: translate(0,-1.8px);
+}
+
+@media(min-width: 700px) {
+    footer div:first-child {
+        float: left;
+        width: calc(100% - 200px);
+    }
+
+    footer .python-powered-link {
+        float: right;
+        margin-block-start: 1em;
+        margin-block-end: 1em;
+    }
+}
+
+.python-powered-link img {
+    width: 200px;
 }

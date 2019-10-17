@@ -4,7 +4,7 @@ import base64
 import os
 import sys
 
-from bot_utils import CustomAsyncTeleBot
+#from bot_utils import CustomAsyncTeleBot
 
 directory = os.path.dirname(__file__)
 os.chdir(directory)
@@ -88,6 +88,7 @@ class Snippets:
 {}
 </div>
 <footer>
+<div>
 <p id="telegram-info">Der Telegram-Bot <a href="https://t.me/GaWVertretungBot{telegram_link}" target="_blank">@GaWVertretungBot</a> informiert automatisch über Vertretungen. 
 </p>
 <p>
@@ -96,6 +97,8 @@ class Snippets:
 <p>
 	Programmiert von Florian Rädiker.
 </p>
+</div>
+<a class="python-powered-link" href="https://python.org/" target="_blank"><img src="/img/python-powered.svg"></a>
 </footer>
 <script src="/js/main.js"></script>
 </body>
@@ -475,7 +478,7 @@ def create_site_and_send_notifications(new_data, status_string):
             else:
                 substitutions = Snippets.NO_SUBSTITUTIONS
             containers += create_day_container(day, substitutions)
-    bot.chats.save()
+    #bot.chats.save()
     with open("data/sent_messages.json", "w") as f:
         json.dump({
             "substitutions": list(sent_substitutions), 
@@ -778,5 +781,5 @@ stdout_logger = logging.StreamHandler(sys.stdout)
 stdout_logger.setFormatter(log_formatter)
 logger.addHandler(stdout_logger)
 
-with open("secret.json", "r") as f:
-    bot = CustomAsyncTeleBot(json.load(f)["token"], "data/chats.sqlite3")
+#with open("secret.json", "r") as f:
+#    bot = CustomAsyncTeleBot(json.load(f)["token"], "data/chats.sqlite3")
