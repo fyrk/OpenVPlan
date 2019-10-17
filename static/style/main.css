@@ -17,6 +17,17 @@ body {
         margin-right: 10px;
         margin-left: 10px;
     }
+
+    footer div:first-child {
+        float: left;
+        width: calc(100% - 100px);
+    }
+
+    footer .python-powered-link {
+        float: right;
+        margin-block-start: 1em;
+        margin-block-end: 1em;
+    }
 }
 
 .container {
@@ -255,19 +266,6 @@ h1 {
     transform: translate(0,-1.8px);
 }
 
-@media(min-width: 700px) {
-    footer div:first-child {
-        float: left;
-        width: calc(100% - 200px);
-    }
-
-    footer .python-powered-link {
-        float: right;
-        margin-block-start: 1em;
-        margin-block-end: 1em;
-    }
-}
-
 .python-powered-link img {
-    width: 200px;
+    width: 100px;
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="700" height="280" viewBox="0 0 582.92 235.27">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="700" height="280" viewBox="0 0 582.92 235.27">
 <defs>
     <linearGradient id="b">
         <stop stop-color="#366a96" offset="0"/>
@@ -9,8 +9,8 @@
         <stop stop-color="#ffc836" offset="0"/>
         <stop stop-color="#ffe873" offset="1"/>
     </linearGradient>
-    <linearGradient id="c" x1="224.24" x2="-65.309" y1="144.76" y2="144.76" gradientUnits="userSpaceOnUse" href="#d"/>
-    <linearGradient id="a" x1="172.94" x2="26.67" y1="77.476" y2="76.313" gradientUnits="userSpaceOnUse" href="#b"/>
+    <linearGradient id="c" x1="224.24" x2="-65.309" y1="144.76" y2="144.76" gradientUnits="userSpaceOnUse" xlink:href="#d"/>
+    <linearGradient id="a" x1="172.94" x2="26.67" y1="77.476" y2="76.313" gradientUnits="userSpaceOnUse" xlink:href="#b"/>
 </defs>
 <g>
     <path d="m289.25 74.345c0-14.562-4.1523-22.038-12.457-22.448-3.3043-0.15595-6.5306 0.37039-9.6691 1.5888-2.505 0.89673-4.1912 1.7837-5.0782 2.6804v34.758c5.3122 3.3335 10.03 4.8833 14.143 4.6396 8.7042-0.57508 13.061-7.6417 13.061-21.219zm10.244 0.60432c0 7.398-1.735 13.539-5.2244 18.422-3.8891 5.5266-9.2792 8.3727-16.17 8.5287-5.1952 0.1657-10.546-1.4621-16.053-4.8736v31.59l-8.9088-3.1776v-70.121c1.4621-1.7935 3.3432-3.3335 5.6241-4.6396 5.3024-3.0898 11.745-4.6786 19.328-4.7566l0.12671 0.12671c6.9302-0.087724 12.272 2.7584 16.024 8.5287 3.4992 5.2927 5.2537 12.077 5.2537 20.371z" fill="#646464"/>

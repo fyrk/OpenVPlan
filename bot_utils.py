@@ -2,7 +2,8 @@ import json
 import sqlite3
 from functools import partial
 
-from telebot import TeleBot, AsyncTeleBot
+import aiotg.bot
+from aiotg import Bot, Chat
 
 
 def adapter_list(lst):
@@ -32,16 +33,18 @@ sqlite3.register_adapter(dict, adapter_json)
 sqlite3.register_converter("JSON", converter_json)
 
 
-class CustomAsyncTeleBot(AsyncTeleBot):
+class CustomBot(Bot):
     chats: "ChatList"
 
-    def __init__(self, token, chat_filename, threaded=True, skip_pending=False, num_threads=2):
-        self.chats = ChatList(chat_filename, self)
-        TeleBot.__init__(self, token, threaded, skip_pending, num_threads)
+    def __init__(self, api_token, chats_filename, api_timeout=aiotg.bot.API_TIMEOUT, chatbase_token=None, name=None,
+                 json_serialize=json.dumps, json_deserialize=json.loads, default_in_groups=False, proxy=None):
+        self.chats = ChatList(chats_filename, self)
+        Bot.__init__(self, api_token, api_timeout, chatbase_token, name, json_serialize, json_deserialize,
+                     default_in_groups, proxy)
 
 
 class ChatList:
-    def __init__(self, filename, bot: CustomAsyncTeleBot):
+    def __init__(self, filename, bot: CustomBot):
         self._conn = sqlite3.connect(filename, detect_types=sqlite3.PARSE_DECLTYPES)
         self._conn.row_factory = partial(Chat.from_row, bot=bot)
         self._cursor = self._conn.cursor()
