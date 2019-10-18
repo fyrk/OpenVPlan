@@ -161,7 +161,7 @@ class Snippets:
 
     NOTICE_CLASSES_ARE_SELECTED = '''<div class="selected-classes">Es werden Vertretungen für <i>{}</i> angezeigt. <a href="/">Alle Klassen</a></div>'''
 
-    SELECT_CLASSES = '''<!--[if !IE]><div class="container" id="select-classes-container">
+    SELECT_CLASSES = '''<![if !IE]><div class="container" id="select-classes-container">
 	<form action="javascript:onSetClassesSelection()" autocomplete="off">
 		<label for="select-classes-input" class="select-classes-label">Alle Klassen, die angezeigt werden sollen, durch Kommata getrennt eingeben: </label>
 		<span id="select-classes-input-wrapper">
@@ -179,7 +179,7 @@ class Snippets:
 		searchParams.set("classes", classesInput.value);
 		window.location = window.location.pathname + "?classes=" + classesInput.value.toString();
 	}}
-</script><![endif]-->'''
+</script><![endif]>'''
 
     SUBSTITUTION_ROW = '''<tr class="{lesson_num}"><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'''
 
