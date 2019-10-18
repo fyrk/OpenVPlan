@@ -148,7 +148,7 @@ tr.grey td:not(.class-name) {
 }
 
 a {
-    text-decoration-line: none;
+    text-decoration: none;
     color: #e07d00;
 }
 
@@ -266,6 +266,6 @@ h1 {
     transform: translate(0,-1.8px);
 }
 
-.python-powered-link img {
+.python-powered-link {
     width: 100px;
 }

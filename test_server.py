@@ -49,6 +49,10 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Content-length", str(len(bytes_data)))
         self.end_headers()
         self.wfile.write(bytes_data)
+    
+    def do_HEAD(self):
+        self.path = "/static" + self.path
+        super().do_HEAD()
 
 
 if __name__ == "__main__":
