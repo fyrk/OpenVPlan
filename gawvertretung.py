@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import asyncio
 import base64
 import os
 import sys
@@ -20,6 +21,8 @@ import urllib.error
 import urllib.parse
 from html.parser import HTMLParser
 from collections import OrderedDict, deque
+
+import aiohttp
 
 
 class Snippets:
@@ -79,7 +82,7 @@ class Snippets:
 <body>
 <div id="content">
 <div class="container" id="title-bar">
-	Vertretungsplan Gymnasium am Wall Verden
+	<span id="title-big">Vertretungsplan Gymnasium am Wall Verden</span><span id="title-middle" style="display: none">GaW Vertretungsplan</span><span id="title-small" style="display: none">GaW VPlan</span>
 </div>
 {}
 <div class="container" id="status-container">
@@ -89,7 +92,7 @@ class Snippets:
 </div>
 <footer>
 <div>
-<p id="telegram-info">Der Telegram-Bot <a href="https://t.me/GaWVertretungBot{telegram_link}" target="_blank">@GaWVertretungBot</a> informiert automatisch über Vertretungen. 
+<p id="telegram-info">Der Telegram-Bot <a href="https://t.me/GaWVertretungBot{telegram_link}" target="_blank">@GaWVertretungBot</a> informiert automatisch über Vertretungen.
 </p>
 <p>
 	Dies ist eine Alternative zum originalen Vertretungsplan unter <a href="https://gaw-verden.de/images/vertretung/klassen/subst_001.htm" target="_blank">gaw-verden.de</a>. Alle Angaben ohne Gewähr.
@@ -133,21 +136,21 @@ class Snippets:
 </head>
 <body>
 <div id="content">
-	<div class="container" id="title-bar">
-		Vertretungsplan Gymnasium am Wall Verden
-	</div>
-	<div class="container">
-		<h1>Ein Fehler ist aufgetreten</h1>
-		Der <a href="https://gaw-verden.de/images/vertretung/klassen/subst_001.htm">originale Vertretungsplan</a> konnte nicht eingelesen werden.
-	</div>
+<div class="container" id="title-bar">
+	<span id="title-big">Vertretungsplan Gymnasium am Wall Verden</span><span id="title-middle" style="display: none">GaW Vertretungsplan</span><span id="title-small" style="display: none">GaW VPlan</span>
+</div>
+<div class="container">
+	<h1>Ein Fehler ist aufgetreten</h1>
+	Der <a href="https://gaw-verden.de/images/vertretung/klassen/subst_001.htm">originale Vertretungsplan</a> konnte nicht eingelesen werden.
+</div>
 </div>
 <footer>
-	<p>
-		Dies ist eine Alternative zum originalen Vertretungsplan unter <a href="https://gaw-verden.de/images/vertretung/klassen/subst_001.htm">gaw-verden.de</a>. Alle Angaben ohne Gewähr.
-	</p>
-	<p>
-		Programmiert von Florian Rädiker.
-	</p>
+<p>
+    Dies ist eine Alternative zum originalen Vertretungsplan unter <a href="https://gaw-verden.de/images/vertretung/klassen/subst_001.htm">gaw-verden.de</a>. Alle Angaben ohne Gewähr.
+</p>
+<p>
+	Programmiert von Florian Rädiker.
+</p>
 </footer>
 </body>
 </html>'''
@@ -162,23 +165,19 @@ class Snippets:
     NOTICE_CLASSES_ARE_SELECTED = '''<div class="selected-classes">Es werden Vertretungen für <i>{}</i> angezeigt. <a href="/">Alle Klassen</a></div>'''
 
     SELECT_CLASSES = '''<![if !IE]><div class="container" id="select-classes-container">
-	<form action="javascript:onSetClassesSelection()" autocomplete="off">
-		<label for="select-classes-input" class="select-classes-label">Alle Klassen, die angezeigt werden sollen, durch Kommata getrennt eingeben: </label>
-		<span id="select-classes-input-wrapper">
-			<input type="text" id="select-classes-input" autofocus placeholder="z.B. 6A, 11C">
-			<button type="submit" class="button">OK</button>
-		</span>
-	</form>
+	<label for="select-classes-input" id="select-classes-label">Alle Klassen, die angezeigt werden sollen, durch Kommata getrennt eingeben: </label>
+	<span id="select-classes-input-wrapper">
+		<input type="text" id="select-classes-input" autofocus placeholder="z.B. 6A, 11C">
+		<button id="select-classes-button">OK</button>
+	</span>
 </div>
 <script>
-	const container = document.getElementById("select-classes-container");
-	const classesInput = document.getElementById("select-classes-input");
-	container.classList.add("visible");
-	function onSetClassesSelection() {{
+	document.getElementById("select-classes-container").classList.add("visible");
+	document.getElementById("select-classes-button").onclick = function() {{
 		const searchParams = new URLSearchParams(window.location.search);
-		searchParams.set("classes", classesInput.value);
-		window.location = window.location.pathname + "?classes=" + classesInput.value.toString();
-	}}
+		searchParams.set("classes", document.getElementById("select-classes-input").value);
+		window.location = window.location.pathname + "?" + searchParams.toString();
+	}};
 </script><![endif]>'''
 
     SUBSTITUTION_ROW = '''<tr class="{lesson_num}"><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'''
@@ -371,6 +370,21 @@ class SubstitutionParser(HTMLParser):
         super().close()
 
 
+async def get_data_from_site(new_data, current_timestamp, session: aiohttp.ClientSession, site_num):
+    logger.info("REQUEST subst_" + str(site_num) + ".htm")
+    async with session.get("https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm".format(site_num)) as \
+            response:
+        response.raise_for_status()
+        response_data = await response.text("iso-8859-1")
+        parser = SubstitutionParser(new_data, current_timestamp)
+        try:
+            parser.feed(response_data)
+            parser.close()
+        except ValueError:
+            pass
+        return parser.next_site == "subst_001.htm"
+
+
 def create_data(first_site):
     new_data = {}
     current_timestamp = create_date_timestamp(datetime.datetime.now().strftime("%d.%m.%Y"))
@@ -379,28 +393,18 @@ def create_data(first_site):
         parser.feed(first_site.decode("iso-8859-1"))
         parser.close()
     except ValueError:
-        # return data
         pass
-    site_num = 2
+    if parser.next_site == "subst_001.htm":
+        return new_data
+    session = aiohttp.ClientSession()
+    loop = asyncio.get_event_loop()
+    i = 2
     while True:
-        logger.debug("REQUEST subst_{:03}.htm".format(site_num))
-        try:
-            site_request = urllib.request.urlopen(
-                "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm".format(site_num))
-        except urllib.error.HTTPError:
-            logger.debug("ERROR 404")
-            break
-        parser.reset()
-        try:
-            parser.feed(site_request.read().decode("iso-8859-1"))
-            parser.close()
-        except ValueError:
-            pass
-        if parser.next_site == "subst_001.htm":
-            logger.debug("next site is 'subst_001.htm'")
-            break
-        site_num += 1
-    return new_data
+        if True in loop.run_until_complete(asyncio.gather(
+                *(get_data_from_site(new_data, current_timestamp, session, site_num) for site_num in range(i, i+4)))):
+            loop.run_until_complete(session.close())
+            return new_data
+        i += 4
 
 
 def create_day_container(day, substitutions):
@@ -737,11 +741,11 @@ def get_main_page(storage):
                     selected_classes.append(selected_class)
 
     if status > last_status:
-        logger.debug("Creating new _data...")
+        logger.debug("Creating new data...")
         t1 = time.perf_counter()
         new_data = create_data(text)
         t2 = time.perf_counter()
-        logger.debug("New _data created in {:.3f}".format(t2 - t1))
+        logger.debug("New data created in {:.3f}".format(t2 - t1))
         logger.debug("Creating site and sending bot notifications...")
         t1 = time.perf_counter()
         index_site = create_site_and_send_notifications(new_data, status_string)
