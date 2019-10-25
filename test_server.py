@@ -7,6 +7,7 @@ import urllib.parse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 import gawvertretung
+from logging_tool import create_logger
 
 
 class HTTPRequestHandler(SimpleHTTPRequestHandler):
@@ -56,11 +57,12 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    gawvertretung.logger = create_logger("website")
     gawvertretung.logger.info("Starting server...")
     httpd = HTTPServer(('0.0.0.0', 8001), HTTPRequestHandler)
     gawvertretung.logger.info("Server started")
     try:
         httpd.serve_forever()
     finally:
-        logging.shutdown()
         gawvertretung.logger.error("Error occurred, shutting down")
+        logging.shutdown()

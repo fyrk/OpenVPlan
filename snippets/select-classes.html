@@ -1,0 +1,15 @@
+<!--[if !IE]--><div class="container" id="select-classes-container">
+	<label for="select-classes-input" id="select-classes-label">Alle Klassen, die angezeigt werden sollen, durch Kommata getrennt eingeben: </label>
+	<span id="select-classes-input-wrapper">
+		<input type="text" id="select-classes-input" autofocus placeholder="z.B. 6A, 11C">
+		<button id="select-classes-button">OK</button>
+	</span>
+</div>
+<script>
+	document.getElementById("select-classes-container").classList.add("visible");
+	document.getElementById("select-classes-button").onclick = function() {{
+		const searchParams = new URLSearchParams(window.location.search);
+		searchParams.set("classes", document.getElementById("select-classes-input").value);
+		window.location = window.location.pathname + "?" + searchParams.toString();
+	}};
+</script><!--[endif]-->
