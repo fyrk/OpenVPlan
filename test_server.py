@@ -37,12 +37,13 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
                 logging.shutdown()
                 os._exit(1)
                 quit()
+                return
             else:
                 self.path = "/static" + self.path
                 return super().do_GET()
         except Exception:
             gawvertretung.logger.exception("Could not handle request")
-            content = gawvertretung.Snippets.ERROR
+            content = gawvertretung.Snippets.get("error")
             content_type = "text/html"
         self.send_response(200)
         bytes_data = content.encode("utf-8")

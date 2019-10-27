@@ -156,7 +156,8 @@ class Chat:
             self._sent_messages[day_timestamp] = [message.message_id]
         logger.debug("Sent Substitution to {}: {}".format(self.chat_id, message.message_id))
         try:
-            self._cursor.execute("UPDATE chats SET sent_messages=? WHERE chat_id=?", (self._sent_messages, self._chat_id))
+            self._cursor.execute("UPDATE chats SET sent_messages=? WHERE chat_id=?", (self._sent_messages,
+                                                                                      self._chat_id))
         except Exception:
             logger.error("MESSAGE NOT ADDED TO SENT_MESSAGES: {} ({})".format(message.message_id, self.chat_id))
 

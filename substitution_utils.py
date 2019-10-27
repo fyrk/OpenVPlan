@@ -2,7 +2,7 @@ import datetime
 import re
 
 
-REGEX_STATUS = re.compile(b"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
+REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
 
 REGEX_CLASS = re.compile(r"(?:\D|\A)(\d{1,3})([A-Za-z]*)(?:\D|\Z)")
 

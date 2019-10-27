@@ -26,13 +26,14 @@ from logging_tool import create_logger
 
 class Snippets:
     __files = {}
+
     @staticmethod
     def load():
         with open("snippets/_base.html", "r") as f:
             base = f.read()
-        if base.startswith("ignore: "):
-            first_line, base = base.split("\n", 1)
-            base_ignore_keys = {key.strip(): "{"+key.strip()+"}" for key in first_line[8:].split(",")}
+        if base.startswith("<!--ignore: "):
+            first_line, base = base[12:].split("\n", 1)
+            base_ignore_keys = {key.strip(): "{" + key.strip() + "}" for key in first_line[:-3].split(",")}
         else:
             base_ignore_keys = {}
         Snippets.__files = {}
@@ -51,9 +52,9 @@ class Snippets:
                     else:
                         styles = ""
                     keys = base_ignore_keys.copy()
-                    if snippet.startswith("keys: "):
-                        add_keys, snippet = snippet[6:].split("\n", 1)
-                        for key_value in add_keys.split(","):
+                    if snippet.startswith("<!--keys: "):
+                        add_keys, snippet = snippet[10:].split("\n", 1)
+                        for key_value in add_keys[:-3].split(","):
                             key, value = key_value.split("=", 1)
                             key = key.strip()
                             value = value.strip()
@@ -285,7 +286,7 @@ def get_lesson_num(lesson_string):
     try:
         return "lesson" + str(max(int(num.group(0))
                                   for num in REGEX_NUMBERS.finditer(lesson_string) if num.group(0) != ""))
-    except:
+    except Exception:
         logger.exception("Could not determine lesson number for '{}'".format(lesson_string))
         return ""
 
@@ -300,15 +301,12 @@ def create_site(data, status_string):
             day["substitutions"] = OrderedDict(sorted(day["substitutions"].items(), key=lambda s: sort_classes(s[0])))
             substitution_rows = ""
             for class_name, class_substitutions in day["substitutions"].items():
-                substitution_rows += Snippets.get("substitution-row-first").format(len(class_substitutions), class_name,
-                                                                            *class_substitutions[0],
-                                                                            lesson_num=get_lesson_num(
-                                                                                class_substitutions[0][
-                                                                                    2]) if i == 1 else "")
+                substitution_rows += Snippets.get("substitution-row-first") \
+                    .format(len(class_substitutions), class_name, *class_substitutions[0],
+                            lesson_num=get_lesson_num(class_substitutions[0][2]) if i == 1 else "")
                 for substitution in class_substitutions[1:]:
-                    substitution_rows += Snippets.get("substitution-row").format(*substitution,
-                                                                          lesson_num=get_lesson_num(
-                                                                              substitution[2]) if i == 1 else "")
+                    substitution_rows += Snippets.get("substitution-row") \
+                        .format(*substitution, lesson_num=get_lesson_num(substitution[2]) if i == 1 else "")
             if substitution_rows:
                 substitutions = Snippets.get("substitution-table").format(substitution_rows)
             else:
@@ -335,27 +333,21 @@ def create_site_with_selected(data, selected_classes, status_string):
             substitution_rows = ""
             for class_name, class_substitutions in day["substitutions"].items():
                 if any(do_class_names_match(class_name, selected_name) for selected_name in selected_classes_split):
-                    substitution_rows += Snippets.get("substitution-row-first").format(len(class_substitutions),
-                                                                                class_name,
-                                                                                *class_substitutions[0],
-                                                                                lesson_num=get_lesson_num(
-                                                                                    class_substitutions[0][
-                                                                                        2]) if i == 1 else "")
-                    for substitution in class_substitutions[1]:
-                        substitution_rows += Snippets.get("substitution-row").format(*substitution,
-                                                                              lesson_num=get_lesson_num(
-                                                                                  substitution[
-                                                                                      2]) if i == 1 else "")
+                    substitution_rows += Snippets.get("substitution-row-first") \
+                        .format(len(class_substitutions), class_name, *class_substitutions[0],
+                                lesson_num=get_lesson_num(class_substitutions[0][2]) if i == 1 else "")
+                    for substitution in class_substitutions[1:]:
+                        substitution_rows += Snippets.get("substitution-row") \
+                            .format(*substitution, lesson_num=get_lesson_num(substitution[2]) if i == 1 else "")
             if substitution_rows:
                 substitutions = Snippets.get("substitution-table").format(
                     substitution_rows) + Snippets.get("notice-classes-are-selected").format(selected_classes_string)
             else:
-                substitutions = Snippets.get("no-substitutons-reset-classes").format(selected_classes_string)
+                substitutions = Snippets.get("no-substitutions-reset-classes").format(selected_classes_string)
             containers += create_day_container(day, substitutions)
     return Snippets.get("index").format("", containers, status=status_string,
-                                 telegram_link="?start=" +
-                                               base64.urlsafe_b64encode(selected_classes_string.encode("utf-8"))
-                                 .replace(b"=", b"").decode("utf-8"))
+                                        telegram_link="?start=" + base64.urlsafe_b64encode(
+                                            selected_classes_string.encode("utf-8")).replace(b"=", b"").decode("utf-8"))
 
 
 last_status = datetime.datetime.fromtimestamp(0)

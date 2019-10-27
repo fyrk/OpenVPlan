@@ -38,7 +38,7 @@ def start_bot(token):
 
     @handler.subscribe_message(commands=["start"])
     async def start(message):
-        logger.info(str(message.chat.id) + " " + str_from_timestamp(message.date) + " COMMAND /start" + " (" + message.from_.first_name + ")")
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /start ({message.from_.first_name})")
         await help_(message)
         try:
             text = message.text.strip()
@@ -65,7 +65,7 @@ def start_bot(token):
 
     @handler.subscribe_message(commands=["help"])
     async def help_(message):
-        logger.info(str(message.chat.id) + " " + str_from_timestamp(message.date) + " COMMAND /help" + " (" + message.from_.first_name + ")")
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /help ({message.from_.first_name})")
         bot.chats.open()
         chat = bot.chats.get_from_msg(message)
         chat.reset_status()
@@ -75,7 +75,8 @@ def start_bot(token):
 
     @handler.subscribe_message(commands=["klassen"])
     async def select_classes(message):
-        logger.info(str(message.chat.id) + str_from_timestamp(message.date) + " COMMAND /klassen" + " (" + message.from_.first_name + ")")
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /klassen "
+                    f"({message.from_.first_name})")
         bot.chats.open()
         chat = bot.chats.get_from_msg(message)
         chat.status = "select-classes"
@@ -85,7 +86,8 @@ def start_bot(token):
 
     @handler.subscribe_message(commands=["auswahl"])
     async def show_settings(message: asynctelebot.Message):
-        logger.info(str(message.chat.id) + " " + str_from_timestamp(message.date) + " COMMAND /auswahl" + " (" + message.from_.first_name + ")")
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /auswahl "
+                    f"({message.from_.first_name})")
         bot.chats.open()
         chat = bot.chats.get(message.chat.id)
         bot.chats.close()
@@ -117,7 +119,7 @@ def start_bot(token):
 
     @handler.subscribe_message(commands=["reset"])
     async def reset(message):
-        logger.info(str(message.chat.id) + " " + str_from_timestamp(message.date) + " COMMAND /reset" + " (" + message.from_.first_name + ")")
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /reset ({message.from_.first_name})")
         bot.chats.open()
         bot.chats.reset_chat(message.chat.id)
         bot.chats.save()
@@ -127,7 +129,8 @@ def start_bot(token):
 
     @handler.subscribe_message(commands=["format"])
     async def set_send_type(message):
-        logger.info(str(message.chat.id) + " " + str_from_timestamp(message.date) + " COMMAND /format" + " (" + message.from_.first_name + ")")
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /format "
+                    f"({message.from_.first_name})")
         bot.chats.open()
         chat = bot.chats.get_from_msg(message)
         chat.reset_status()
@@ -139,7 +142,8 @@ def start_bot(token):
         await chat.send(TEXTS["send-table-or-text"], reply_markup=markup)
 
     async def set_send_base(message, name, name_german):
-        logger.info(str(message.chat.id) + " " + str_from_timestamp(message.date) + " COMMAND /set-send (" + name + ")" + " (" + message.from_.first_name + ")")
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /set-send {name} "
+                    f"({message.from_.first_name})")
         bot.chats.open()
         chat = bot.chats.get_from_msg(message)
         chat.reset_status()
@@ -157,17 +161,24 @@ def start_bot(token):
             await chat.send(TEXTS["not-notifying"].format(name_german),
                             reply_markup=markup)
 
-    set_send_news = handler.subscribe_message(
-        commands=["nachrichten"])(partial(set_send_base, name="news", name_german=TEXTS["news"]))
+    # noinspection PyUnusedLocal
+    set_send_news = handler.subscribe_message(commands=["nachrichten"])(partial(set_send_base,
+                                                                                name="news",
+                                                                                name_german=TEXTS["news"]))
+    # noinspection PyUnusedLocal,SpellCheckingInspection
     set_send_absent_classes = handler.subscribe_message(
-        commands=["abwesendeklassen"])(partial(set_send_base, name="absent_classes", name_german=TEXTS["absent-classes"]))
+        commands=["abwesendeklassen"])(partial(set_send_base,
+                                               name="absent_classes",
+                                               name_german=TEXTS["absent-classes"]))
+    # noinspection PyUnusedLocal,SpellCheckingInspection
     set_send_absent_teachers = handler.subscribe_message(
-        commands=["abwesendelehrer"])(partial(set_send_base, name="absent_teachers", name_german=TEXTS["absent-teachers"]))
+        commands=["abwesendelehrer"])(partial(set_send_base,
+                                              name="absent_teachers",
+                                              name_german=TEXTS["absent-teachers"]))
 
     @handler.subscribe_message()
     async def all_messages(message):
-        logger.info(str(message.chat.id) + " " + str_from_timestamp(
-            message.date) + " ALL MESSAGES" + " (" + message.from_.first_name + ")")
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} ALL MESSAGES ({message.from_.first_name})")
         if determine_message_content_type(message) == "text":
             logger.debug("Message: " + message.text)
             bot.chats.open()
@@ -187,7 +198,8 @@ def start_bot(token):
                 elif len(selected_classes) == 1:
                     await chat.send(TEXTS["notify-about-class"].format(selected_classes[0]), parse_mode="html")
                 else:
-                    await chat.send(TEXTS["notify-about-classes"].format(", ".join(selected_classes)), parse_mode="html")
+                    await chat.send(TEXTS["notify-about-classes"].format(", ".join(selected_classes)),
+                                    parse_mode="html")
             else:
                 bot.chats.close()
                 logger.debug("Unknown text")
@@ -197,7 +209,8 @@ def start_bot(token):
 
     @handler.subscribe_callback_query(custom_filter=lambda c: True)
     async def all_callbacks(callback: asynctelebot.types.CallbackQuery):
-        logger.info(str(callback.message.chat.id) + " " + str_from_timestamp(callback.message.date) + " CALLBACK" + " (" + callback.message.chat.first_name + ")")
+        logger.info(f"{callback.message.chat.id} {str_from_timestamp(callback.message.date)} CALLBACK "
+                    f"({callback.message.chat.first_name})")
         bot.chats.open()
         chat = bot.chats.get(callback.message.chat.id)
         if callback.data == "set-format-table":
@@ -244,4 +257,4 @@ if __name__ == "__main__":
         logger.info("Polling")
         handler.polling(infinite=True, error_wait=10)
     finally:
-        logger.error("Error occured, saving and closing")
+        logger.error("Error occurred, saving and closing")
