@@ -1,0 +1,51 @@
+{
+	"class-automatically-set": "Die von dir auf der Webseite ausgewählte Klasse <i>{}</i> wurde automatisch ausgewählt. Du kannst die Auswahl mit dem /klassen-Befehl anpassen.",
+	"classes-automatically-set": "Die von dir auf der Webseite ausgewählten Klassen <i>{}</i> wurden automatisch ausgewählt. Du kannst die Auswahl mit dem /klassen-Befehl anpassen.",
+	"help": [
+		"Ich verschicke Nachrichten, wenn es neue Vertretungen auf dem Vertretungsplan des Gymnasiums am Wall Verden gibt.",
+		"Folgende Befehle stehen zur Verfügung:",
+		"",
+		"/klassen - Klassen setzen, für die du benachrichtigt werden willst. Die Klassen müssen gesetzt werden, damit der Bot Nachrichten an dich verschicken kann.",
+		"/nachrichten - Einstellen, ob du über Nachrichten informiert werden willst",
+		"/abwesendeklassen - Einstellen, ob du über abwesende Klassen informiert werden willst",
+		"/abwesendelehrer - Einstellen, ob du über abwesende Lehrer informiert werden willst",
+		"/auswahl - Zeigt die Einstellungen: Die gewählten Klassen und ob über Nachrichten, abwesende Lehrer oder abwesende Klassen informiert werden soll.",
+		"/format - Einstellen, ob Vertretungen als Tabelle oder Text gesendet werden sollen",
+		"/reset - Löscht alle Daten, die diesem Chat zugeordnet sind",
+		"",
+		"Dieser Bot gehört zum Vertretungsplan unter <Website einfügen> und ist nicht offiziell.",
+		"Alle Angaben ohne Gewähr. Es gibt keine Garantie, dass Benachrichtigungen zuverlässig verschickt werden."
+	],
+	"send-classes-for-selection": [
+		"Schicke mir alle Klassen, für die du benachrichtigt werden willst, durch Kommata getrennt (z.B. \"6A, 11C\").",
+		"Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. "
+	],
+	"selected-classes": "Du hast die Klassen <i>{}</i> ausgewählt. ",
+	"no-classes-selected": "Du hast noch keine Klassen ausgewählt. Wähle Klassen mit dem /klassen-Befehl aus. ",
+	"are-notified-about": "\nDu wirst über {} auf dem Vertretungsplan informiert. ",
+	"not-notified-about": "\nDu wirst nicht über {} auf dem Vertretungsplan informiert. ",
+	"reset-successful": "Die diesem Chat zugeordneten Daten wurden gelöscht. ",
+	"table": "Tabelle",
+	"text": "Text",
+	"news": "Nachrichten",
+	"absent-classes": "abwesende Klassen",
+	"absent-teachers": "absent-teachers",
+	"send-table-or-text": "Sollen Vertretungen als Text oder Tabelle gesendet werden? Tabellen sind auf kleinen Displays schwerer zu lesen. ",
+	"notifying": "Im Moment informiere ich über {} auf dem Vertretungsplan. ",
+	"not-notifying": "Im Moment informiere ich nicht über {} auf dem Vertretungsplan. ",
+	"send-classes-for-selection-wrong": "Bitte gib alle Klassen, für die du benachrichtigt werden willst, durch Kommata getrennt ein. ",
+	"notify-about-class": "Du wirst für die Klasse <i>{}</i> benachrichtigt. ",
+	"notify-about-classes": "Du wirst für die Klassen <i>{}</i> benachrichtigt. ",
+	"substitutions-sent-as-table": "Vertretungen werden als Tabelle verschickt. ",
+	"substitutions-sent-as-text": "Vertretungen werden als Text verschickt. ",
+	"will-be-notified-about": "Du wirst über {} informiert. ",
+	"wont-be-notified-about": "Du wirst nicht über {} informiert. ",
+	"already-notified-about": "Du wirst bereits über {} informiert. ",
+	"already-not-notified-about": "Du wirst bereits nicht über {} informiert. ",
+	"unknown": {
+		"Keine Ahnung, was das heißen soll...": 4,
+		"Meintest du vielleicht: \"Moin\"?": 2,
+		"Das verstehe ich nicht": 3
+	},
+	"send-only-text": "Ich kann nur mit Textnachrichten umgehen..."
+}

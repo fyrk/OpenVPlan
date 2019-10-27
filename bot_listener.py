@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 import base64
 import datetime
+import json
 import os
+import random
+import re
 from functools import partial
 
 import asynctelebot
@@ -13,7 +16,27 @@ import bot_utils
 os.chdir(os.path.dirname(__file__))
 
 
-TEXTS = bot_utils.get_texts()
+with open("bot_texts.json", "r") as f:
+    TEXTS = {}
+    for key, value in json.load(f).items():
+        if type(value) == list:
+            TEXTS[key] = "\n".join(value)
+        elif type(value) == dict:
+            choices = []
+            weights = []
+            for choice, weight in value.items():
+                choices.append(choice)
+                weights.append(weight)
+            TEXTS[key] = (choices, weights)
+        else:
+            TEXTS[key] = value
+
+
+MOIN = re.compile(r"\bmoin\b", re.IGNORECASE)
+
+
+def random_text(name):
+    return random.choices(TEXTS[name][0], TEXTS[name][1])[0]
 
 
 INFO_NAME_TO_GERMAN = {
@@ -35,6 +58,9 @@ def start_bot(token):
     bot = bot_utils.CustomBot(token, "data/chats.sqlite3")
 
     handler = asynctelebot.UpdateHandler(bot)
+
+    handler.add_restriction_allowed_language_codes("de", help_text='Sorry, this bot is only for users with language '
+                                                                   'code "de"')
 
     @handler.subscribe_message(commands=["start"])
     async def start(message):
@@ -177,7 +203,7 @@ def start_bot(token):
                                               name_german=TEXTS["absent-teachers"]))
 
     @handler.subscribe_message()
-    async def all_messages(message):
+    async def all_messages(message: asynctelebot.Message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} ALL MESSAGES ({message.from_.first_name})")
         if determine_message_content_type(message) == "text":
             logger.debug("Message: " + message.text)
@@ -202,8 +228,12 @@ def start_bot(token):
                                     parse_mode="html")
             else:
                 bot.chats.close()
-                logger.debug("Unknown text")
-                await bot.send_message(message.chat.id, TEXTS["unknown"])
+                if MOIN.search(message.text):
+                    logger.debug("MOIN MOIN")
+                    await bot.send_message(message.chat.id, "Moin Moin")
+                else:
+                    logger.debug("Unknown text")
+                    await bot.send_message(message.chat.id, random_text("unknown"))
         else:
             await bot.send_message(message.chat.id, TEXTS["send-only-text"])
 

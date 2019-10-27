@@ -8,11 +8,6 @@ import asynctelebot
 logger = None
 
 
-def get_texts():
-    with open("data/static/texts.json", "r") as f:
-        return {key: ("\n".join(value) if type(value) == list else value) for key, value in json.load(f).items()}
-
-
 def adapter_list(lst):
     return ",".join(str(e) for e in lst)
 

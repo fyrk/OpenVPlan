@@ -1,103 +1,98 @@
-const a = [
-    ["1", 8, 35],
-    ["2", 9, 25],
-    ["3", 10, 30],
-    ["4", 11, 15],
-    ["5", 12, 20],
-    ["6", 13, 10],
-    ["7", 14, 35],
-    ["8", 15, 25],
-    ["9", 16, 20],
-    ["10", 17, 5]
-];
+const dates = document.getElementsByClassName("date");
+const statusContainer = document.getElementById("status-container");
+let updateStatusElement = null;
+let lastUpdateTime = new Date();
 
-const b = document.getElementsByClassName("date");
-const c = document.getElementById("status-container");
-let d = null;
-let e = new Date();
 
-function f1() {
-    if (d == null) {
-        d = document.createElement("span");
-        c.appendChild(d);
+function showUpdateStatus() {
+    if (updateStatusElement == null) {
+        updateStatusElement = document.createElement("span");
+        statusContainer.appendChild(updateStatusElement);
     }
-    const a1 = (new Date()).getTime() - e.getTime();
-    const b1 = Math.floor(a1 / 60000);
-    if (b1 === 0) {
-        d.textContent = "Zuletzt aktualisiert: gerade eben";
+    const diff = (new Date()).getTime() - lastUpdateTime.getTime();
+    const diffMinutes = Math.floor(diff / 60000);
+    if (diffMinutes === 0) {
+        updateStatusElement.textContent = "Zuletzt aktualisiert: gerade eben";
     } else {
-        if (b1 === 1) {
-            d.textContent = "Zuletzt aktualisiert vor 1 Minute ";
-        } else if (b1 < 60) {
-            d.textContent = "Zuletzt aktualisiert vor " + b1 + " Minuten ";
+        if (diffMinutes === 1) {
+            updateStatusElement.textContent = "Zuletzt aktualisiert vor 1 Minute ";
+        } else if (diffMinutes < 60) {
+            updateStatusElement.textContent = "Zuletzt aktualisiert vor " + diffMinutes + " Minuten ";
         } else {
-            const c1 = Math.floor(a1 / 3600000);
-            if (c1 === 1) {
-                d.textContent = "Zuletzt aktualisiert vor 1 Stunde ";
-            } else if (c1 < 24) {
-                d.textContent = "Zuletzt aktualisiert vor " + c1 + " Stunden ";
+            const diffHours = Math.floor(diff / 3600000);
+            if (diffHours === 1) {
+                updateStatusElement.textContent = "Zuletzt aktualisiert vor 1 Stunde ";
+            } else if (diffHours < 24) {
+                updateStatusElement.textContent = "Zuletzt aktualisiert vor " + diffHours + " Stunden ";
             } else {
-                d.textContent = "Zuletzt aktualisiert: " + e.getDate() + "." + (e.getMonth() + 1) + "." + e.getFullYear() + " " + e.getHours() + ":" + e.getMinutes() + " ";
+                updateStatusElement.textContent = "Zuletzt aktualisiert: " + lastUpdateTime.getDate() + "." + (lastUpdateTime.getMonth() + 1) + "." + lastUpdateTime.getFullYear() + " " + lastUpdateTime.getHours() + ":" + lastUpdateTime.getMinutes() + " ";
             }
         }
         const d1 = document.createElement("a");
-        d1.href = "#";
         d1.textContent = "Jetzt aktualisieren";
-        d1.onclick = f3;
-        d.appendChild(d1);
+        d1.onclick = update;
+        updateStatusElement.appendChild(d1);
     }
 }
 
-let f = setInterval(f1, 60000);
-f1();
+let updateInterval = setInterval(showUpdateStatus, 60000);
+showUpdateStatus();
 
 
-
-function f2() {
-    const a2 = new Date();
-    if (b.length > 0 && b[0].innerHTML === ", " + a2.getDate() + "." + (a2.getMonth() + 1) + "." + a2.getFullYear()) {
-        const b2 = a2.getHours();
-        const c2 = a2.getMinutes();
-        for (let i of a) {
+function greySubstitutions() {
+    const now = new Date();
+    if (dates.length > 0 && dates[0].innerHTML === ", " + now.getDate() + "." + (now.getMonth() + 1) + "." + now.getFullYear()) {
+        const b2 = now.getHours();
+        const c2 = now.getMinutes();
+        for (let i of [
+                        ["1", 8, 35],
+                        ["2", 9, 25],
+                        ["3", 10, 30],
+                        ["4", 11, 15],
+                        ["5", 12, 20],
+                        ["6", 13, 10],
+                        ["7", 14, 35],
+                        ["8", 15, 25],
+                        ["9", 16, 20],
+                        ["10", 17, 5]
+                    ]) {
             if (i[1] < b2 || (i[1] === b2 && i[2] <= c2)) {
-                [].forEach.bind(document.getElementsByClassName("lesson" + i[0]), function (p) {
-                    p.classList.add("grey")
-                })()
+                for (let x of document.getElementsByClassName("lesson" + i[0])) {
+                    x.classList.add("grey");
+                }
             } else {
-                setTimeout(f2, new Date(a2.getFullYear(), a2.getMonth(), a2.getDate(), i[1], i[2]).getTime() - a2.getTime());
+                setTimeout(greySubstitutions, new Date(now.getFullYear(), now.getMonth(), now.getDate(), i[1], i[2]).getTime() - now.getTime());
                 break
             }
         }
     }
 }
-f2();
+greySubstitutions();
 
-function f3() {
-    clearInterval(f);
-    d.textContent = "Aktualisiere...";
-    if ((new Date).getDate() !== e.getDate()) {
-        console.log("date changed");
+function update() {
+    clearInterval(updateInterval);
+    updateStatusElement.textContent = "Aktualisiere...";
+    if ((new Date).getDate() !== lastUpdateTime.getDate()) {
         return;
     }
     fetch("/api/last-status")
         .then(function (p) {
             return p.text();
         }).then(function (p) {
-            if (!(c.innerHTML.includes(p))) {
+            if (!(statusContainer.innerHTML.includes(p))) {
                 window.location.reload()
             } else {
-                e = new Date();
-                f = setInterval(f1, 60000);
-                f1();
-                f2();
+                lastUpdateTime = new Date();
+                updateInterval = setInterval(showUpdateStatus, 60000);
+                showUpdateStatus();
+                greySubstitutions();
             }
         }).catch(function () {
-            d.textContent = "Aktualisierung fehlgeschlagen ";
+            updateStatusElement.textContent = "Aktualisierung fehlgeschlagen ";
             const a1 = document.createElement("a");
-            a1.href = "#";
             a1.textContent = "Nochmal versuchen";
-            a1.onclick = f3;
-            d.appendChild(a1);
+            a1.onclick = update;
+            updateStatusElement.appendChild(a1);
         });
 }
-window.onfocus = f3;
+window.onfocus = update;

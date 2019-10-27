@@ -173,6 +173,7 @@ tr.grey td:not(.class-name) {
 a {
 	text-decoration: none;
 	color: #e07d00;
+	cursor: pointer;
 }
 
 a:hover {
