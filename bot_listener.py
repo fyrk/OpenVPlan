@@ -6,7 +6,6 @@ import json
 import os
 import random
 import re
-from functools import partial
 
 import asynctelebot
 from asynctelebot.utils import determine_message_content_type
@@ -15,13 +14,15 @@ import bot_utils
 
 os.chdir(os.path.dirname(__file__))
 
+with open("bot_settings.json", "r") as f:
+    SETTINGS = json.load(f)
 
 with open("bot_texts.json", "r") as f:
     TEXTS = {}
     for key, value in json.load(f).items():
         if type(value) == list:
             TEXTS[key] = "\n".join(value)
-        elif type(value) == dict:
+        elif type(value) == dict and value.get("_random", False):
             choices = []
             weights = []
             for choice, weight in value.items():
@@ -37,13 +38,6 @@ MOIN = re.compile(r"\bmoin\b", re.IGNORECASE)
 
 def random_text(name):
     return random.choices(TEXTS[name][0], TEXTS[name][1])[0]
-
-
-INFO_NAME_TO_GERMAN = {
-    "news": TEXTS["news"],
-    "absent_classes": TEXTS["absent-classes"],
-    "absent_teachers": TEXTS["absent-teachers"]
-}
 
 
 def upper_first(string):
@@ -62,7 +56,7 @@ def start_bot(token):
     handler.add_restriction_allowed_language_codes("de", help_text='Sorry, this bot is only for users with language '
                                                                    'code "de"')
 
-    @handler.subscribe_message(commands=["start"])
+    @handler.subscribe_message(commands=SETTINGS["commands"]["start"])
     async def start(message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /start ({message.from_.first_name})")
         await help_(message)
@@ -89,7 +83,7 @@ def start_bot(token):
         except Exception:
             pass
 
-    @handler.subscribe_message(commands=["help"])
+    @handler.subscribe_message(commands=SETTINGS["commands"]["help"])
     async def help_(message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /help ({message.from_.first_name})")
         bot.chats.open()
@@ -99,7 +93,7 @@ def start_bot(token):
         bot.chats.close()
         await chat.send(TEXTS["help"])
 
-    @handler.subscribe_message(commands=["klassen"])
+    @handler.subscribe_message(commands=SETTINGS["commands"]["select-classes"])
     async def select_classes(message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /klassen "
                     f"({message.from_.first_name})")
@@ -110,40 +104,53 @@ def start_bot(token):
         bot.chats.close()
         await chat.send(TEXTS["send-classes-for-selection"])
 
-    @handler.subscribe_message(commands=["auswahl"])
-    async def show_settings(message: asynctelebot.Message):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /auswahl "
-                    f"({message.from_.first_name})")
-        bot.chats.open()
-        chat = bot.chats.get(message.chat.id)
-        bot.chats.close()
-        chat.reset_status()
-        if chat.selected_classes:
-            message_text = TEXTS["selected-classes"].format(", ".join(chat.selected_classes))
-        else:
-            message_text = TEXTS["no-classes-selected"]
-        selected_infos = []
-        not_selected_infos = []
+    def create_settings_keyboard(chat):
+        markup = asynctelebot.types.InlineKeyboardMarkup()
+        for setting, values in SETTINGS["settings"].items():
+            print(setting, values)
+            value = str(values[0]) if chat.get(setting) == values[1] else str(values[1])
+            markup.add_row(asynctelebot.types.InlineKeyboardButton(TEXTS["settings"][setting][value],
+                                                                   callback_data="setting-" + setting + "-" + value))
+        return markup
+
+    def create_settings_text(chat):
+        enabled = []
+        disabled = []
         for name in ("news", "absent_classes", "absent_teachers"):
             if chat.get("send_" + name):
-                selected_infos.append(name)
+                enabled.append(name)
             else:
-                not_selected_infos.append(name)
-        if selected_infos:
-            message_text += TEXTS["are-notified-about"].format(
-                (", ".join(INFO_NAME_TO_GERMAN[name] for name in selected_infos[:-1]) + " und " +
-                 INFO_NAME_TO_GERMAN[selected_infos[-1]]
-                 if len(selected_infos) > 1 else INFO_NAME_TO_GERMAN[selected_infos[0]])
-            )
-        if not_selected_infos:
-            message_text += TEXTS["not-notified-about"].format(
-                (", ".join(INFO_NAME_TO_GERMAN[name] for name in not_selected_infos[:-1]) + " und " +
-                 INFO_NAME_TO_GERMAN[not_selected_infos[-1]]
-                 if len(not_selected_infos) > 1 else INFO_NAME_TO_GERMAN[not_selected_infos[0]])
-            )
-        await chat.send(message_text, parse_mode="html")
+                disabled.append(name)
+        if chat.selected_classes:
+            message = TEXTS["settings-info-selected-class" if len(chat.selected_classes) == 1 else "settings-info-selected-classes"].format(", ".join(chat.selected_classes))
+        else:
+            message = TEXTS["settings-info-no-classes-selected"]
+        if enabled:
+            if len(enabled) == 1:
+                message += TEXTS["settings-info-enabled"].format(TEXTS[enabled[0]])
+            else:
+                message += TEXTS["settings-info-enabled"].format(", ".join(TEXTS[name] for name in enabled[:-1]) +
+                                                                 TEXTS["and"] + TEXTS[enabled[-1]])
+        if disabled:
+            if len(disabled) == 1:
+                message += TEXTS["settings-info-disabled"].format(TEXTS[disabled[0]])
+            else:
+                message += TEXTS["settings-info-disabled"].format(", ".join(TEXTS[name] for name in disabled[:-1]) +
+                                                                  TEXTS["and"] + TEXTS[disabled[-1]])
+        message += TEXTS["setting-info-format"].format(TEXTS[chat.get("send_format")])
+        return message
 
-    @handler.subscribe_message(commands=["reset"])
+    @handler.subscribe_message(commands=SETTINGS["commands"]["settings"])
+    async def settings(message: asynctelebot.Message):
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /einst ({message.from_.first_name})")
+        bot.chats.open()
+        chat = bot.chats.get_from_msg(message)
+        chat.reset_status()
+        bot.chats.save()
+        bot.chats.close()
+        await chat.send(create_settings_text(chat), parse_mode="html", reply_markup=create_settings_keyboard(chat))
+
+    @handler.subscribe_message(commands=SETTINGS["commands"]["reset"])
     async def reset(message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /reset ({message.from_.first_name})")
         bot.chats.open()
@@ -152,55 +159,6 @@ def start_bot(token):
         bot.chats.close()
         logger.debug("Reset successful for chat id '" + str(message.chat.id) + "'")
         await bot.send_message(message.chat.id, TEXTS["reset-successful"])
-
-    @handler.subscribe_message(commands=["format"])
-    async def set_send_type(message):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /format "
-                    f"({message.from_.first_name})")
-        bot.chats.open()
-        chat = bot.chats.get_from_msg(message)
-        chat.reset_status()
-        bot.chats.save()
-        bot.chats.close()
-        markup = asynctelebot.types.InlineKeyboardMarkup()
-        markup.add_row(asynctelebot.types.InlineKeyboardButton(TEXTS["table"], callback_data="set-format-table"),
-                       asynctelebot.types.InlineKeyboardButton(TEXTS["text"], callback_data="set-format-text"))
-        await chat.send(TEXTS["send-table-or-text"], reply_markup=markup)
-
-    async def set_send_base(message, name, name_german):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /set-send {name} "
-                    f"({message.from_.first_name})")
-        bot.chats.open()
-        chat = bot.chats.get_from_msg(message)
-        chat.reset_status()
-        bot.chats.close()
-        if chat.get("send_{}".format(name)):
-            markup = asynctelebot.types.InlineKeyboardMarkup()
-            markup.add_row(asynctelebot.types.InlineKeyboardButton(upper_first(name_german) + " nicht mehr senden",
-                                                                   callback_data="set-send-{}-n".format(name)))
-            await chat.send(TEXTS["notifying"].format(name_german),
-                            reply_markup=markup)
-        else:
-            markup = asynctelebot.types.InlineKeyboardMarkup()
-            markup.add_row(asynctelebot.types.InlineKeyboardButton(upper_first(name_german) + " wieder senden",
-                                                                   callback_data="set-send-{}-y".format(name)))
-            await chat.send(TEXTS["not-notifying"].format(name_german),
-                            reply_markup=markup)
-
-    # noinspection PyUnusedLocal
-    set_send_news = handler.subscribe_message(commands=["nachrichten"])(partial(set_send_base,
-                                                                                name="news",
-                                                                                name_german=TEXTS["news"]))
-    # noinspection PyUnusedLocal,SpellCheckingInspection
-    set_send_absent_classes = handler.subscribe_message(
-        commands=["abwesendeklassen"])(partial(set_send_base,
-                                               name="absent_classes",
-                                               name_german=TEXTS["absent-classes"]))
-    # noinspection PyUnusedLocal,SpellCheckingInspection
-    set_send_absent_teachers = handler.subscribe_message(
-        commands=["abwesendelehrer"])(partial(set_send_base,
-                                              name="absent_teachers",
-                                              name_german=TEXTS["absent-teachers"]))
 
     @handler.subscribe_message()
     async def all_messages(message: asynctelebot.Message):
@@ -243,33 +201,21 @@ def start_bot(token):
                     f"({callback.message.chat.first_name})")
         bot.chats.open()
         chat = bot.chats.get(callback.message.chat.id)
-        if callback.data == "set-format-table":
-            chat.send_type = "table"
-            bot.chats.save()
-            bot.chats.close()
-            await bot.answer_callback_query(callback.id, TEXTS["substitutions-sent-as-table"])
-        elif callback.data == "set-format-text":
-            chat.send_type = "text"
-            bot.chats.save()
-            bot.chats.close()
-            await bot.answer_callback_query(callback.id, TEXTS["substitutions-sent-as-text"])
-        elif callback.data.startswith("set-send-"):
-            name = callback.data[9:-2]
-            value = callback.data[-1] == "y"
-            name_german = INFO_NAME_TO_GERMAN[name]
-            if value != chat.get("send_" + name):
-                chat.set("send_" + name, value)
+        if callback.data.startswith("setting-"):
+            name, value_string = callback.data[8:].split("-", 1)
+            values = SETTINGS["settings"][name]
+            value = values[0] if str(values[0]) == value_string else values[1]
+            if value != chat.get(name):
+                chat.set(name, value)
                 bot.chats.save()
                 bot.chats.close()
-                await bot.answer_callback_query(callback.id,
-                                                TEXTS["will-be-notified-about" if value else "wont-be-notified-about"]
-                                                .format(name_german))
+                await bot.answer_callback_query(callback.id, TEXTS["settings"][name]["selected-" + value_string])
+                await bot.edit_message_text(create_settings_text(chat), callback.message.chat.id,
+                                            callback.message.message_id, parse_mode="html",
+                                            reply_markup=create_settings_keyboard(chat))
             else:
+                bot.chats.save()
                 bot.chats.close()
-                await bot.answer_callback_query(callback.id,
-                                                TEXTS["already-notified-about" if value else
-                                                      "already-not-notified-about"]
-                                                .format(name_german))
 
     return bot, handler
 

@@ -86,7 +86,6 @@ async def send_bot_notifications(bot, data):
 
 
 def send_day_news(bot, sent_news, sent_absent_classes, sent_absent_teachers, day_timestamp, day):
-    logger.info("Send day news")
     try:
         if "news" in day or "absent-classes" in day or "absent-teachers" in day:
             texts = {}
@@ -217,7 +216,6 @@ def create_substitution_messages(day, class_name, substitutions):
 
 
 def send_substitution_notification(bot, sent_substitutions, day_timestamp, day, class_name, substitutions):
-    logger.info("Sending substitution notifications")
     try:
         new_substitutions = []
         for substitution in substitutions:

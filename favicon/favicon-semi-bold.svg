@@ -8,16 +8,16 @@
         xmlns="http://www.w3.org/2000/svg"
         xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
         xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-        width="80"
-        height="80"
-        viewBox="0 0 21.166666 21.166667"
+        width="64"
+        height="64"
+        viewBox="0 0 16.933333 16.933334"
         version="1.1"
         id="svg8"
         inkscape:version="0.92.3 (2405546, 2018-03-11)"
-        sodipodi:docname="favicon-circle.svg"
-        inkscape:export-filename="C:\Users\Florian\Dropbox\PycharmProjects\GaWVPlan-onefile\favicon\favicon-circle-1024.png"
-        inkscape:export-xdpi="1228.8"
-        inkscape:export-ydpi="1228.8">
+        sodipodi:docname="favicon-semi-bold.svg"
+        inkscape:export-filename="C:\Users\Florian\Dropbox\PycharmProjects\GaWVPlan\favicon-16.png"
+        inkscape:export-xdpi="24.000002"
+        inkscape:export-ydpi="24.000002">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -28,8 +28,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="3.959798"
-     inkscape:cx="-35.308042"
-     inkscape:cy="36.930767"
+     inkscape:cx="-11.866199"
+     inkscape:cy="53.043"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -47,7 +47,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -55,34 +55,39 @@
      inkscape:label="Ebene 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-275.83332)">
-    <circle
-       style="opacity:1;fill:#e67b10;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.31200004;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:markers fill stroke"
-       id="path819"
-       cx="10.583333"
-       cy="286.41666"
-       r="10.847917" />
+     transform="translate(0,-280.06665)">
+    <rect
+       style="opacity:1;fill:#e67b10;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.27999997;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:markers fill stroke"
+       id="rect815"
+       width="16.933332"
+       height="16.933332"
+       x="0"
+       y="280.06665"
+       rx="2.6458333"
+       ry="2.6458333"
+       inkscape:export-xdpi="1536"
+       inkscape:export-ydpi="1536" />
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:3.24555564px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="10.388709"
-       y="285.8154"
+       style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:3.24555564px;line-height:1.25;font-family:'Open Sans';-inkscape-font-specification:'Open Sans Semi-Bold';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="8.2720423"
+       y="287.93207"
        id="text821"><tspan
          sodipodi:role="line"
          id="tspan819"
-         x="10.388709"
-         y="285.8154"
+         x="8.2720423"
+         y="287.93207"
          style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:7.38130093px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans Semi-Bold';text-align:center;text-anchor:middle;stroke-width:0.26458332">GaW</tspan></text>
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:6.07945442px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="10.819328"
-       y="292.04584"
+       style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:6.07945442px;line-height:1.25;font-family:'Open Sans';-inkscape-font-specification:'Open Sans Semi-Bold';text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="8.7026615"
+       y="294.16248"
        id="text827"><tspan
          sodipodi:role="line"
          id="tspan825"
-         x="10.819329"
-         y="292.04584"
+         x="8.7026625"
+         y="294.16248"
          style="font-style:normal;font-variant:normal;font-weight:600;font-stretch:normal;font-size:6.07945442px;line-height:8.81944466px;font-family:'Open Sans';-inkscape-font-specification:'Open Sans Semi-Bold';text-align:center;text-anchor:middle;stroke-width:0.26458332">VPlan</tspan></text>
   </g>
 </svg>
