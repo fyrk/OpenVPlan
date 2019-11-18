@@ -6,12 +6,12 @@ import pickle
 import time
 from collections import deque
 
+from substitution_utils import *
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-import bot_utils
+import bot.utils as bot_utils
 from logging_tool import create_logger
-from substitution_utils import *
 
 os.chdir(os.path.dirname(__file__))
 
@@ -229,9 +229,9 @@ def send_substitution_notification(bot, sent_substitutions, day_timestamp, day, 
             message_text, message_table = create_substitution_messages(day, class_name, new_substitutions)
 
             for chat in bot.chats.all_chats():
-                if chat.selected_classes:
+                if chat.selection:
                     if any(do_class_names_match(class_name, split_class_name(selected_class_name))
-                           for selected_class_name in chat.selected_classes):
+                           for selected_class_name in chat.selection):
                         if chat.send_format == "text":
                             yield chat.send_substitution(day_timestamp, message_text.strip(), parse_mode="html")
                         else:
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     bot_utils.logger = logger
     event_handler = EventHandler()
     observer = Observer()
-    observer.schedule(event_handler, "data/substitutions")
+    observer.schedule(event_handler, "../data/substitutions")
     observer.start()
     try:
         while True:

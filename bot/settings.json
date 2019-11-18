@@ -1,0 +1,22 @@
+{
+	"available_settings": {
+		"send_news": [0, 1],
+		"send_absent_classes": [0, 1],
+		"send_absent_teachers": [0, 1],
+		"send_format": ["text", "table"]
+	},
+	"student_commands": {
+		"start": ["start"],
+		"help":  ["help", "hilfe"],
+		"select": ["klassen"],
+		"settings": ["einst"],
+		"reset": ["reset"]
+	},
+	"teacher_commands": {
+		"start": ["start"],
+		"help":  ["help", "hilfe"],
+		"select": ["kürzel"],
+		"settings": ["einst"],
+		"reset": ["reset"]
+	}
+}
