@@ -8,6 +8,7 @@ import string
 import sys
 import time
 
+from website.stats import Stats
 from website.substitution_plan_students import StudentHTMLCreator, StudentSubstitutionLoader
 from website.substitution_plan_teachers import TeacherHTMLCreator, TeacherSubstitutionLoader
 from website.substitution_utils import get_status_string
@@ -33,7 +34,6 @@ class Snippets:
         Snippets.__files = {}
         for filename in sorted(filename[:-5] for filename in list(os.walk(Snippets.SNIPPET_PATH))[0][2]
                                if filename.endswith(".html") and not filename.startswith(".")):
-            print("load snippet", filename)
             with open(Snippets.SNIPPET_PATH + filename + ".html", "r") as f:
                 snippet = f.read()
             if snippet.startswith("<!-- extends "):
@@ -61,14 +61,12 @@ class Snippets:
                         formatting[current_key] = "\n".join(current_content)
                         current_key = line[9:-4]
                         current_content = []
-                    print(formatting)
                     snippet = string.Template(parent_snippet)
                     Snippets.__files[filename] = snippet.safe_substitute(formatting)
                     continue
                 Snippets.__files[filename] = snippet
             else:
                 Snippets.__files[filename] = snippet
-        print(repr(Snippets.get("substitution-plan")))
 
     @staticmethod
     def get(name):
@@ -87,8 +85,12 @@ class SubstitutionPlan:
 
     URL_FIRST_SITE = URL_STUDENTS.format(1)
 
+    FILENAME_SUBSTITUTIONS = "data/substitutions/substitutions.pickle"
+    FILENAME_STATS = "data/stats.json"
+
     def __init__(self, snippets):
-        self.substitution_loader_students = StudentSubstitutionLoader(self.URL_STUDENTS)
+        self.stats = Stats(self.FILENAME_STATS)
+        self.substitution_loader_students = StudentSubstitutionLoader(self.URL_STUDENTS, self.stats)
         self.substitution_loader_teachers = TeacherSubstitutionLoader(self.URL_TEACHERS)
         self.html_creator_students = StudentHTMLCreator(snippets)
         self.html_creator_teachers = TeacherHTMLCreator(snippets)
@@ -121,6 +123,7 @@ class SubstitutionPlan:
         if new_status_string != self.current_status_string:
             # status changed, load new data
             self.current_status_string = new_status_string
+            self.stats.add_status(self.current_status_string)
             asyncio.run(self._load_data(text))
             logger.debug("Creating site...")
             t1 = time.perf_counter()
@@ -130,10 +133,12 @@ class SubstitutionPlan:
                                                                               self.current_status_string)
             t2 = time.perf_counter()
             logger.debug("Site created in {:.3f}".format(t2 - t1))
-            with open("data/substitutions/students.pickle", "wb") as f:
-                pickle.dump((self.current_status_string, self.data_students), f)
-            with open("data/substitutions/teachers.pickle", "wb") as f:
-                pickle.dump((self.current_status_string, self.data_teachers), f)
+            with open(self.FILENAME_SUBSTITUTIONS, "wb") as f:
+                pickle.dump({
+                    "students": (self.current_status_string, self.data_students),
+                    "teachers": (self.current_status_string, self.data_teachers)
+                }, f)
+            self.stats.save()
         today = datetime.datetime.now().date()
         if today > self.current_status_date:
             self.current_status_date = today

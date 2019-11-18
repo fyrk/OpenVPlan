@@ -56,8 +56,8 @@ class StudentSubstitutionParser(BaseSubstitutionParser):
 
 
 class StudentSubstitutionLoader(BaseSubstitutionLoader):
-    def __init__(self, url):
-        super().__init__(StudentSubstitutionParser, url)
+    def __init__(self, url, stats=None):
+        super().__init__(StudentSubstitutionParser, url, stats)
 
     def _data_postprocessing(self, data):
         for day_timestamp, day in data.items():

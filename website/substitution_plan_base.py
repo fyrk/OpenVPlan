@@ -173,9 +173,10 @@ class BaseSubstitutionParser(HTMLParser):
 
 
 class BaseSubstitutionLoader:
-    def __init__(self, substitutions_parser_class, url):
+    def __init__(self, substitutions_parser_class, url, stats=None):
         self.substitutions_parser = substitutions_parser_class
         self.url = url
+        self.stats = stats
 
     async def _load_data_from_site(self, new_data, current_timestamp, session: aiohttp.ClientSession, site_num, plan):
         logger.info(f"{time.time()} REQUEST {plan}/subst_" + str(site_num) + ".htm")
@@ -190,6 +191,11 @@ class BaseSubstitutionLoader:
                 parser.close()
             except ValueError:
                 pass
+            if self.stats:
+                is_last_site = parser.is_last_site()
+                if is_last_site:
+                    self.stats.add_last_site(site_num)
+                return is_last_site
             return parser.is_last_site()
 
     async def load_data(self, plan, first_site=None):
@@ -203,6 +209,8 @@ class BaseSubstitutionLoader:
             except ValueError:
                 pass
             if parser.next_site == "subst_001.htm":
+                if self.stats:
+                    self.stats.add_last_site(1)
                 return new_data
             i = 2
         else:

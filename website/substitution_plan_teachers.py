@@ -100,8 +100,8 @@ class TeacherSubstitutionParser(BaseSubstitutionParser):
 
 
 class TeacherSubstitutionLoader(BaseSubstitutionLoader):
-    def __init__(self, url):
-        super().__init__(TeacherSubstitutionParser, url)
+    def __init__(self, url, stats=None):
+        super().__init__(TeacherSubstitutionParser, url, stats)
 
     def _data_postprocessing(self, data):
         for day_timestamp, day in data.items():
