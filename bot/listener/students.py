@@ -1,22 +1,24 @@
 from bot.listener.base import SubstitutionsBotListener
-from bot.utils import BotTexts
-from common.students import StudentSelectionHandler
+from bot.listener.texts import BotTexts
 
 
 class StudentBotListener(SubstitutionsBotListener):
-    def __init__(self, texts: BotTexts, available_settings, commands, token, filename):
-        super().__init__(texts, available_settings, commands, token, filename, StudentSelectionHandler)
+    def __init__(self, bot, texts: BotTexts, available_settings, commands):
+        super().__init__(bot, texts, available_settings, commands)
+
+    def _create_selection_info_text(self, selection):
+        return self.texts["settings-info-selected-class" if len(selection) == 1 else "settings-info-selected-classes"] \
+            .format(", ".join(selection))
 
     async def send_selection_set(self, chat, selection, was_selected_in_start_command=False):
         if was_selected_in_start_command:
             if len(selection) == 1:
-                await chat.send(self.texts["classes-automatically-set"].format(selection[0]),
-                                parse_mode="html")
+                await chat.send(self.texts["classes-automatically-set"].format(", ".join(selection)), parse_mode="html")
             else:
-                await chat.send(self.texts["classes-automatically-set"].format(", ".join(selection)),
-                                parse_mode="html")
+                await chat.send(self.texts["classes-automatically-set"].format(", ".join(selection),
+                                                                               parse_mode="html"))
         else:
-            if len(selection) == 1:
-                await chat.send(self.texts["notify-about-class"].format(selection[0]), parse_mode="html")
+            if "," not in selection:
+                await chat.send(self.texts["notify-about-class"].format(", ".join(selection)), parse_mode="html")
             else:
                 await chat.send(self.texts["notify-about-classes"].format(", ".join(selection)), parse_mode="html")

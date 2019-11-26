@@ -1,47 +1,8 @@
 from collections import OrderedDict
-from functools import lru_cache
 
-from .substitution_plan_base import BaseHTMLCreator, BaseSubstitutionParser, BaseSubstitutionLoader, BaseSubstitution
-from .substitution_utils import sort_classes, split_class_name_lower
-
-
-class StudentSubstitution(BaseSubstitution):
-    def __init__(self, teacher, substitute, lesson, subject, room, subs_from, hint):
-        super().__init__(lesson)
-        self.teacher = teacher
-        self.substitute = substitute
-        self.subject = subject
-        self.room = room
-        self.subs_from = subs_from
-        self.hint = hint
-
-    @lru_cache()
-    def get_html_first_of_group(self, group_substitution_count, group_name, snippets, add_lesson_num):
-        return snippets.get("substitution-row-first-students").format(
-            group_substitution_count,
-            group_name,
-            self.teacher,
-            self.substitute,
-            self.lesson,
-            self.subject,
-            self.room,
-            self.subs_from,
-            self.hint,
-            lesson_num=self.lesson_num if add_lesson_num else ""
-        )
-
-    @lru_cache()
-    def get_html(self, snippets, add_lesson_num):
-        return snippets.get("substitution-row-students").format(
-            self.teacher,
-            self.substitute,
-            self.lesson,
-            self.subject,
-            self.room,
-            self.subs_from,
-            self.hint,
-            lesson_num=self.lesson_num if add_lesson_num else ""
-        )
+from common.students import StudentSubstitution, is_class_selected, split_class_name_lower, parse_selection
+from website.substitution_utils import sort_classes
+from .substitution_plan_base import BaseHTMLCreator, BaseSubstitutionParser, BaseSubstitutionLoader
 
 
 class StudentSubstitutionParser(BaseSubstitutionParser):
@@ -78,18 +39,8 @@ class StudentHTMLCreator(BaseHTMLCreator):
                          "select-classes")
 
     def parse_selection(self, selection):
-        selected_classes = []
-        for selected_class in "".join(selection.split()).split(","):
-            if selected_class not in selected_classes:
-                selected_classes.append(selected_class)
-        print(selected_classes)
+        selected_classes = parse_selection(selection)
         return [split_class_name_lower(name) for name in selected_classes], ", ".join(selected_classes)
 
     def is_selected(self, class_name, processed_selection):
-        print("check class", repr(class_name), processed_selection)
-        class_name = class_name.lower()
-        if class_name == "" or class_name == "\xa0":  # "\xa0" is non-breaking space
-            # class_name is empty, check if empty class name is in selection
-            return ("", "") in processed_selection
-        return any((selected_class[0] in class_name and selected_class[1] in class_name)
-                   for selected_class in processed_selection if selected_class[0] or selected_class[1])
+        return is_class_selected(class_name, processed_selection)

@@ -1,51 +1,8 @@
 from collections import OrderedDict
-from functools import lru_cache
 
-from .substitution_plan_base import BaseHTMLCreator, BaseSubstitutionParser, BaseSubstitutionLoader, BaseSubstitution
+from common.teachers import TeacherSubstitution
+from .substitution_plan_base import BaseHTMLCreator, BaseSubstitutionParser, BaseSubstitutionLoader
 from .substitution_utils import sort_classes, split_class_name
-
-
-class TeacherSubstitution(BaseSubstitution):
-    def __init__(self, lesson, class_name, teacher, subject, room, subs_from, hint, is_teacher_striked):
-        super().__init__(lesson)
-        self.class_name = class_name
-        self.teacher = teacher
-        self.subject = subject
-        self.room = room
-        self.subs_from = subs_from
-        self.hint = hint
-        self.teacher_attrs = ' class="striked"' if is_teacher_striked else ""
-
-    @lru_cache()
-    def get_html_first_of_group(self, group_substitution_count, group, snippets, add_lesson_num):
-        return snippets.get("substitution-row-first-teachers").format(
-            group_substitution_count,
-            group[0],
-            self.lesson,
-            self.class_name,
-            self.teacher,
-            self.subject,
-            self.room,
-            self.subs_from,
-            self.hint,
-            lesson_num=self.lesson_num if add_lesson_num else "",
-            first_cell_classes=" striked" if group[1] else "",
-            teacher_attrs=self.teacher_attrs
-        )
-
-    @lru_cache()
-    def get_html(self, snippets, add_lesson_num):
-        return snippets.get("substitution-row-teachers").format(
-            self.lesson,
-            self.class_name,
-            self.teacher,
-            self.subject,
-            self.room,
-            self.subs_from,
-            self.hint,
-            lesson_num=self.lesson_num if add_lesson_num else "",
-            teacher_attrs=self.teacher_attrs
-        )
 
 
 class TeacherSubstitutionParser(BaseSubstitutionParser):

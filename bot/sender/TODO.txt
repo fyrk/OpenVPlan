@@ -1,0 +1,1 @@
+response of sendMessage should be checked (especially because of limits: https://core.telegram.org/bots/faq#broadcasting-to-users )

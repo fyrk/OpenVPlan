@@ -3,29 +3,13 @@ import base64
 import datetime
 import logging
 import re
-import time
-from functools import lru_cache
 from html.parser import HTMLParser
 
 import aiohttp
 
-from .substitution_utils import create_date_timestamp, get_lesson_num
+from .substitution_utils import create_date_timestamp
 
 logger = logging.getLogger()
-
-
-class BaseSubstitution:
-    def __init__(self, lesson):
-        self.lesson = lesson
-        self.lesson_num = get_lesson_num(self.lesson)
-
-    @lru_cache()
-    def get_html_first_of_group(self, group_substitution_count, group, snippets, add_lesson_num):
-        raise NotImplementedError
-
-    @lru_cache()
-    def get_html(self, snippets, add_lesson_num):
-        raise NotImplementedError
 
 
 class BaseSubstitutionParser(HTMLParser):
@@ -179,9 +163,9 @@ class BaseSubstitutionLoader:
         self.stats = stats
 
     async def _load_data_from_site(self, new_data, current_timestamp, session: aiohttp.ClientSession, site_num, plan):
-        logger.info(f"{time.time()} REQUEST {plan}/subst_" + str(site_num) + ".htm")
+        logger.info(f"REQUEST {plan}/subst_" + str(site_num) + ".htm")
         async with session.get(self.url.format(site_num)) as response:
-            logger.info(f"{time.time()} Got answer for {plan}/subst_" + str(site_num) + ".htm")
+            logger.info(f"Got answer for {plan}/subst_" + str(site_num) + ".htm")
             if response.status != 200:
                 return True
             response_data = await response.text("iso-8859-1")

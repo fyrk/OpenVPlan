@@ -53,8 +53,8 @@
 			"",
 			"/klassen - Klassen setzen, für die du benachrichtigt werden willst. Die Klassen müssen gesetzt werden, damit der Bot Nachrichten an dich verschicken kann.",
 			"/einst - Einstellungen anzeigen und verändern: ",
-			"              • ob über Nachrichten, abwesende Klassen und abwesende Lehrer informiert werden soll (standardmäßig alle aktiviert)",
-			"              • ob Vertretungen als Text (Standard) oder Tabelle verschickt werden sollen",
+			"          • ob über Nachrichten, abwesende Klassen und abwesende Lehrer informiert werden soll (standardmäßig alle aktiviert)",
+			"          • ob Vertretungen als Text (Standard) oder Tabelle verschickt werden sollen",
 			"/reset - Löscht alle Daten, die diesem Chat zugeordnet sind",
 			"",
 			"Der Bot für Lehrer*innen heißt @GaWVertretungLehrerBot. ",
@@ -64,7 +64,7 @@
 		],
 		"class-automatically-set": "Die von dir auf der Webseite ausgewählte Klasse <i>{}</i> wurde automatisch ausgewählt. Du kannst die Auswahl mit dem /klassen-Befehl anpassen.",
 		"classes-automatically-set": "Die von dir auf der Webseite ausgewählten Klassen <i>{}</i> wurden automatisch ausgewählt. Du kannst die Auswahl mit dem /klassen-Befehl anpassen.",
-		"send-classes-for-selection": [
+		"send-me-selection": [
 			"Schicke mir alle Klassen, für die du benachrichtigt werden willst, durch Kommata getrennt (z.B. \"6A, 11C\").",
 			"Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. "
 		],
@@ -72,17 +72,17 @@
 		"settings-info-selected-classes": "Du hast die Klassen <i>{}</i> ausgewählt. \n",
 		"notify-about-class": "Du wirst für die Klasse <i>{}</i> benachrichtigt. ",
 		"notify-about-classes": "Du wirst für die Klassen <i>{}</i> benachrichtigt. ",
-		"settings-info-no-classes-selected": "Du hast noch keine Klassen ausgewählt. Wähle Klassen mit dem /klassen-Befehl aus. \n"
+		"settings-info-no-selection": "Du hast noch keine Klassen ausgewählt. Wähle Klassen mit dem /klassen-Befehl aus. \n"
 	},
 	"teachers": {
 		"help": [
 			"Ich verschicke Nachrichten, wenn es neue Vertretungen auf dem Vertretungsplan des Gymnasiums am Wall Verden für Lehrer*innen gibt.",
 			"Folgende Befehle stehen zur Verfügung:",
 			"",
-			"/kürzel - Lehrer*innenkürzel setzen, für das du benachrichtigt werden willst. Das Kürzel muss gesetzt werden, damit der Bot Nachrichten an dich verschicken kann.",
+			"/auswahl - Lehrer*innenkürzel setzen, für das du benachrichtigt werden willst. Das Kürzel muss gesetzt werden, damit der Bot Nachrichten an dich verschicken kann.",
 			"/einst - Einstellungen anzeigen und verändern: ",
-			"              • ob über Nachrichten, abwesende Klassen und abwesende Lehrer informiert werden soll (standardmäßig alle aktiviert)",
-			"              • ob Vertretungen als Text (Standard) oder Tabelle verschickt werden sollen",
+			"          • ob über Nachrichten, abwesende Klassen und abwesende Lehrer informiert werden soll (standardmäßig alle aktiviert)",
+			"          • ob Vertretungen als Text (Standard) oder Tabelle verschickt werden sollen",
 			"/reset - Löscht alle Daten, die diesem Chat zugeordnet sind",
 			"",
 			"Der Bot für Schüler*innen heißt @GaWVertretungBot. ",
@@ -90,13 +90,13 @@
 			"Dieser Bot gehört zum Vertretungsplan unter <Website einfügen> und ist nicht offiziell.",
 			"Alle Angaben ohne Gewähr. Es gibt keine Garantie, dass Benachrichtigungen zuverlässig verschickt werden."
 		],
-		"teacher-abbr-automatically-set": "Deine Auswahl von der Webseite für Vertretungen von <i>{}</i> wurde automatisch gesetzt. Du kannst die Auswahl mit dem /kürzel-Befehl anpassen.",
-		"send-teacher-abbr-for-selection": [
+		"teacher-abbr-automatically-set": "Deine Auswahl von der Webseite für Vertretungen von <i>{}</i> wurde automatisch gesetzt. Du kannst die Auswahl mit dem /auswahl-Befehl anpassen.",
+		"send-me-selection": [
 			"Schicke mir das Lehrer*innenkürzel, für das du über Vertretungen benachrichtigt werden willst (z.B. \"ABC\").",
 			"Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. "
 		],
 		"settings-info-selected-teacher-abbr": "Du wirst über Vertretungen von <i>{}</i> benachrichtigt. \n",
 		"notify-about-teacher-abbr": "Du wirst über Vertretungen von <i>{}</i> benachrichtigt. \n",
-		"settings-info-no-classes-selected": "Du hast noch kein Lehrer*innenkürzel ausgewählt. Wähle es mit dem /kürzel-Befehl aus. \n"
+		"settings-info-no-selection": "Du hast noch kein Lehrer*innenkürzel ausgewählt. Wähle es mit dem /auswahl-Befehl aus. \n"
 	}
 }

@@ -1,4 +1,9 @@
+import logging
 import random
+
+random.seed()
+
+logger = logging.getLogger()
 
 
 class BaseBotText:
@@ -27,8 +32,9 @@ class RandomBotText(BaseBotText):
         self.choices = []
         self.weights = []
         for choice, weight in data.items():
-            self.choices.append(choice)
-            self.weights.append(weight)
+            if choice != "_random":
+                self.choices.append(choice)
+                self.weights.append(weight)
 
     def get(self):
         return random.choices(self.choices, self.weights)[0]

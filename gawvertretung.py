@@ -5,23 +5,17 @@ import datetime
 import os
 import pickle
 import string
-import sys
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
+
+os.chdir(os.path.dirname(__file__))
 
 from website.stats import Stats
 from website.substitution_plan_students import StudentHTMLCreator, StudentSubstitutionLoader
 from website.substitution_plan_teachers import TeacherHTMLCreator, TeacherSubstitutionLoader
 from website.substitution_utils import get_status_string
-
-sys.path.append("/home/pi/gawvertretung-python-venv/lib/python3.8/site-packages/")
-sys.path.append("/home/pi/gawvertretung-website/")
-
-os.chdir(os.path.dirname(__file__))
-
-import urllib.request
-import urllib.error
-import urllib.parse
-
 from logging_tool import create_logger
 
 
@@ -118,8 +112,9 @@ class SubstitutionPlan:
         with urllib.request.urlopen(self.URL_FIRST_SITE) as site:
             text = site.read()
         t2 = time.perf_counter()
-        logger.debug("Got answer in {:.3f}".format(t2 - t1))
         new_status_string = get_status_string(text)
+        logger.debug(f"Got answer in {t2 - t1:.3f}: {new_status_string}")
+        logger.debug(f"Old status is {self.current_status_string}")
         if new_status_string != self.current_status_string:
             # status changed, load new data
             self.current_status_string = new_status_string
@@ -134,10 +129,11 @@ class SubstitutionPlan:
             t2 = time.perf_counter()
             logger.debug("Site created in {:.3f}".format(t2 - t1))
             with open(self.FILENAME_SUBSTITUTIONS, "wb") as f:
-                pickle.dump({
-                    "students": (self.current_status_string, self.data_students),
-                    "teachers": (self.current_status_string, self.data_teachers)
-                }, f)
+                pickle.dump((
+                    self.current_status_string,
+                    self.data_students,
+                    self.data_teachers
+                ), f)
             self.stats.save()
         today = datetime.datetime.now().date()
         if today > self.current_status_date:
@@ -176,7 +172,6 @@ logger = create_logger("website")
 def application(environ, start_response):
     if environ["PATH_INFO"] == "/":
         storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
-        print(storage)
         start_response("200 OK", [("Content-Type", "text/html; charset=utf-8")])
         return [substitution_plan.get_site_students(storage).encode("utf-8")]
 

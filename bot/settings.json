@@ -15,7 +15,9 @@
 	"teacher_commands": {
 		"start": ["start"],
 		"help":  ["help", "hilfe"],
-		"select": ["kürzel"],
+		"select": [
+			"auswahl"
+		],
 		"settings": ["einst"],
 		"reset": ["reset"]
 	}

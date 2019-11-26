@@ -7,7 +7,6 @@ import time
 import urllib.parse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-print(__file__)
 sys.path.append(os.path.dirname(__file__))
 import gawvertretung
 
@@ -23,7 +22,6 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
             environ["QUERY_STRING"] = parsed_url.query
             for key, value in self.headers.items():
                 environ["HTTP_" + key] = value
-            print("environ", environ)
             if self.path.startswith("/js") or self.path.startswith("/style") or self.path.startswith("/img") or \
                     self.path.startswith("/manifest.json") or self.path.startswith("/favicon"):
                 self.path = "/website/static" + self.path

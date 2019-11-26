@@ -1,19 +1,34 @@
+import asyncio
 import datetime
 import json
 
-import bot_utils
+from bot.db.students import StudentDatabaseBot
+from bot.db.teachers import TeacherDatabaseBot
+from common.db_connector import get_connection
 from logging_tool import create_logger
 
 logger = create_logger("delete-old-msg")
-
-bot_utils.logger = logger
 
 
 def create_date_timestamp(date):
     return int(datetime.datetime.strptime(date, "%d.%m.%Y").timestamp())
 
 
-with open("secret.json", "r") as f:
-    bot = bot_utils.CustomBot(json.load(f)["token"], "data/chats.sqlite3")
+with open("bot/secret.json", "r") as f:
+    secret = json.load(f)
+    connection = get_connection(secret)
+    bot_students = StudentDatabaseBot(secret["token_students"], connection)
+    bot_teachers = TeacherDatabaseBot(secret["token_teachers"], connection)
 
-bot.chats.remove_old_messages(create_date_timestamp(datetime.datetime.strftime(datetime.datetime.now(), "%d.%m.%Y")))
+min_time = create_date_timestamp(datetime.datetime.strftime(datetime.datetime.now(), "%d.%m.%Y"))
+
+
+async def delete_old_messages():
+    await asyncio.gather(
+        bot_students.chats.remove_old_messages(min_time),
+        bot_teachers.chats.remove_old_messages(min_time)
+    )
+
+
+asyncio.run(delete_old_messages())
+connection.close()
