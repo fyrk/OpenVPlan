@@ -75,7 +75,9 @@ function update() {
     if ((new Date).getDate() !== lastUpdateTime.getDate()) {
         return;
     }
-    fetch("/api/last-status")
+    fetch("/", {
+        method: "POST"
+    })
         .then(function (p) {
             return p.text();
         }).then(function (p) {

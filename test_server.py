@@ -3,7 +3,6 @@
 import logging
 import os.path
 import sys
-import time
 import urllib.parse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
@@ -13,13 +12,12 @@ import gawvertretung
 
 class HTTPRequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
-        t1 = time.time()
+        self.handle_request("GET")
+
+    def handle_request(self, method):
         try:
-            gawvertretung.logger.info("Request: {}".format(self.path))
-            environ = {}
             parsed_url = urllib.parse.urlparse(self.path)
-            environ["PATH_INFO"] = parsed_url.path
-            environ["QUERY_STRING"] = parsed_url.query
+            environ = {"REQUEST_METHOD": method, "PATH_INFO": parsed_url.path, "QUERY_STRING": parsed_url.query}
             for key, value in self.headers.items():
                 environ["HTTP_" + key] = value
             if self.path.startswith("/js") or self.path.startswith("/style") or self.path.startswith("/img") or \
@@ -28,16 +26,15 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
                 return super().do_GET()
             self.wfile.write(gawvertretung.application(environ, self.start_response)[0])
         except Exception:
-            gawvertretung.logger.exception("Could not handle request")
             self.start_response("500 ERROR", [("Content-Type", "text/text; charset=utf-8")])
-            self.wfile.write(gawvertretung.Snippets.get("error").encode("utf-8"))
-        t2 = time.time()
-        gawvertretung.logger.info("Time for handling request:" + str(t2-t1))
+            self.wfile.write("Es ist ein Fehler aufgetreten".encode("utf-8"))
+
+    def do_POST(self):
+        self.handle_request("POST")
 
     def start_response(self, code_and_message, headers):
         code, message = code_and_message.split(" ", 1)
         code = int(code)
-        gawvertretung.logger.debug("Response: " + code_and_message)
         self.send_response(code, message)
         for name, value in headers:
             self.send_header(name, value)

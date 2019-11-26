@@ -86,8 +86,9 @@ class SubstitutionPlan:
         self.stats = Stats(self.FILENAME_STATS)
         self.substitution_loader_students = StudentSubstitutionLoader(self.URL_STUDENTS, self.stats)
         self.substitution_loader_teachers = TeacherSubstitutionLoader(self.URL_TEACHERS)
-        self.html_creator_students = StudentHTMLCreator(snippets)
-        self.html_creator_teachers = TeacherHTMLCreator(snippets)
+        self.snippets = snippets
+        self.html_creator_students = StudentHTMLCreator(self.snippets)
+        self.html_creator_teachers = TeacherHTMLCreator(self.snippets)
 
         self.current_status_string = ""
         self.current_status_date = datetime.datetime.now().date()
@@ -120,7 +121,6 @@ class SubstitutionPlan:
             self.current_status_string = new_status_string
             self.stats.add_status(self.current_status_string)
             asyncio.run(self._load_data(text))
-            logger.debug("Creating site...")
             t1 = time.perf_counter()
             self.index_site_students = self.html_creator_students.create_html(self.data_students,
                                                                               self.current_status_string)
@@ -140,28 +140,37 @@ class SubstitutionPlan:
             self.current_status_date = today
 
     def get_site_students(self, storage):
-        self.update_data()
-        if "classes" in storage:
-            selection = storage["classes"][0]
-            if selection:
-                return self.html_creator_students.create_html(self.data_students,
-                                                              self.current_status_string,
-                                                              selection)
-        return self.index_site_students
+        try:
+            self.update_data()
+            if "classes" in storage:
+                selection = storage["classes"][0]
+                if selection:
+                    return "200 OK", self.html_creator_students.create_html(self.data_students,
+                                                                            self.current_status_string,
+                                                                            selection)
+            return "200 OK", self.index_site_students
+        except Exception:
+            return "500 Internal Server Error", self.snippets.get("error-500-students")
 
     def get_site_teachers(self, storage):
-        self.update_data()
-        if "teacher" in storage:
-            selection = storage["teacher"][0]
-            if selection:
-                return self.html_creator_teachers.create_html(self.data_teachers,
-                                                              self.current_status_string,
-                                                              selection)
-        return self.index_site_teachers
+        try:
+            self.update_data()
+            if "teacher" in storage:
+                selection = storage["teacher"][0]
+                if selection:
+                    return self.html_creator_teachers.create_html(self.data_teachers,
+                                                                  self.current_status_string,
+                                                                  selection)
+            return "200 OK", self.index_site_teachers
+        except Exception:
+            return "500 Internal Server Error", self.snippets.get("error-500-teachers")
 
     def get_current_status(self):
-        self.update_data()
-        return self.current_status_string
+        try:
+            self.update_data()
+            return "200 OK", self.current_status_string
+        except Exception:
+            return "500 Internal Server Error", ""
 
 
 substitution_plan = SubstitutionPlan(Snippets)
@@ -170,19 +179,38 @@ logger = create_logger("website")
 
 
 def application(environ, start_response):
-    if environ["PATH_INFO"] == "/":
-        storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
-        start_response("200 OK", [("Content-Type", "text/html; charset=utf-8")])
-        return [substitution_plan.get_site_students(storage).encode("utf-8")]
+    t1 = time.perf_counter()
+    if environ["REQUEST_METHOD"] == "GET":
+        if environ["PATH_INFO"] == "/":
+            logger.info("GET /")
+            storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
+            response, content = substitution_plan.get_site_students(storage)
+            t2 = time.perf_counter()
+            logger.debug(f"Time for handling request: {t2 - t1}")
+            start_response(response, [("Content-Type", "text/html;charset=utf-8")])
+            return [content.encode("utf-8")]
 
-    if environ["PATH_INFO"] == "/teachers":
-        storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
-        start_response("200 OK", [("Content-Type", "text/html; charset=utf-8")])
-        return [substitution_plan.get_site_teachers(storage).encode("utf-8")]
+        if environ["PATH_INFO"] == "/teachers":
+            logger.info("GET /teachers")
+            storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
+            response, content = substitution_plan.get_site_teachers(storage)
+            t2 = time.perf_counter()
+            logger.debug(f"Time for handling request: {t2 - t1}")
+            start_response(response, [("Content-Type", "text/html;charset=utf-8")])
+            return [content.encode("utf-8")]
 
-    if environ["PATH_INFO"] == "/api/last-status":
-        start_response("200 OK", [("Content-Type", "text/text; charset=utf-8")])
-        return [substitution_plan.get_current_status().encode("utf-8")]
+        t2 = time.perf_counter()
+        logger.debug(f"Time for handling request: {t2 - t1}")
+        start_response("404 Not Found", [("Content-Type", "text/html;charset=utf-8")])
+        return [substitution_plan.snippets.get("error-404").encode("utf-8")]
 
-    start_response("400 NOT FOUND", [("Content-Type", "text/html; charset=utf-8")])
-    return [Snippets.get("error-404").encode("utf-8")]
+    if environ["REQUEST_METHOD"] == "POST" and environ["PATH_INFO"] == "/":
+        logger.info("POST /")
+        response, content = substitution_plan.get_current_status()
+        t2 = time.perf_counter()
+        logger.debug(f"Time for handling request: {t2 - t1}")
+        start_response(response, [("Content-Type", "text/text;charset=utf-8")])
+        return [content.encode("utf-8")]
+
+    start_response("405	Method Not Allowed", [("Content-Type", "text/text;charset=utf-8")])
+    return ["Error: 405 Method Not Allowed".encode("utf-8")]

@@ -124,10 +124,8 @@ class BaseSubstitutionParser(HTMLParser):
                             else:
                                 if "news" in self.day_data:
                                     self.day_data["news"] += "<br>" + data
-                                    logger.debug("add news data " + data)
                                 else:
                                     self.day_data["news"] = data
-                                    logger.debug("news data " + data)
                                 self.current_day_info = None
                     else:
                         if self.current_day_info:
@@ -163,9 +161,8 @@ class BaseSubstitutionLoader:
         self.stats = stats
 
     async def _load_data_from_site(self, new_data, current_timestamp, session: aiohttp.ClientSession, site_num, plan):
-        logger.info(f"REQUEST {plan}/subst_" + str(site_num) + ".htm")
         async with session.get(self.url.format(site_num)) as response:
-            logger.info(f"Got answer for {plan}/subst_" + str(site_num) + ".htm")
+            logger.debug(f"Got response for {plan}/subst_" + str(site_num) + ".htm")
             if response.status != 200:
                 return True
             response_data = await response.text("iso-8859-1")
