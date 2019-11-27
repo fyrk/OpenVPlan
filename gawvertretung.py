@@ -158,9 +158,9 @@ class SubstitutionPlan:
             if "teacher" in storage:
                 selection = storage["teacher"][0]
                 if selection:
-                    return self.html_creator_teachers.create_html(self.data_teachers,
-                                                                  self.current_status_string,
-                                                                  selection)
+                    return "200 OK", self.html_creator_teachers.create_html(self.data_teachers,
+                                                                            self.current_status_string,
+                                                                            selection)
             return "200 OK", self.index_site_teachers
         except Exception:
             return "500 Internal Server Error", self.snippets.get("error-500-teachers")

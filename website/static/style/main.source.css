@@ -50,20 +50,12 @@ nav a {
 
 nav a.active {
 	cursor: pointer;
-/*	background-color: #f1b900;
-	border-top-left-radius: 6px;
-	border-top-right-radius: 6px;
-}
-
-nav a:not(.active):hover {
-	border-top-left-radius: 8px;
-	border-top-right-radius: 8px;
-	transition: background-color 0.3s;*/
 }
 
 
 @media(min-width: 351px) {
 	nav a {
+		/*noinspection CssInvalidPropertyValue*/
 		width: -webkit-fill-available;
 		width: available;
 		max-width: 320px;
@@ -332,7 +324,6 @@ button:hover {
 }
 
 #selection-container {
-	display: none;
 	padding-top: 8px;
 	padding-bottom: 8px;
 }

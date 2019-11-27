@@ -26,6 +26,7 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
                 return super().do_GET()
             self.wfile.write(gawvertretung.application(environ, self.start_response)[0])
         except Exception:
+            gawvertretung.logger.exception("Exception")
             self.start_response("500 ERROR", [("Content-Type", "text/text; charset=utf-8")])
             self.wfile.write("Es ist ein Fehler aufgetreten".encode("utf-8"))
 
