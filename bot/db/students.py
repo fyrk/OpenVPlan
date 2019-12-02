@@ -40,6 +40,6 @@ class StudentDatabaseChat(DatabaseChat):
     def get_pretty_selection(self):
         return ", ".join(self._parsed_selection)
 
-    def set_selection_from_string(self, text):
+    def set_selection_from_string(self, text: str):
         self._parsed_selection = parse_selection(text)
-        self.set("selection", ",".join(self._parsed_selection))
+        super().set_selection_from_string(",".join(self._parsed_selection))

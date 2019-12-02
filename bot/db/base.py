@@ -184,9 +184,8 @@ class DatabaseChat:
     def has_selection(self):
         return bool(self._selection)
 
-    def set_selection_from_string(self, text):
+    def set_selection_from_string(self, text: str):
         self.selection = text
-        return text
 
     def get_pretty_selection(self):
         return self._selection

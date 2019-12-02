@@ -2,6 +2,8 @@ import logging
 import sys
 import time
 
+logging.captureWarnings(True)
+
 
 def create_logger(logging_type):
     logger = logging.getLogger()

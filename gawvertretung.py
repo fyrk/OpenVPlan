@@ -82,16 +82,30 @@ class SubstitutionPlan:
     FILENAME_SUBSTITUTIONS = "data/substitutions/substitutions.pickle"
     FILENAME_STATS = "data/stats.json"
 
-    def __init__(self, snippets):
+    def __init__(self, snippets, logger, try_load_data=True):
         self.stats = Stats(self.FILENAME_STATS)
+        self.logger = logger
         self.substitution_loader_students = StudentSubstitutionLoader(self.URL_STUDENTS, self.stats)
         self.substitution_loader_teachers = TeacherSubstitutionLoader(self.URL_TEACHERS)
         self.snippets = snippets
         self.html_creator_students = StudentHTMLCreator(self.snippets)
         self.html_creator_teachers = TeacherHTMLCreator(self.snippets)
 
-        self.current_status_string = ""
         self.current_status_date = datetime.datetime.now().date()
+        if try_load_data:
+            try:
+                with open(self.FILENAME_SUBSTITUTIONS, "rb") as f:
+                    self.current_status_string, self.data_students, self.data_teachers = pickle.load(f)
+            except Exception:
+                self.logger.exception("Could not load substitutions from file")
+            else:
+                logger.info(f"Loaded substitutions from file (status is '{self.current_status_string}')")
+                self.index_site_students = self.html_creator_students.create_html(self.data_students,
+                                                                                  self.current_status_string)
+                self.index_site_teachers = self.html_creator_teachers.create_html(self.data_teachers,
+                                                                                  self.current_status_string)
+                return
+        self.current_status_string = ""
         self.data_students = {}
         self.data_teachers = {}
         self.index_site_students = ""
@@ -105,17 +119,17 @@ class SubstitutionPlan:
             self.substitution_loader_teachers.load_data("lehrer")
         )
         t2 = time.perf_counter()
-        logger.debug("New data created in {:.3f}".format(t2 - t1))
+        self.logger.debug("New data created in {:.3f}".format(t2 - t1))
 
     def update_data(self):
-        logger.debug("Requesting subst_001.htm ...")
+        self.logger.debug("Requesting subst_001.htm ...")
         t1 = time.perf_counter()
         with urllib.request.urlopen(self.URL_FIRST_SITE) as site:
             text = site.read()
         t2 = time.perf_counter()
         new_status_string = get_status_string(text)
-        logger.debug(f"Got answer in {t2 - t1:.3f}: {new_status_string}")
-        logger.debug(f"Old status is {self.current_status_string}")
+        self.logger.debug(f"Got answer in {t2 - t1:.3f}: {new_status_string}")
+        self.logger.debug(f"Old status is {self.current_status_string}")
         if new_status_string != self.current_status_string:
             # status changed, load new data
             self.current_status_string = new_status_string
@@ -127,7 +141,7 @@ class SubstitutionPlan:
             self.index_site_teachers = self.html_creator_teachers.create_html(self.data_teachers,
                                                                               self.current_status_string)
             t2 = time.perf_counter()
-            logger.debug("Site created in {:.3f}".format(t2 - t1))
+            self.logger.debug("Site created in {:.3f}".format(t2 - t1))
             with open(self.FILENAME_SUBSTITUTIONS, "wb") as f:
                 pickle.dump((
                     self.current_status_string,
@@ -173,9 +187,9 @@ class SubstitutionPlan:
             return "500 Internal Server Error", ""
 
 
-substitution_plan = SubstitutionPlan(Snippets)
-
 logger = create_logger("website")
+
+substitution_plan = SubstitutionPlan(Snippets, logger)
 
 
 def application(environ, start_response):

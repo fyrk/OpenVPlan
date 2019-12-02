@@ -22,3 +22,6 @@ class TeacherDatabaseChat(DatabaseChat):
     @staticmethod
     def from_row(cursor, row, bot):
         return TeacherDatabaseChat(bot, cursor, *row)
+
+    def set_selection_from_string(self, text: str):
+        super().set_selection_from_string(text.upper())

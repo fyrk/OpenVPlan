@@ -5,6 +5,7 @@ import re
 from typing import Type
 
 import asynctelebot
+from asynctelebot import ForceReply
 from asynctelebot.utils import determine_message_content_type
 
 from bot.db.base import DatabaseBot, DatabaseChat
@@ -70,8 +71,8 @@ class SubstitutionsBotListener:
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /klassen "
                     f"({message.from_.first_name})")
         chat = self.bot.chats.get_from_msg(message)
-        chat.status = "do-select"
-        await chat.send(self.texts["send-me-selection"])
+        sent_message = (await chat.send(self.texts["send-me-selection"], reply_markup=ForceReply()))
+        chat.status = "do-select:" + str(sent_message.message_id)
 
     def create_settings_keyboard(self, chat):
         markup = asynctelebot.types.InlineKeyboardMarkup()
@@ -129,18 +130,22 @@ class SubstitutionsBotListener:
         if determine_message_content_type(message) == "text":
             logger.debug("Message: " + message.text)
             chat = self.bot.chats.get_from_msg(message)
-            if chat.status == "do-select":
-                chat.reset_status()
-                logger.debug("Chat '{}' selected '{}'".format(chat.chat_id, message.text))
-                chat.set_selection_from_string(message.text)
-                await self.send_selection_set(chat, chat.get_parsed_selection())
+
+            if chat.status.startswith("do-select:") and message.reply_to_message:
+                message_id = int(chat.status.split(":", 1)[1])
+                if message.reply_to_message.message_id == message_id:
+                    chat.reset_status()
+                    logger.debug("Chat '{}' selected '{}'".format(chat.chat_id, message.text))
+                    chat.set_selection_from_string(message.text)
+                    await self.send_selection_set(chat, chat.get_pretty_selection())
+                    return
+
+            if MOIN.search(message.text):
+                logger.debug("MOIN MOIN")
+                await self.bot.send_message(message.chat.id, self.texts["MOIN"])
             else:
-                if MOIN.search(message.text):
-                    logger.debug("MOIN MOIN")
-                    await self.bot.send_message(message.chat.id, self.texts["MOIN"])
-                else:
-                    logger.debug("Unknown text")
-                    await self.bot.send_message(message.chat.id, self.texts["unknown"])
+                logger.debug("Unknown text")
+                await self.bot.send_message(message.chat.id, self.texts["unknown"])
         else:
             await self.bot.send_message(message.chat.id, self.texts["send-only-text"])
 
@@ -164,6 +169,7 @@ class SubstitutionsBotListener:
 def run_bot_listener(logger_name, token, db_bot_class: Type[DatabaseBot], db_connection,
                      bot_listener_class: Type[SubstitutionsBotListener], bot_texts_name, settings_command_key):
     import json
+    import time
     from logging_tool import create_logger
 
     logger = create_logger(logger_name)
@@ -178,6 +184,7 @@ def run_bot_listener(logger_name, token, db_bot_class: Type[DatabaseBot], db_con
     texts = BotTexts(texts)
     db_bot = db_bot_class(token, db_connection)
     bot_listener = bot_listener_class(db_bot, texts, settings["available_settings"], settings[settings_command_key])
+    time.sleep(10)
     try:
         logger.info("Polling")
         bot_listener.handler.polling(infinite=True, error_wait=10)
