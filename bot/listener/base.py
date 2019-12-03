@@ -58,7 +58,7 @@ class SubstitutionsBotListener:
             chat = self.bot.chats.get_from_msg(message)
             chat.set_selection_from_string(selection_string)
             if chat.has_selection():
-                await self.send_selection_set(chat, chat.get_parsed_selection(), True)
+                await self.send_selection_set(chat, chat.get_pretty_selection(), True)
         except Exception:
             pass
 
