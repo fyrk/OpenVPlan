@@ -1,0 +1,3 @@
+# this file only exists so that the substitutions folder is included
+*
+!.gitignore
