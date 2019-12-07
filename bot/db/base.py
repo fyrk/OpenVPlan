@@ -2,8 +2,11 @@ import asyncio
 import json
 import logging
 import sqlite3
+from typing import Optional
 
 import asynctelebot
+from asynctelebot.api import BotAPIException
+from asynctelebot.types import Message
 
 logger = logging.getLogger()
 
@@ -31,7 +34,6 @@ class DatabaseChatList:
                                 chat_id INTEGER primary key,
                                 status TEXT,
                                 selection TEXT,
-                                send_format TEXT,
                                 send_news INTEGER,
                                 send_absent_classes INTEGER,
                                 send_absent_teachers INTEGER,
@@ -43,18 +45,27 @@ class DatabaseChatList:
     def _new_chat(self, chat_id):
         raise NotImplementedError
 
-    def get(self, chat_id: int) -> "DatabaseChat":
-        logger.debug("Get chat '" + str(chat_id) + "'")
+    def try_get(self, chat_id: int) -> Optional["DatabaseChat"]:
+        logger.debug(f"Try get chat {chat_id}")
         self.cursor.execute("""SELECT * FROM {} WHERE chat_id=?""".format(self.table_name), (chat_id,))
         chat = self.cursor.fetchone()
-        if chat is None:
-            logger.debug("Unknown chat, creating new")
-            self.cursor.execute("""INSERT INTO {} VALUES (?,?,?,?,?,?,?,?)""".format(self.table_name),
-                                (chat_id, "", "", "text", 1, 1, 1, ""))
-            return self._new_chat(chat_id)
-        return self._chat_from_row(chat)
+        if chat is not None:
+            return self._chat_from_row(chat)
+        return None
 
-    def get_from_msg(self, message) -> "DatabaseChat":
+    def try_get_from_msg(self, message: Message) -> Optional["DatabaseChat"]:
+        return self.try_get(message.chat.id)
+
+    def get(self, chat_id: int) -> "DatabaseChat":
+        chat = self.try_get(chat_id)
+        if chat is not None:
+            return chat
+        logger.debug("Unknown chat, creating new")
+        self.cursor.execute("""INSERT INTO {} VALUES (?,?,?,?,?,?,?)""".format(self.table_name),
+                            (chat_id, "", "", 1, 1, 1, ""))
+        return self._new_chat(chat_id)
+
+    def get_from_msg(self, message: Message) -> "DatabaseChat":
         return self.get(message.chat.id)
 
     def all_chats(self):
@@ -74,7 +85,7 @@ class DatabaseChat:
     cursor: sqlite3.Cursor
 
     def __init__(self, bot: DatabaseBot, cursor,
-                 chat_id: int, status="", selection=None, send_format="text", send_news=True,
+                 chat_id: int, status="", selection=None, send_news=True,
                  send_absent_classes=True, send_absent_teachers=True, sent_messages=None):
         self.bot = bot
         self.cursor = cursor
@@ -84,7 +95,6 @@ class DatabaseChat:
             self._selection = ""
         else:
             self._selection = selection
-        self._send_format = send_format
         self._send_news = send_news
         self._send_absent_classes = send_absent_classes
         self._send_absent_teachers = send_absent_teachers
@@ -98,22 +108,17 @@ class DatabaseChat:
     chat_id={},
     status={},
     selection={},
-    send_format={},
     send_news={},
     send_absent_classes={},
     send_absent_teachers={},
     sent_messages={}
 )""".format(repr(self.bot), repr(self._chat_id), repr(self._status), repr(self._selection),
-            repr(self._send_format), repr(self._send_news), repr(self._send_absent_classes),
-            repr(self._send_absent_teachers), repr(self._sent_messages))
+            repr(self._send_news), repr(self._send_absent_classes), repr(self._send_absent_teachers),
+            repr(self._sent_messages))
 
     @staticmethod
     def from_row(cursor, row, bot):
         raise NotImplementedError
-
-    def reset_status(self):
-        self.cursor.execute("""UPDATE {} SET status='' WHERE chat_id=?""".format(self.bot.chats.table_name),
-                            (self._chat_id,))
 
     async def send(self, text, reply_markup=None, parse_mode=None):
         return await self.bot.send_message(self.chat_id, text, reply_markup=reply_markup, parse_mode=parse_mode)
@@ -144,8 +149,8 @@ class DatabaseChat:
             try:
                 await self.bot.edit_message_text(
                     "Alte Nachrichten zum Vertretungsplan werden gelöscht. ", self.chat_id, message_id)
-            except:
-                pass
+            except BotAPIException:
+                logger.exception(f"Exception editing message {message_id} in chat {self.chat_id}")
 
         new_sent_messages = self.sent_messages.copy()
         tasks = []
@@ -156,9 +161,8 @@ class DatabaseChat:
                     logger.info("Deleted {} from {}".format(message_id, self.chat_id))
                 del new_sent_messages[day]
         await asyncio.gather(*tasks)
-        # self.sent_messages = new_sent_messages
-        # self.cursor.execute("UPDATE {} SET sent_messages=? WHERE chat_id=?".format(self.bot.chats.table_name),
-        #                    (self._sent_messages, self._chat_id))
+        self._sent_messages = new_sent_messages
+        self.save_sent_messages()
 
     def get(self, property_name):
         return self.__dict__["_" + property_name]
@@ -200,14 +204,6 @@ class DatabaseChat:
     @selection.setter
     def selection(self, value):
         self.set("selection", value)
-
-    @property
-    def send_format(self):
-        return self._send_format
-
-    @send_format.setter
-    def send_format(self, value):
-        self.set("send_format", value)
 
     @property
     def send_news(self):

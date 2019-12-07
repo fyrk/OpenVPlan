@@ -5,7 +5,8 @@ import re
 from typing import Type
 
 import asynctelebot
-from asynctelebot import ForceReply
+from asynctelebot.methods import SendMessage, EditMessageText
+from asynctelebot.types import ForceReply, Message
 from asynctelebot.utils import determine_message_content_type
 
 from bot.db.base import DatabaseBot, DatabaseChat
@@ -33,43 +34,38 @@ class SubstitutionsBotListener:
         self.handler.subscribe_message(commands=commands["settings"])(self.show_settings)
         self.handler.subscribe_message(commands=commands["reset"])(self.reset)
         self.handler.subscribe_message()(self.all_messages)
-        self.handler.subscribe_callback_query(custom_filter=lambda c: True)(self.all_callbacks)
-
-    def _reset_status(self, message):
-        chat = self.bot.chats.get_from_msg(message)
-        chat.reset_status()
-        return chat
+        self.handler.subscribe_callback_query()(self.all_callbacks)
 
     def _create_selection_info_text(self, selection):
         raise NotImplementedError
 
-    async def send_selection_set(self, chat, selection, was_selected_in_start_command=False):
+    def send_selection_set(self, chat_id, selection, was_selected_in_start_command=False):
         raise NotImplementedError
 
     async def start(self, message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /start ({message.from_.first_name})")
-        await self.help(message)
         # noinspection PyBroadException
         try:
             text = message.text.strip()
             if len(text) % 4 != 0:
                 text += (4 - len(text) % 4) * "="
             selection_string = base64.b64decode(text[7:]).decode("utf-8")
+        except Exception:
+            pass
+        else:
             chat = self.bot.chats.get_from_msg(message)
             chat.set_selection_from_string(selection_string)
             if chat.has_selection():
-                await self.send_selection_set(chat, chat.get_pretty_selection(), True)
-        except Exception:
-            pass
+                await chat.send(self.texts["help"])
+                return self.send_selection_set(chat.chat_id, chat.get_pretty_selection(), True)
+        return await self.help(message)
 
     async def help(self, message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /help ({message.from_.first_name})")
-        chat = self._reset_status(message)
-        await chat.send(self.texts["help"])
+        return SendMessage(message.chat.id, self.texts["help"])
 
     async def do_select(self, message):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /klassen "
-                    f"({message.from_.first_name})")
+        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND select ({message.from_.first_name})")
         chat = self.bot.chats.get_from_msg(message)
         sent_message = (await chat.send(self.texts["send-me-selection"], reply_markup=ForceReply()))
         chat.status = "do-select:" + str(sent_message.message_id)
@@ -108,52 +104,48 @@ class SubstitutionsBotListener:
                 message += self.texts["settings-info-disabled"].format(
                     ", ".join(self.texts[name] for name in disabled[:-1]) +
                     self.texts["and"] + self.texts[disabled[-1]])
-        message += self.texts["setting-info-format"].format(self.texts[chat.get("send_format")])
         return message
 
-    async def show_settings(self, message: asynctelebot.Message):
+    async def show_settings(self, message: Message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /einst ({message.from_.first_name})")
-        chat = self._reset_status(message)
-        await chat.send(self.create_settings_text(chat),
-                        parse_mode="html",
-                        reply_markup=self.create_settings_keyboard(chat))
+        chat = self.bot.chats.get_from_msg(message)
+        return SendMessage(message.chat.id, self.create_settings_text(chat),
+                           parse_mode="html",
+                           reply_markup=self.create_settings_keyboard(chat))
 
     async def reset(self, message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /reset ({message.from_.first_name})")
-        self.bot.chats.get(message.chat.id).remove_all_messages()
+        self.bot.chats.get_from_msg(message).remove_all_messages()
         self.bot.chats.reset_chat(message.chat.id)
         logger.debug("Reset successful for chat id '" + str(message.chat.id) + "'")
-        await self.bot.send_message(message.chat.id, self.texts["reset-successful"])
+        return SendMessage(message.chat.id, self.texts["reset-successful"])
 
-    async def all_messages(self, message: asynctelebot.Message):
+    async def all_messages(self, message: Message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} ALL MESSAGES ({message.from_.first_name})")
         if determine_message_content_type(message) == "text":
             logger.debug("Message: " + message.text)
-            chat = self.bot.chats.get_from_msg(message)
-
-            if chat.status.startswith("do-select:") and message.reply_to_message:
+            chat = self.bot.chats.try_get_from_msg(message)
+            if chat is not None and chat.status.startswith("do-select:") and message.reply_to_message:
                 message_id = int(chat.status.split(":", 1)[1])
                 if message.reply_to_message.message_id == message_id:
-                    chat.reset_status()
                     logger.debug("Chat '{}' selected '{}'".format(chat.chat_id, message.text))
                     chat.set_selection_from_string(message.text)
-                    await self.send_selection_set(chat, chat.get_pretty_selection())
-                    return
+                    return self.send_selection_set(chat.chat_id, chat.get_pretty_selection())
 
             if MOIN.search(message.text):
                 logger.debug("MOIN MOIN")
-                await self.bot.send_message(message.chat.id, self.texts["MOIN"])
+                return SendMessage(message.chat.id, self.texts["MOIN"])
             else:
                 logger.debug("Unknown text")
-                await self.bot.send_message(message.chat.id, self.texts["unknown"])
+                return SendMessage(message.chat.id, self.texts["unknown"])
         else:
-            await self.bot.send_message(message.chat.id, self.texts["send-only-text"])
+            return SendMessage(message.chat.id, self.texts["send-only-text"])
 
     async def all_callbacks(self, callback: asynctelebot.types.CallbackQuery):
         logger.info(f"{callback.message.chat.id} {str_from_timestamp(callback.message.date)} CALLBACK "
                     f"({callback.message.chat.first_name})")
-        chat = self.bot.chats.get(callback.message.chat.id)
-        if callback.data.startswith("setting-"):
+        chat = self.bot.chats.try_get(callback.message.chat.id)
+        if chat is not None and callback.data.startswith("setting-"):
             name, value_string = callback.data[8:].split("-", 1)
             values = self.available_settings[name]
             value = values[0] if str(values[0]) == value_string else values[1]
@@ -161,15 +153,14 @@ class SubstitutionsBotListener:
                 chat.set(name, value)
                 await self.bot.answer_callback_query(callback.id,
                                                      self.texts["settings"][name]["selected-" + value_string])
-                await self.bot.edit_message_text(self.create_settings_text(chat), callback.message.chat.id,
-                                                 callback.message.message_id, parse_mode="html",
-                                                 reply_markup=self.create_settings_keyboard(chat))
+                return EditMessageText(self.create_settings_text(chat), callback.message.chat.id,
+                                       callback.message.message_id, parse_mode="html",
+                                       reply_markup=self.create_settings_keyboard(chat))
 
 
 def run_bot_listener(logger_name, token, db_bot_class: Type[DatabaseBot], db_connection,
                      bot_listener_class: Type[SubstitutionsBotListener], bot_texts_name, settings_command_key):
     import json
-    import time
     from logging_tool import create_logger
 
     logger = create_logger(logger_name)
@@ -183,8 +174,8 @@ def run_bot_listener(logger_name, token, db_bot_class: Type[DatabaseBot], db_con
     texts.update(texts_all[bot_texts_name])
     texts = BotTexts(texts)
     db_bot = db_bot_class(token, db_connection)
+    db_bot.chats.try_create_table()
     bot_listener = bot_listener_class(db_bot, texts, settings["available_settings"], settings[settings_command_key])
-    time.sleep(10)
     try:
         logger.info("Polling")
         bot_listener.handler.polling(infinite=True, error_wait=10)

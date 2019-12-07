@@ -1,8 +1,18 @@
 import hashlib
-import re
 from functools import lru_cache
 
-from common.base import BaseSubstitution
+from common.base import BaseSubstitution, BaseSubstitutionGroup
+from common.utils import sort_classes, REGEX_CLASS
+
+
+class StudentSubstitutionGroup(BaseSubstitutionGroup):
+    def __new__(cls, group_name, substitutions):
+        self = super().__new__(cls, group_name, substitutions)
+        self._sort_classes = sort_classes(self.group_name)
+        return self
+
+    def __lt__(self, other):
+        return self._sort_classes < other._sort_classes
 
 
 class StudentSubstitution(BaseSubstitution):
@@ -14,6 +24,10 @@ class StudentSubstitution(BaseSubstitution):
         self.room = room
         self.subs_from = subs_from
         self.hint = hint
+
+    def __repr__(self):
+        return f"StudentSubstitution({self.lesson}, {self.teacher}, {self.substitute}, {self.subject}, {self.room}, " \
+               f"{self.subs_from}, {self.hint})"
 
     @lru_cache()
     def get_html_first_of_group(self, group_substitution_count, group_name, snippets, add_lesson_num):
@@ -102,9 +116,6 @@ def parse_selection(text):
         if selected_class not in selected_classes:
             selected_classes.append(selected_class)
     return selected_classes
-
-
-REGEX_CLASS = re.compile(r"(?:\D|\A)(\d{1,3})([A-Za-z]*)(?:\D|\Z)")
 
 
 def split_class_name_lower(class_name):

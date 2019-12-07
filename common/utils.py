@@ -1,13 +1,14 @@
 import datetime
 import re
-
-from common.students import REGEX_CLASS
+import time
 
 REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
 
+REGEX_CLASS = re.compile(r"(?:\D|\A)(\d{1,3})([A-Za-z]*)(?:\D|\Z)")
 
-def create_date_timestamp(date):
-    return int(datetime.datetime.strptime(date, "%d.%m.%Y").timestamp())
+
+def create_date_timestamp(date: datetime.datetime):
+    return int(time.mktime(date.date().timetuple()))
 
 
 def get_status_string(text):
@@ -28,8 +29,4 @@ def sort_classes(class_name):
     matches = REGEX_CLASS.search(class_name)
     if matches:
         return int(matches.group(1)), matches.group(2)
-    if "<" in class_name:
-        matches = re.search(r">(.*?)<", class_name)
-        if matches:
-            return 0, matches.group(1)
     return 0, class_name

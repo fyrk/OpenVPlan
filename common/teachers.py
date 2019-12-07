@@ -1,7 +1,12 @@
 import hashlib
 from functools import lru_cache
 
-from common.base import BaseSubstitution
+from common.base import BaseSubstitution, BaseSubstitutionGroup
+
+
+class TeacherSubstitutionGroup(BaseSubstitutionGroup):
+    def __lt__(self, other):
+        return self.group_name < other.group_name
 
 
 class TeacherSubstitution(BaseSubstitution):
@@ -14,6 +19,10 @@ class TeacherSubstitution(BaseSubstitution):
         self.subs_from = subs_from
         self.hint = hint
         self.is_substitute_striked = is_substitute_striked
+
+    def __repr__(self):
+        return f"TeacherSubstitution({self.lesson}, {self.class_name}, {self.teacher}, {self.subject}, {self.room}, " \
+               f"{self.subs_from}, {self.hint}, {self.is_substitute_striked})"
 
     @lru_cache()
     def get_html_first_of_group(self, group_substitution_count, group, snippets, add_lesson_num):

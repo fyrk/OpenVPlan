@@ -2,8 +2,10 @@
 	"available_settings": {
 		"send_news": [0, 1],
 		"send_absent_classes": [0, 1],
-		"send_absent_teachers": [0, 1],
-		"send_format": ["text", "table"]
+		"send_absent_teachers": [
+			0,
+			1
+		]
 	},
 	"student_commands": {
 		"start": ["start"],

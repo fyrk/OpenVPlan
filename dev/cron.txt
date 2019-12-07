@@ -30,3 +30,15 @@ PATH=/usr/local/bin
 0 * * * 1,2,3,4,5 /home/pi/gawvertretung-website/update_substitutions.sh
 30 19 * * SUN /home/pi/gawvertretung-website/update_substitutions.sh
 0 0 * * * python3.8 /home/pi/gawvertretung-website/delete_old_messages.py 2> /home/pi/gawvertretung-website/output/delete_old_messages.txt
+
+
+SHELL=/bin/bash
+PATH=/usr/bin
+
+@reboot python3.7 /home/florian/gawvertretung/bot_listener_teachers.py 2> /home/florian/gawvertretung/output/bot_listener_teachers.txt
+@reboot python3.7 /home/florian/gawvertretung/bot_listener_students.py 2> /home/florian/gawvertretung/output/bot_listener_students.txt
+@reboot python3.7 /home/florian/gawvertretung/bot_sender.py 2> /home/florian/gawvertretung/output/bot_sender.txt
+@reboot python3.7 /home/florian/gawvertretung/build_snippets.py 2> /home/florian/gawvertretung/output/build_snippets.txt 2>&1
+* 7 * * 1,2,3,4,5 /home/florian/gawvertretung/update_substitutions.sh > /home/florian/gawvertretung/output/update_substitutions.txt 2>&1
+0,15,30,45 * * * * /home/florian/gawvertretung/update_substitutions.sh > /home/florian/gawvertretung/output/update_substitutions.txt 2>&1
+0 0 * * * python3.7 /home/florian/gawvertretung/delete_old_messages.py > /home/florian/gawvertretung/output/delete_old_messages.txt 2>&1

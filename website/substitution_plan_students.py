@@ -1,12 +1,12 @@
-from collections import OrderedDict
-
-from common.students import StudentSubstitution, is_class_selected, split_class_name_lower, parse_selection
-from website.substitution_utils import sort_classes
+from common.students import StudentSubstitution, is_class_selected, split_class_name_lower, parse_selection, \
+    StudentSubstitutionGroup
+from website.snippets import Snippets
+from website.stats import Stats
 from .substitution_plan_base import BaseHTMLCreator, BaseSubstitutionParser, BaseSubstitutionLoader
 
 
 class StudentSubstitutionParser(BaseSubstitutionParser):
-    def __init__(self, data, current_timestamp):
+    def __init__(self, data: dict, current_timestamp: int):
         super().__init__(data, current_timestamp)
 
     def get_current_group(self):
@@ -17,20 +17,16 @@ class StudentSubstitutionParser(BaseSubstitutionParser):
 
 
 class StudentSubstitutionLoader(BaseSubstitutionLoader):
-    def __init__(self, url, stats=None):
+    def __init__(self, url: str, stats: Stats = None):
         super().__init__(StudentSubstitutionParser, url, stats)
 
-    def _data_postprocessing(self, data):
-        for day_timestamp, day in data.items():
-            if "absent-teachers" in day:
-                day["absent-teachers"] = ", ".join(sorted(day["absent-teachers"].split(", ")))
-            if "absent-classes" in day:
-                day["absent-classes"] = ", ".join(sorted(day["absent-classes"].split(", "), key=sort_classes))
-            day["substitutions"] = OrderedDict(sorted(day["substitutions"].items(), key=lambda s: sort_classes(s[0])))
+    def _sort_substitutions(self, substitutions: dict):
+        return sorted(StudentSubstitutionGroup(group_name, substitutions)
+                      for group_name, substitutions in substitutions.items())
 
 
 class StudentHTMLCreator(BaseHTMLCreator):
-    def __init__(self, snippets):
+    def __init__(self, snippets: Snippets):
         super().__init__(snippets,
                          "substitution-plan-students",
                          "substitution-table-students",
@@ -38,9 +34,9 @@ class StudentHTMLCreator(BaseHTMLCreator):
                          "no-substitutions-reset-classes",
                          "select-classes")
 
-    def parse_selection(self, selection):
+    def parse_selection(self, selection: str):
         selected_classes = parse_selection(selection)
         return [split_class_name_lower(name) for name in selected_classes], ", ".join(selected_classes)
 
-    def is_selected(self, class_name, processed_selection):
+    def is_selected(self, class_name: str, processed_selection):
         return is_class_selected(class_name, processed_selection)

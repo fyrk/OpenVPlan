@@ -21,9 +21,9 @@ class StudentDatabaseChatList(DatabaseChatList):
 
 class StudentDatabaseChat(DatabaseChat):
     def __init__(self, bot: DatabaseBot, cursor,
-                 chat_id: int, status="", db_selection=None, send_format="text", send_news=True,
+                 chat_id: int, status="", db_selection=None, send_news=True,
                  send_absent_classes=True, send_absent_teachers=True, sent_messages=None):
-        super().__init__(bot, cursor, chat_id, status, db_selection, send_format, send_news, send_absent_classes,
+        super().__init__(bot, cursor, chat_id, status, db_selection, send_news, send_absent_classes,
                          send_absent_teachers, sent_messages)
         if not db_selection:
             self._parsed_selection = []

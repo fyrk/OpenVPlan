@@ -4,10 +4,14 @@ import datetime
 import logging
 import re
 from html.parser import HTMLParser
+from typing import Type, List
 
 import aiohttp
 
-from .substitution_utils import create_date_timestamp
+from common.base import SubstitutionDay
+from common.utils import create_date_timestamp, sort_classes
+from website.snippets import Snippets
+from website.stats import Stats
 
 logger = logging.getLogger()
 
@@ -15,7 +19,7 @@ logger = logging.getLogger()
 class BaseSubstitutionParser(HTMLParser):
     REGEX_TITLE = re.compile(r"(\d+.\d+.\d\d\d\d) (\w+), Woche (\w+)")
 
-    def __init__(self, data, current_timestamp):
+    def __init__(self, data: dict, current_timestamp: int):
         super().__init__()
         self.data = data
         self.current_timestamp = current_timestamp
@@ -98,7 +102,7 @@ class BaseSubstitutionParser(HTMLParser):
                 match = self.REGEX_TITLE.search(data)
                 if match:
                     date = match.group(1)
-                    self.day_timestamp = create_date_timestamp(date)
+                    self.day_timestamp = create_date_timestamp(datetime.datetime.strptime(date, "%d.%m.%Y"))
                     if self.day_timestamp < self.current_timestamp:
                         raise ValueError
                     if self.day_timestamp not in self.data:
@@ -150,17 +154,18 @@ class BaseSubstitutionParser(HTMLParser):
     def close(self):
         super().close()
 
-    def is_last_site(self):
+    def is_last_site(self) -> bool:
         return self.next_site == "subst_001.htm"
 
 
 class BaseSubstitutionLoader:
-    def __init__(self, substitutions_parser_class, url, stats=None):
+    def __init__(self, substitutions_parser_class: Type[BaseSubstitutionParser], url: str, stats: Stats = None):
         self.substitutions_parser = substitutions_parser_class
         self.url = url
         self.stats = stats
 
-    async def _load_data_from_site(self, new_data, current_timestamp, session: aiohttp.ClientSession, site_num, plan):
+    async def _load_data_from_site(self, new_data: dict, current_timestamp: int, session: aiohttp.ClientSession,
+                                   site_num: int, plan: str):
         async with session.get(self.url.format(site_num)) as response:
             logger.debug(f"Got response for {plan}/subst_" + str(site_num) + ".htm")
             if response.status != 200:
@@ -179,9 +184,9 @@ class BaseSubstitutionLoader:
                 return is_last_site
             return parser.is_last_site()
 
-    async def load_data(self, plan, first_site=None):
+    async def load_data(self, plan: str, first_site: bytes = None):
         new_data = {}
-        current_timestamp = create_date_timestamp(datetime.datetime.now().strftime("%d.%m.%Y"))
+        current_timestamp = create_date_timestamp(datetime.datetime.now())
         if first_site:
             parser = self.substitutions_parser(new_data, current_timestamp)
             try:
@@ -192,7 +197,7 @@ class BaseSubstitutionLoader:
             if parser.next_site == "subst_001.htm":
                 if self.stats:
                     self.stats.add_last_site(1)
-                return new_data
+                return self._data_postprocessing(new_data)
             i = 2
         else:
             i = 1
@@ -200,34 +205,46 @@ class BaseSubstitutionLoader:
         asyncio.set_event_loop(loop)
         session = aiohttp.ClientSession()
         while True:
-            if True in \
-                    await asyncio.gather(
-                        *(self._load_data_from_site(new_data, current_timestamp, session, site_num, plan)
-                          for site_num in range(i, i + 4))):
+            if True in await asyncio.gather(
+                    *(self._load_data_from_site(new_data, current_timestamp, session, site_num, plan)
+                      for site_num in range(i, i + 4))):
                 await session.close()
-                self._data_postprocessing(new_data)
-                return new_data
+                return self._data_postprocessing(new_data)
             i += 4
 
-    def _data_postprocessing(self, data):
+    def _data_postprocessing(self, data: dict):
+        return sorted(
+            SubstitutionDay(
+                timestamp,
+                day["day_name"],
+                day["date"],
+                day["week"],
+                day["news"] if "news" in day else None,
+                ", ".join(sorted(day["absent-classes"].split(", "), key=sort_classes))
+                if "absent-classes" in day else None,
+                ", ".join(sorted(day["absent-teachers"].split(", ")))
+                if "absent-teachers" in day else None,
+                self._sort_substitutions(day["substitutions"])
+            )
+            for timestamp, day in data.items()
+        )
+
+    def _sort_substitutions(self, substitutions: dict):
         raise NotImplementedError
 
 
 class BaseHTMLCreator:
-    def __init__(self, snippets,
-                 snippet_base,
-                 snippet_substitution_table,
-                 snippet_notice_selection,
-                 snippet_no_substitutions_reset_selection,
-                 snippet_select):
+    def __init__(self, snippets: Snippets, snippet_name_base: str, snippets_name_substitution_table: str,
+                 snippet_name_notice_selection: str, snippet_name_no_substitutions_reset_selection: str,
+                 snippet_name_select: str):
         self.snippets = snippets
-        self.snippet_base = snippet_base
-        self.snippet_substitution_table = snippet_substitution_table
-        self.snippet_notice_selection = snippet_notice_selection
-        self.snippet_no_substitutions_reset_selection = snippet_no_substitutions_reset_selection
-        self.snippet_select = snippet_select
+        self.snippet_base = snippet_name_base
+        self.snippet_substitution_table = snippets_name_substitution_table
+        self.snippet_notice_selection = snippet_name_notice_selection
+        self.snippet_no_substitutions_reset_selection = snippet_name_no_substitutions_reset_selection
+        self.snippet_select = snippet_name_select
 
-    def parse_selection(self, selection):
+    def parse_selection(self, selection: str):
         """
         Parse the selection: Return parsed selection (will be passed to is_selected) and formatted selection for
         display on website
@@ -237,25 +254,25 @@ class BaseHTMLCreator:
     def is_selected(self, group, selection):
         raise NotImplementedError
 
-    def create_day_container(self, day, substitutions):
-        absent_teachers = (self.snippets.get("absent-teachers").format(day["absent-teachers"])
-                           if "absent-teachers" in day else "")
-        absent_classes = (
-            self.snippets.get("absent-classes").format(day["absent-classes"]) if "absent-classes" in day else "")
-        if "news" in day:
+    def create_day_container(self, day: SubstitutionDay, substitutions: str):
+        absent_classes = (self.snippets.get("absent-classes").format(day.absent_classes)
+                          if day.absent_classes else "")
+        absent_teachers = (self.snippets.get("absent-teachers").format(day.absent_teachers)
+                           if day.absent_teachers in day else "")
+        if day.news:
             day_info = self.snippets.get("day-info-all").format(
-                day_name=day["day_name"],
-                date=day["date"],
-                week=day["week"],
-                news=self.snippets.get("news").format(day["news"]),
+                day_name=day.day_name,
+                date=day.date,
+                week=day.week,
+                news=self.snippets.get("news").format(day.news),
                 absent_teachers=absent_teachers,
                 absent_classes=absent_classes
             )
         else:
             day_info = self.snippets.get("day-info-only-absent").format(
-                day_name=day["day_name"],
-                date=day["date"],
-                week=day["week"],
+                day_name=day.day_name,
+                date=day.date,
+                week=day.week,
                 absent_teachers=absent_teachers,
                 absent_classes=absent_classes
             )
@@ -264,21 +281,22 @@ class BaseHTMLCreator:
             substitutions=substitutions
         )
 
-    def create_html(self, data, status_string, selection=None):
+    def create_html(self, data: List[SubstitutionDay], status_string: str, selection: str = None):
         if selection:
             parsed_selection, selection_string = self.parse_selection(selection)
         containers = ""
-        current_timestamp = create_date_timestamp(datetime.datetime.now().strftime("%d.%m.%Y"))
+        current_timestamp = create_date_timestamp(datetime.datetime.now())
         i = 0
-        for day_timestamp, day in data.items():
-            if day_timestamp >= current_timestamp:
+        for day in data:
+            if day.timestamp >= current_timestamp:
                 i += 1
                 substitution_rows = ""
-                for group, group_substitutions in day["substitutions"].items():
-                    if not selection or self.is_selected(group, parsed_selection):
-                        substitution_rows += group_substitutions[0].get_html_first_of_group(
-                            len(group_substitutions), group, self.snippets, i == 1)
-                        for substitution in group_substitutions[1:]:
+                for substitutions_group in day.substitution_groups:
+                    if not selection or self.is_selected(substitutions_group.group_name, parsed_selection):
+                        substitution_rows += substitutions_group.substitutions[0].get_html_first_of_group(
+                            len(substitutions_group.substitutions), substitutions_group.group_name, self.snippets,
+                            i == 1)
+                        for substitution in substitutions_group.substitutions[1:]:
                             substitution_rows += substitution.get_html(self.snippets, i == 1)
                 if substitution_rows:
                     substitutions = self.snippets.get(self.snippet_substitution_table).format(substitution_rows)

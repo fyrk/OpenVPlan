@@ -27,8 +27,8 @@ class HTTPRequestHandler(SimpleHTTPRequestHandler):
             self.wfile.write(gawvertretung.application(environ, self.start_response)[0])
         except Exception:
             gawvertretung.logger.exception("Exception")
-            self.start_response("500 ERROR", [("Content-Type", "text/text; charset=utf-8")])
-            self.wfile.write("Es ist ein Fehler aufgetreten".encode("utf-8"))
+            self.start_response("500 ERROR", [("Content-Type", "text/html;charset=utf-8")])
+            self.wfile.write(gawvertretung.substitution_plan.snippets.get("error-500-students").encode("utf-8"))
 
     def do_POST(self):
         self.handle_request("POST")

@@ -1,12 +1,12 @@
-from collections import OrderedDict
-
-from common.teachers import TeacherSubstitution
+from common.teachers import TeacherSubstitution, TeacherSubstitutionGroup
+from common.utils import split_class_name
+from website.snippets import Snippets
+from website.stats import Stats
 from .substitution_plan_base import BaseHTMLCreator, BaseSubstitutionParser, BaseSubstitutionLoader
-from .substitution_utils import sort_classes, split_class_name
 
 
 class TeacherSubstitutionParser(BaseSubstitutionParser):
-    def __init__(self, data, current_timestamp):
+    def __init__(self, data: dict, current_timestamp: int):
         super().__init__(data, current_timestamp)
         self.is_in_strike = False
         self.current_strikes = []
@@ -57,20 +57,16 @@ class TeacherSubstitutionParser(BaseSubstitutionParser):
 
 
 class TeacherSubstitutionLoader(BaseSubstitutionLoader):
-    def __init__(self, url, stats=None):
+    def __init__(self, url: str, stats: Stats = None):
         super().__init__(TeacherSubstitutionParser, url, stats)
 
-    def _data_postprocessing(self, data):
-        for day_timestamp, day in data.items():
-            if "absent-teachers" in day:
-                day["absent-teachers"] = ", ".join(sorted(day["absent-teachers"].split(", ")))
-            if "absent-classes" in day:
-                day["absent-classes"] = ", ".join(sorted(day["absent-classes"].split(", "), key=sort_classes))
-            day["substitutions"] = OrderedDict(sorted(day["substitutions"].items(), key=lambda s: s[0]))
+    def _sort_substitutions(self, substitutions: dict):
+        return sorted(TeacherSubstitutionGroup(group_name, substitutions)
+                      for group_name, substitutions in substitutions.items())
 
 
 class TeacherHTMLCreator(BaseHTMLCreator):
-    def __init__(self, snippets):
+    def __init__(self, snippets: Snippets):
         super().__init__(snippets,
                          "substitution-plan-teachers",
                          "substitution-table-teachers",
@@ -81,6 +77,6 @@ class TeacherHTMLCreator(BaseHTMLCreator):
     def is_selected(self, group, processed_selection):
         return group[0].lower() == processed_selection
 
-    def parse_selection(self, teacher_name):
+    def parse_selection(self, teacher_name: str):
         stripped = teacher_name.strip()
         return stripped.lower(), stripped

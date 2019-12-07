@@ -46,29 +46,24 @@ class BotSender(FileSystemEventHandler):
         if event.src_path == "data/substitutions/substitutions.pickle":
             self.on_substitutions_modified()
 
-    def on_created(self, event):
-        if event.src_path == "data/substitutions/substitutions.pickle":
-            self.on_substitutions_modified()
-
-    def on_substitutions_modified(self):
-        while True:
-            try:
-                with open("data/substitutions/substitutions.pickle", "rb") as f:
-                    status, data_students, data_teachers = pickle.load(f)
-            except EOFError:
-                # writing is not finished yet
-                time.sleep(0.1)
-            else:
-                break
-        if status != self.last_status:
-            self._create_bots_if_necessary()
-            self.last_status = status
-            asyncio.set_event_loop(self.loop)
-            self.loop.run_until_complete(asyncio.gather(
-                self.sender_students.send_messages(data_students),
-                self.sender_teachers.send_messages(data_teachers)
-            ))
-            self.save()
+    def on_substitutions_modified(self, *_):
+        logger.info("Substitutions changed")
+        try:
+            with open("data/substitutions/substitutions.pickle", "rb") as f:
+                status, data_students, data_teachers = pickle.load(f)
+        except EOFError:
+            logger.exception("Could not read substitutions.pickle, writing not finished yet")
+        else:
+            if status != self.last_status:
+                logger.info(f"Status changed, sending messages {data_students}")
+                self._create_bots_if_necessary()
+                self.last_status = status
+                asyncio.set_event_loop(self.loop)
+                self.loop.run_until_complete(asyncio.gather(
+                    self.sender_students.send_messages(data_students),
+                    self.sender_teachers.send_messages(data_teachers)
+                ))
+                self.save()
 
     def save(self):
         if self.connection:
