@@ -3,6 +3,9 @@ import string
 
 import htmlmin
 
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+
+
 SOURCE_PATH = "website/snippets_source/"
 DST_PATH = "website/snippets/"
 
