@@ -9,15 +9,14 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from common.utils import get_status_string
+from logging_tool import create_logger
 from website.snippets import Snippets
-
-os.chdir(os.path.dirname(__file__))
-
 from website.stats import Stats
 from website.substitution_plan_students import StudentHTMLCreator, StudentSubstitutionLoader
 from website.substitution_plan_teachers import TeacherHTMLCreator, TeacherSubstitutionLoader
-from common.utils import get_status_string
-from logging_tool import create_logger
+
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 
 class SubstitutionPlan:

@@ -8,7 +8,8 @@ from bot.listener.base import run_bot_listener
 from bot.listener.teachers import TeacherBotListener
 from common.db_connector import get_connection
 
-os.chdir(os.path.dirname(__file__))
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+
 
 with open("bot/secret.json") as f:
     secret = json.load(f)

@@ -1,11 +1,15 @@
 import asyncio
 import datetime
 import json
+import os
 
 from bot.db.students import StudentDatabaseBot
 from bot.db.teachers import TeacherDatabaseBot
 from common.db_connector import get_connection
 from logging_tool import create_logger
+
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+
 
 logger = create_logger("delete-old-msg")
 
