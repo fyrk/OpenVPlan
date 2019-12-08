@@ -1,57 +1,32 @@
-#!/usr/local/bin/python3
-# -*- coding: utf-8 -*-
-import logging
-import os.path
+# https://docs.python.org/3/library/wsgiref.html#examples
+import mimetypes
+import os
 import sys
-import urllib.parse
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from wsgiref import simple_server, util
 
-sys.path.append(os.path.dirname(__file__))
 import gawvertretung
 
 
-class HTTPRequestHandler(SimpleHTTPRequestHandler):
-    def do_GET(self):
-        self.handle_request("GET")
+def application_wrapper(environ, respond):
+    fn = os.path.join(path, environ['PATH_INFO'][1:])
+    if '.' not in fn.split(os.path.sep)[-1]:
+        fn = os.path.join(fn, 'index.html')
+    type = mimetypes.guess_type(fn)[0]
 
-    def handle_request(self, method):
-        try:
-            parsed_url = urllib.parse.urlparse(self.path)
-            environ = {"REQUEST_METHOD": method, "PATH_INFO": parsed_url.path, "QUERY_STRING": parsed_url.query}
-            for key, value in self.headers.items():
-                environ["HTTP_" + key] = value
-            if self.path.startswith("/js") or self.path.startswith("/style") or self.path.startswith("/img") or \
-                    self.path.startswith("/manifest.json") or self.path.startswith("/favicon"):
-                self.path = "/website/static" + self.path
-                return super().do_GET()
-            self.wfile.write(gawvertretung.application(environ, self.start_response)[0])
-        except Exception:
-            gawvertretung.logger.exception("Exception")
-            self.start_response("500 ERROR", [("Content-Type", "text/html;charset=utf-8")])
-            self.wfile.write(gawvertretung.substitution_plan.snippets.get("error-500-students").encode("utf-8"))
-
-    def do_POST(self):
-        self.handle_request("POST")
-
-    def start_response(self, code_and_message, headers):
-        code, message = code_and_message.split(" ", 1)
-        code = int(code)
-        self.send_response(code, message)
-        for name, value in headers:
-            self.send_header(name, value)
-        self.end_headers()
-
-    def do_HEAD(self):
-        self.path = "/website/static" + self.path
-        super().do_HEAD()
+    if os.path.exists(fn):
+        respond('200 OK', [('Content-Type', type)])
+        return util.FileWrapper(open(fn, "rb"))
+    else:
+        return gawvertretung.application(environ, respond)
 
 
-if __name__ == "__main__":
-    gawvertretung.logger.info("Starting server...")
-    httpd = HTTPServer(('0.0.0.0', 8001), HTTPRequestHandler)
-    gawvertretung.logger.info("Server started")
+if __name__ == '__main__':
+    path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.getcwd(), "website/static")
+    port = int(sys.argv[2]) if len(sys.argv) > 2 else 8000
+    httpd = simple_server.make_server('', port, application_wrapper)
+    print("Serving {} on port {}, control-C to stop".format(path, port))
     try:
         httpd.serve_forever()
-    finally:
-        gawvertretung.logger.error("Error occurred, shutting down")
-        logging.shutdown()
+    except KeyboardInterrupt:
+        print("Shutting down.")
+        httpd.server_close()
