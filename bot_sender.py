@@ -2,14 +2,11 @@ import asyncio
 import json
 import os
 import pickle
-import sys
 import time
 from functools import partial
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-
-print(sys.path)
 
 from bot.db.students import StudentDatabaseBot
 from bot.db.teachers import TeacherDatabaseBot
