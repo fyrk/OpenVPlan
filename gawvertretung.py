@@ -166,32 +166,42 @@ def application(environ, start_response):
             logger.info("GET /")
             storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
             response, content = substitution_plan.get_site_students(storage)
+            content = content.encode("utf-8")
             t2 = time.perf_counter()
             logger.debug(f"Time for handling request: {t2 - t1}")
-            start_response(response, [("Content-Type", "text/html;charset=utf-8")])
-            return [content.encode("utf-8")]
+            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                      ("Content-Length", str(len(content)))])
+            return [content]
 
         if environ["PATH_INFO"] == "/teachers":
             logger.info("GET /teachers")
             storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
             response, content = substitution_plan.get_site_teachers(storage)
+            content = content.encode("utf-8")
             t2 = time.perf_counter()
             logger.debug(f"Time for handling request: {t2 - t1}")
-            start_response(response, [("Content-Type", "text/html;charset=utf-8")])
-            return [content.encode("utf-8")]
+            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                      ("Content-Length", str(len(content)))])
+            return [content]
 
         t2 = time.perf_counter()
         logger.debug(f"Time for handling request: {t2 - t1}")
-        start_response("404 Not Found", [("Content-Type", "text/html;charset=utf-8")])
-        return [substitution_plan.snippets.get("error-404").encode("utf-8")]
+        content = substitution_plan.snippets.get("error-404").encode("utf-8")
+        start_response("404 Not Found", [("Content-Type", "text/html;charset=utf-8"),
+                                         ("Content-Length", str(len(content)))])
+        return [content]
 
     if environ["REQUEST_METHOD"] == "POST" and environ["PATH_INFO"] == "/":
         logger.info("POST /")
         response, content = substitution_plan.get_current_status()
+        content = content.encode("utf-8")
         t2 = time.perf_counter()
         logger.debug(f"Time for handling request: {t2 - t1}")
-        start_response(response, [("Content-Type", "text/text;charset=utf-8")])
-        return [content.encode("utf-8")]
+        start_response(response, [("Content-Type", "text/text;charset=utf-8"),
+                                  ("Content-Length", str(len(content)))])
+        return [content]
 
-    start_response("405	Method Not Allowed", [("Content-Type", "text/text;charset=utf-8")])
-    return ["Error: 405 Method Not Allowed".encode("utf-8")]
+    content = "Error: 405 Method Not Allowed".encode("utf-8")
+    start_response("405	Method Not Allowed", [("Content-Type", "text/text;charset=utf-8"),
+                                                 ("Content-Length", str(len(content)))])
+    return [content]
