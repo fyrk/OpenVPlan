@@ -11,6 +11,7 @@ import urllib.request
 
 from common.utils import get_status_string
 from logging_tool import create_logger
+from website.api import SubstitutionAPI
 from website.snippets import Snippets
 from website.stats import Stats
 from website.substitution_plan_students import StudentHTMLCreator, StudentSubstitutionLoader
@@ -38,6 +39,7 @@ class SubstitutionPlan:
         self.snippets = Snippets(self.PATH_SNIPPETS)
         self.html_creator_students = StudentHTMLCreator(self.snippets)
         self.html_creator_teachers = TeacherHTMLCreator(self.snippets)
+        self.api = SubstitutionAPI(self)
 
         self.current_status_date = datetime.datetime.now().date()
 
@@ -160,6 +162,8 @@ substitution_plan = SubstitutionPlan(logger)
 
 
 def application(environ, start_response):
+    if environ["PATH_INFO"].startswith("/api"):
+        return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
     t1 = time.perf_counter()
     if environ["REQUEST_METHOD"] == "GET":
         if environ["PATH_INFO"] == "/":

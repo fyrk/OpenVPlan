@@ -8,6 +8,9 @@ class TeacherSubstitutionGroup(BaseSubstitutionGroup):
     def __lt__(self, other):
         return self.group_name < other.group_name
 
+    def is_selected(self, parsed_selection):
+        return self.group_name[0] == parsed_selection
+
 
 class TeacherSubstitution(BaseSubstitution):
     def __init__(self, lesson, class_name, teacher, subject, room, subs_from, hint, is_substitute_striked):
@@ -24,6 +27,13 @@ class TeacherSubstitution(BaseSubstitution):
         return f"TeacherSubstitution({self.lesson}, {self.class_name}, {self.teacher}, {self.subject}, {self.room}, " \
                f"{self.subs_from}, {self.hint}, {self.is_substitute_striked})"
 
+    def to_dict(self):
+        return {name: value for name, value in (("lesson", self.lesson), ("class", self.class_name),
+                                                ("teacher", self.teacher), ("subject", self.subject),
+                                                ("room", self.room), ("subs_from", self.subs_from), ("hint", self.hint),
+                                                ("is_substitute_striked", self.is_substitute_striked)
+                                                ) if value is not None}
+
     @lru_cache()
     def get_html_first_of_group(self, group_substitution_count, group, snippets, add_lesson_num):
         return snippets.get("substitution-row-first-teachers").format(
@@ -36,7 +46,7 @@ class TeacherSubstitution(BaseSubstitution):
             self.room,
             self.subs_from,
             self.hint,
-            lesson_num=self.lesson_num if add_lesson_num else "",
+            lesson_num=("lesson" + str(self.lesson_num)) if add_lesson_num else "",
             first_cell_classes=" striked" if group[1] else "",
             teacher_attrs=' class="striked"' if self.is_substitute_striked else ""
         )
@@ -51,7 +61,7 @@ class TeacherSubstitution(BaseSubstitution):
             self.room,
             self.subs_from,
             self.hint,
-            lesson_num=self.lesson_num if add_lesson_num else "",
+            lesson_num=("lesson" + str(self.lesson_num)) if add_lesson_num else "",
             teacher_attrs=' class="striked"' if self.is_substitute_striked else ""
         )
 

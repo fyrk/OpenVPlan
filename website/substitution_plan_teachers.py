@@ -74,9 +74,6 @@ class TeacherHTMLCreator(BaseHTMLCreator):
                          "no-substitutions-reset-teachers",
                          "select-teacher")
 
-    def is_selected(self, group, processed_selection):
-        return group[0].lower() == processed_selection
-
     def parse_selection(self, teacher_name: str):
-        stripped = teacher_name.strip()
-        return stripped.lower(), stripped
+        selection = teacher_name.strip().upper()
+        return selection, selection

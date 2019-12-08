@@ -14,6 +14,9 @@ class StudentSubstitutionGroup(BaseSubstitutionGroup):
     def __lt__(self, other):
         return self._sort_classes < other._sort_classes
 
+    def is_selected(self, parsed_selection):
+        return is_class_selected(self.group_name, parsed_selection)
+
 
 class StudentSubstitution(BaseSubstitution):
     def __init__(self, teacher, substitute, lesson, subject, room, subs_from, hint):
@@ -29,6 +32,13 @@ class StudentSubstitution(BaseSubstitution):
         return f"StudentSubstitution({self.lesson}, {self.teacher}, {self.substitute}, {self.subject}, {self.room}, " \
                f"{self.subs_from}, {self.hint})"
 
+    def to_dict(self):
+        return {name: value for name, value in (("lesson", self.lesson), ("lesson_num", self.lesson_num),
+                                                ("teacher", self.teacher), ("substitute", self.substitute),
+                                                ("subject", self.subject), ("room", self.room),
+                                                ("subs_from", self.subs_from), ("hint", self.hint)
+                                                ) if value is not None}
+
     @lru_cache()
     def get_html_first_of_group(self, group_substitution_count, group_name, snippets, add_lesson_num):
         return snippets.get("substitution-row-first-students").format(
@@ -41,7 +51,7 @@ class StudentSubstitution(BaseSubstitution):
             self.room,
             self.subs_from,
             self.hint,
-            lesson_num=self.lesson_num if add_lesson_num else ""
+            lesson_num=("lesson" + str(self.lesson_num)) if add_lesson_num else ""
         )
 
     @lru_cache()
@@ -54,7 +64,7 @@ class StudentSubstitution(BaseSubstitution):
             self.room,
             self.subs_from,
             self.hint,
-            lesson_num=self.lesson_num if add_lesson_num else ""
+            lesson_num=("lesson" + str(self.lesson_num)) if add_lesson_num else ""
         )
 
     def get_hash(self, date, class_name):

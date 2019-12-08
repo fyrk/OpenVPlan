@@ -251,9 +251,6 @@ class BaseHTMLCreator:
         """
         raise NotImplementedError
 
-    def is_selected(self, group, selection):
-        raise NotImplementedError
-
     def create_day_container(self, day: SubstitutionDay, substitutions: str):
         absent_classes = (self.snippets.get("absent-classes").format(day.absent_classes)
                           if day.absent_classes else "")
@@ -291,13 +288,13 @@ class BaseHTMLCreator:
             if day.timestamp >= current_timestamp:
                 i += 1
                 substitution_rows = ""
-                for substitutions_group in day.substitution_groups:
-                    if not selection or self.is_selected(substitutions_group.group_name, parsed_selection):
-                        substitution_rows += substitutions_group.substitutions[0].get_html_first_of_group(
-                            len(substitutions_group.substitutions), substitutions_group.group_name, self.snippets,
-                            i == 1)
-                        for substitution in substitutions_group.substitutions[1:]:
-                            substitution_rows += substitution.get_html(self.snippets, i == 1)
+                groups = day.filter_groups(parsed_selection) if selection else day.substitution_groups
+                for substitutions_group in groups:
+                    substitution_rows += substitutions_group.substitutions[0].get_html_first_of_group(
+                        len(substitutions_group.substitutions), substitutions_group.group_name, self.snippets,
+                        i == 1)
+                    for substitution in substitutions_group.substitutions[1:]:
+                        substitution_rows += substitution.get_html(self.snippets, i == 1)
                 if substitution_rows:
                     substitutions = self.snippets.get(self.snippet_substitution_table).format(substitution_rows)
                     if selection:

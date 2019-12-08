@@ -1,5 +1,4 @@
-from common.students import StudentSubstitution, is_class_selected, split_class_name_lower, parse_selection, \
-    StudentSubstitutionGroup
+from common.students import StudentSubstitution, split_class_name_lower, parse_selection, StudentSubstitutionGroup
 from website.snippets import Snippets
 from website.stats import Stats
 from .substitution_plan_base import BaseHTMLCreator, BaseSubstitutionParser, BaseSubstitutionLoader
@@ -37,6 +36,3 @@ class StudentHTMLCreator(BaseHTMLCreator):
     def parse_selection(self, selection: str):
         selected_classes = parse_selection(selection)
         return [split_class_name_lower(name) for name in selected_classes], ", ".join(selected_classes)
-
-    def is_selected(self, class_name: str, processed_selection):
-        return is_class_selected(class_name, processed_selection)

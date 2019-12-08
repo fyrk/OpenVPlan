@@ -1,2 +1,89 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="355.98" height="354.53" version="1.1" viewBox="0 0 355.98267 354.53467" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><metadata><rdf:RDF><cc:Work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/></cc:Work></rdf:RDF></metadata><defs><linearGradient id="a" x2="1" gradientTransform="matrix(0 236 236 0 133.9 13.999)" gradientUnits="userSpaceOnUse"><stop stop-color="#1d93d2" offset="0"/><stop stop-color="#38b0e3" offset="1"/></linearGradient><clipPath id="d"><path d="m0 265.9h266.99v-265.9h-266.99z"/></clipPath><clipPath id="c"><path d="m0 265.9h266.99v-265.9h-266.99z"/></clipPath><clipPath id="b"><path d="m0 265.9h266.99v-265.9h-266.99z"/></clipPath></defs><g transform="matrix(1.3333 0 0 -1.3333 0 354.53)"><path d="m15.903 132c0-65.169 52.83-118 118-118s118 52.83 118 118c0 65.17-52.83 118-118 118s-118-52.831-118-118" fill="url(#a)"/><g clip-path="url(#d)"><g transform="translate(95.778 123.37)"><path d="m0 0 14-38.75s1.75-3.625 3.625-3.625 29.75 29 29.75 29l31 59.875-77.875-36.5z" fill="#c8daea"/></g></g><g clip-path="url(#c)"><g transform="translate(114.34 113.44)"><path d="m0 0-2.688-28.562s-1.125-8.751 7.625 0c8.75 8.75 17.125 15.499 17.125 15.499" fill="#a9c6d8"/></g></g><g clip-path="url(#b)"><g transform="translate(96.031 121.99)"><path d="m0 0-28.795 9.383s-3.437 1.395-2.333 4.562c0.228 0.653 0.687 1.208 2.062 2.167 6.382 4.447 118.1 44.604 118.1 44.604s3.155 1.062 5.019 0.356c0.852-0.323 1.396-0.688 1.854-2.021 0.167-0.485 0.263-1.516 0.25-2.542-9e-3 -0.739-0.1-1.425-0.166-2.5-0.681-10.979-21.04-92.918-21.04-92.918s-1.218-4.795-5.583-4.958c-1.592-0.06-3.524 0.263-5.834 2.25-8.565 7.368-38.172 27.265-44.713 31.641-0.369 0.246-0.474 0.567-0.537 0.879-0.092 0.461 0.41 1.034 0.41 1.034s51.552 45.825 52.924 50.633c0.106 0.373-0.293 0.557-0.834 0.396-3.424-1.26-62.78-38.741-69.331-42.88-0.383-0.242-1.457-0.086-1.457-0.086" fill="#fff"/></g></g></g></svg>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+		xmlns:dc="http://purl.org/dc/elements/1.1/"
+		xmlns:cc="http://creativecommons.org/ns#"
+		xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		xmlns="http://www.w3.org/2000/svg"
+		xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+		xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+		width="1000px"
+		height="1000px"
+		viewBox="0 0 1000 1000"
+		version="1.1"
+		id="svg16"
+		sodipodi:docname="TelegramLogo.svg"
+		inkscape:version="0.92.3 (2405546, 2018-03-11)">
+	<metadata
+			id="metadata20">
+		<rdf:RDF>
+			<cc:Work
+					rdf:about="">
+				<dc:format>image/svg+xml</dc:format>
+				<dc:type
+						rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+			</cc:Work>
+		</rdf:RDF>
+	</metadata>
+	<sodipodi:namedview
+			pagecolor="#ffffff"
+			bordercolor="#666666"
+			borderopacity="1"
+			objecttolerance="10"
+			gridtolerance="10"
+			guidetolerance="10"
+			inkscape:pageopacity="0"
+			inkscape:pageshadow="2"
+			inkscape:window-width="1920"
+			inkscape:window-height="1137"
+			id="namedview18"
+			showgrid="false"
+			inkscape:zoom="0.472"
+			inkscape:cx="546.61903"
+			inkscape:cy="474.6582"
+			inkscape:window-x="1042"
+			inkscape:window-y="150"
+			inkscape:window-maximized="1"
+			inkscape:current-layer="Artboard"/>
+	<!-- Generator: Sketch 53.2 (72643) - https://sketchapp.com -->
+	<title
+			id="title2">Artboard
+	</title>
+	<desc
+			id="desc4">Created with Sketch.
+	</desc>
+	<defs
+			id="defs11">
+		<linearGradient
+				x1="50%"
+				y1="0%"
+				x2="50%"
+				y2="99.2583404%"
+				id="linearGradient-1">
+			<stop
+					stop-color="#2AABEE"
+					offset="0%"
+					id="stop6"/>
+			<stop
+					stop-color="#229ED9"
+					offset="100%"
+					id="stop8"/>
+		</linearGradient>
+	</defs>
+	<g
+			id="Artboard"
+			stroke="none"
+			stroke-width="1"
+			fill="none"
+			fill-rule="evenodd">
+		<circle
+				id="Oval"
+				fill="url(#linearGradient-1)"
+				cx="500"
+				cy="500"
+				r="500"/>
+		<path
+				d="M226.328419,494.722069 C372.088573,431.216685 469.284839,389.350049 517.917216,369.122161 C656.772535,311.36743 685.625481,301.334815 704.431427,301.003532 C708.567621,300.93067 717.815839,301.955743 723.806446,306.816707 C728.864797,310.92121 730.256552,316.46581 730.922551,320.357329 C731.588551,324.248848 732.417879,333.113828 731.758626,340.040666 C724.234007,419.102486 691.675104,610.964674 675.110982,699.515267 C668.10208,736.984342 654.301336,749.547532 640.940618,750.777006 C611.904684,753.448938 589.856115,731.588035 561.733393,713.153237 C517.726886,684.306416 492.866009,666.349181 450.150074,638.200013 C400.78442,605.66878 432.786119,587.789048 460.919462,558.568563 C468.282091,550.921423 596.21508,434.556479 598.691227,424.000355 C599.00091,422.680135 599.288312,417.758981 596.36474,415.160431 C593.441168,412.561881 589.126229,413.450484 586.012448,414.157198 C581.598758,415.158943 511.297793,461.625274 375.109553,553.556189 C355.154858,567.258623 337.080515,573.934908 320.886524,573.585046 C303.033948,573.199351 268.692754,563.490928 243.163606,555.192408 C211.851067,545.013936 186.964484,539.632504 189.131547,522.346309 C190.260287,513.342589 202.659244,504.134509 226.328419,494.722069 Z"
+				id="Path-3"
+				fill="#FFFFFF"/>
+	</g>
+</svg>
