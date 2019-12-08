@@ -2,11 +2,14 @@ import asyncio
 import json
 import os
 import pickle
+import sys
 import time
 from functools import partial
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+
+print(sys.path)
 
 from bot.db.students import StudentDatabaseBot
 from bot.db.teachers import TeacherDatabaseBot
@@ -16,6 +19,7 @@ from common.db_connector import get_connection
 from logging_tool import create_logger
 
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
+
 
 class BotSender(FileSystemEventHandler):
     def __init__(self, bot_token_students, bot_token_teachers, create_connection_callback, loop):
