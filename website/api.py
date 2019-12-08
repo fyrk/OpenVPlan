@@ -65,4 +65,5 @@ class SubstitutionAPI:
                                       ("Content-Length", str(len(content)))])
             return [content]
         except Exception:
+            self.substitution_plan.logger.exeption("API: Exception occurred")
             return handle_error("500 Internal Server Error")
