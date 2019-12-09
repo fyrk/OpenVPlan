@@ -174,7 +174,6 @@ nav a.active {
     margin-left: auto;
     padding: 16px;
     box-shadow: 0 0 10px 0 #757575;
-    overflow: auto;
 }
 
 @media (min-width: 500px) {

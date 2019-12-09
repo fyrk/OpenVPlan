@@ -147,10 +147,14 @@ class DatabaseChat:
     async def remove_old_messages(self, min_time):
         async def one_task(message_id):
             try:
-                await self.bot.edit_message_text(
-                    "Alte Nachrichten zum Vertretungsplan werden gelöscht. ", self.chat_id, message_id)
+                await self.bot.delete_message(self.chat_id, message_id)
             except BotAPIException:
-                logger.exception(f"Exception editing message {message_id} in chat {self.chat_id}")
+                logger.exception("Deleting message did not work, try editing")
+                try:
+                    await self.bot.edit_message_text(
+                        "Alte Nachrichten zum Vertretungsplan werden gelöscht. ", self.chat_id, message_id)
+                except BotAPIException:
+                    logger.exception(f"Exception editing message {message_id} in chat {self.chat_id}")
 
         new_sent_messages = self.sent_messages.copy()
         tasks = []
