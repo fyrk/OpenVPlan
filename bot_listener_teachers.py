@@ -14,10 +14,9 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 with open("bot/secret.json") as f:
     secret = json.load(f)
 
-connection = get_connection(secret)
+connection, commands = get_connection(secret)
 try:
-    run_bot_listener("bot-listener-teachers", secret["token_teachers"], TeacherDatabaseBot, connection,
-                     TeacherBotListener, "teachers",
-                     "teacher_commands")
+    run_bot_listener("bot-listener-teachers", secret["token_teachers"], TeacherDatabaseBot, connection, commands,
+                     TeacherBotListener, "teachers", "teacher_commands")
 finally:
     connection.close()

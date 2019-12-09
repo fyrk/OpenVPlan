@@ -14,8 +14,9 @@ logger = logging.getLogger()
 class DatabaseBot(asynctelebot.Bot):
     chats: "DatabaseChatList"
 
-    def __init__(self, api_token, chat_list):
+    def __init__(self, api_token, chat_list, db_commands):
         self.chats = chat_list
+        self.db_commands = db_commands
         super().__init__(api_token)
 
 
@@ -47,7 +48,7 @@ class DatabaseChatList:
 
     def try_get(self, chat_id: int) -> Optional["DatabaseChat"]:
         logger.debug(f"Try get chat {chat_id}")
-        self.cursor.execute("""SELECT * FROM {} WHERE chat_id=?""".format(self.table_name), (chat_id,))
+        self.cursor.execute(self.bot.db_commands.GET_CHAT.format(self.table_name), (chat_id,))
         chat = self.cursor.fetchone()
         if chat is not None:
             return self._chat_from_row(chat)
@@ -61,7 +62,7 @@ class DatabaseChatList:
         if chat is not None:
             return chat
         logger.debug("Unknown chat, creating new")
-        self.cursor.execute("""INSERT INTO {} VALUES (?,?,?,?,?,?,?)""".format(self.table_name),
+        self.cursor.execute(self.bot.db_commands.NEW_CHAT.format(self.table_name),
                             (chat_id, "", "", 1, 1, 1, ""))
         return self._new_chat(chat_id)
 
@@ -74,7 +75,7 @@ class DatabaseChatList:
             yield self._chat_from_row(row)
 
     def reset_chat(self, chat_id: int):
-        self.cursor.execute("""DELETE FROM {} WHERE chat_id=?""".format(self.table_name), (chat_id,))
+        self.cursor.execute(self.bot.db_commands.DELETE_CHAT.format(self.table_name), (chat_id,))
 
     async def remove_old_messages(self, min_time):
         print(await asyncio.gather(*(chat.remove_old_messages(min_time) for chat in self.all_chats())))
@@ -135,7 +136,7 @@ class DatabaseChat:
 
     def save_sent_messages(self):
         logger.debug(f"Set sent substitutions of {self.chat_id} to {repr(self.sent_messages)}")
-        self.cursor.execute("UPDATE {} SET sent_messages=? WHERE chat_id=?".format(self.bot.chats.table_name),
+        self.cursor.execute(self.bot.db_commands.SET_SEND_SUBSTITUTIONS.format(self.bot.chats.table_name),
                             (json.dumps(self.sent_messages), self._chat_id))
 
     async def remove_all_messages(self):
@@ -175,7 +176,7 @@ class DatabaseChat:
     def set(self, property_name, value):
         self.__dict__["_" + property_name] = value
         assert " " not in property_name
-        self.cursor.execute("UPDATE {} SET {}=? WHERE chat_id=?".format(self.bot.chats.table_name, property_name),
+        self.cursor.execute(self.bot.db_commands.UPDATE_CHAT.format(self.bot.chats.table_name, property_name),
                             (value, self._chat_id))
 
     @property

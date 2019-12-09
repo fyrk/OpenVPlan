@@ -36,9 +36,9 @@ class BotSender(FileSystemEventHandler):
         # if self.connection is None:
         if self.connection:
             self.connection.close()
-        self.connection = self.create_connection()
-        self.bot_students = StudentDatabaseBot(self.__bot_token_students, self.connection)
-        self.bot_teachers = TeacherDatabaseBot(self.__bot_token_teachers, self.connection)
+        self.connection, db_commands = self.create_connection()
+        self.bot_students = StudentDatabaseBot(self.__bot_token_students, self.connection, db_commands)
+        self.bot_teachers = TeacherDatabaseBot(self.__bot_token_teachers, self.connection, db_commands)
         self.sender_students = StudentMessageSender(self.bot_students, "data/sent_messages_students.json")
         self.sender_teachers = TeacherMessageSender(self.bot_teachers, "data/sent_messages_teachers.json")
 

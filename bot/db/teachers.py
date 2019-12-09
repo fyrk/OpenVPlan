@@ -6,8 +6,8 @@ logger = logging.getLogger()
 
 
 class TeacherDatabaseBot(DatabaseBot):
-    def __init__(self, api_token, db_connection):
-        super().__init__(api_token, TeacherDatabaseChatList(db_connection, "teachers", self))
+    def __init__(self, api_token, db_connection, db_commands):
+        super().__init__(api_token, TeacherDatabaseChatList(db_connection, "teachers", self), db_commands)
 
 
 class TeacherDatabaseChatList(DatabaseChatList):
