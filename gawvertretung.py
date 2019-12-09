@@ -188,6 +188,13 @@ def application(environ, start_response):
                                       ("Content-Length", str(len(content)))])
             return [content]
 
+        if environ["PATH_INFO"] == "/about":
+            response = "200 OK"
+            content = substitution_plan.snippets.get("about").encode("utf-8")
+            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                      ("Content-Length", str(len(content)))])
+            return [content]
+
         t2 = time.perf_counter()
         logger.debug(f"Time for handling request: {t2 - t1}")
         content = substitution_plan.snippets.get("error-404").encode("utf-8")

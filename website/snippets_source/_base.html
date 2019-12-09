@@ -27,16 +27,20 @@
 <body>
 <div id="content">
 	<div class="container" id="title-bar">
+		${navigation_start}
 		<span id="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
 		<span id="title-middle" style="display:none">GaW Vertretungsplan</span>
 		<span id="title-small" style="display:none">GaW VPlan</span>
-		${navigation}
+		${navigation_end}
 	</div>
 	${content}
 </div>
 <footer>
-	<div>
-		<p id="telegram-info">${bot_notice}</p>
+	<div id="left">
+		<div id="telegram-notice">
+			<object data="/img/TelegramLogo.svg" id="telegram-logo"></object>
+			<p>${bot_notice}</p>
+		</div>
 		<p>Dies ist eine Alternative zum originalen Vertretungsplan unter <a href="${gaw_verden_link}" target="_blank">gaw-verden.de</a>.
 			Alle Angaben ohne Gewähr.</p>
 		<p>Programmiert von Florian Rädiker.</p>

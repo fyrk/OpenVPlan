@@ -1,44 +1,8 @@
-# Edit this file to introduce tasks to be run by cron.
-#
-# Each task to run has to be defined through a single line
-# indicating with different fields when the task will be run
-# and what command to run for the task
-#
-# To define the time you can provide concrete values for
-# minute (m), hour (h), day of month (dom), month (mon),
-# and day of week (dow) or use '*' in these fields (for 'any').
-#
-# Notice that tasks will be started based on the cron's system
-# daemon's notion of time and timezones.
-#
-# Output of the crontab jobs (including errors) is sent through
-# email to the user the crontab file belongs to (unless redirected).
-#
-# For example, you can run a backup of all your user accounts
-# at 5 a.m every week with:
-# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
-#
-# For more information see the manual pages of crontab(5) and cron(8)
-#
-# m h  dom mon dow   command
-SHELL=/bin/bash
-PATH=/usr/local/bin
-
-@reboot python3.8 /home/pi/gawvertretung-website/bot_listener.py 2> /home/pi/gawvertretung-website/output/bot_listener.txt
-@reboot python3.8 /home/pi/gawvertretung-website/bot_sender.py 2> /home/pi/gawvertretung-website/output/bot_sender.txt
-* 7 * * 1,2,3,4,5 /home/pi/gawvertretung-website/update_substitutions.sh
-0 * * * 1,2,3,4,5 /home/pi/gawvertretung-website/update_substitutions.sh
-30 19 * * SUN /home/pi/gawvertretung-website/update_substitutions.sh
-0 0 * * * python3.8 /home/pi/gawvertretung-website/delete_old_messages.py 2> /home/pi/gawvertretung-website/output/delete_old_messages.txt
-
-
 SHELL=/bin/bash
 PATH=/usr/bin
 
-@reboot python3.7 /home/florian/gawvertretung/bot_listener_teachers.py 2> /home/florian/gawvertretung/output/bot_listener_teachers.txt
-@reboot python3.7 /home/florian/gawvertretung/bot_listener_students.py 2> /home/florian/gawvertretung/output/bot_listener_students.txt
-@reboot python3.7 /home/florian/gawvertretung/bot_sender.py 2> /home/florian/gawvertretung/output/bot_sender.txt
-@reboot python3.7 /home/florian/gawvertretung/build_snippets.py 2> /home/florian/gawvertretung/output/build_snippets.txt 2>&1
+# GAWVERTRETUNG
+@reboot /home/florian/gawvertretung/gawvertretung.sh > /home/florian/gawvertretung/output/gawvertretung.txt 2>&1
 * 7 * * 1,2,3,4,5 /home/florian/gawvertretung/update_substitutions.sh > /home/florian/gawvertretung/output/update_substitutions.txt 2>&1
 0,15,30,45 * * * * /home/florian/gawvertretung/update_substitutions.sh > /home/florian/gawvertretung/output/update_substitutions.txt 2>&1
-0 0 * * * python3.7 /home/florian/gawvertretung/delete_old_messages.py > /home/florian/gawvertretung/output/delete_old_messages.txt 2>&1
+0 0 * * *  /home/florian/gawvertretung/delete_old_messages.sh
