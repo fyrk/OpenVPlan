@@ -1,4 +1,38 @@
 {
+	"unknown": [
+		{
+			"text": "(cool|super|toll)",
+			"response": {
+				"_random": true,
+				"Danke": 4,
+				"😊": 2,
+				"😀": 2,
+				"Dankeschön": 1
+			}
+		},
+		{
+			"text": "(danke|dankeschön)",
+			"response": {
+				"_random": true,
+				"Bitte": 1,
+				"Gern": 1,
+				"Bitte, gerne": 1
+			}
+		},
+		{
+			"text": "\\bmoin\\b",
+			"response": "Moin Moin"
+		},
+		{
+			"text": ".*",
+			"response": {
+				"_random": true,
+				"Keine Ahnung, was das heißen soll...": 4,
+				"Meintest du vielleicht „Moin“?": 2,
+				"Das verstehe ich nicht": 3
+			}
+		}
+	],
 	"common": {
 		"wrong-language-code": "Sorry, this bot is only for users with language code \"de\"",
 		"reset-successful": "Die diesem Chat zugeordneten Daten wurden gelöscht. ",
@@ -7,13 +41,6 @@
 		"news": "Nachrichten",
 		"absent_classes": "abwesende Klassen",
 		"absent_teachers": "abwesende Lehrer*innen",
-		"unknown": {
-			"Keine Ahnung, was das heißen soll...": 4,
-			"Meintest du vielleicht: \"Moin\"?": 2,
-			"Das verstehe ich nicht": 3,
-			"_random": true
-		},
-		"MOIN": "Moin Moin",
 		"send-only-text": "Ich kann nur mit Textnachrichten umgehen...",
 		"settings-info-enabled": "Du wirst über {} informiert. \n",
 		"settings-info-disabled": "Du wirst nicht über {} informiert. \n",

@@ -1,7 +1,6 @@
 import base64
 import datetime
 import logging
-import re
 from typing import Type
 
 import asynctelebot
@@ -13,8 +12,6 @@ from bot.db.base import DatabaseBot, DatabaseChat
 from bot.listener.texts import BotTexts
 
 logger = logging.getLogger()
-
-MOIN = re.compile(r"\bmoin\b", re.IGNORECASE)
 
 
 def str_from_timestamp(timestamp):
@@ -131,13 +128,7 @@ class SubstitutionsBotListener:
                     logger.debug("Chat '{}' selected '{}'".format(chat.chat_id, message.text))
                     chat.set_selection_from_string(message.text)
                     return self.send_selection_set(chat.chat_id, chat.get_pretty_selection())
-
-            if MOIN.search(message.text):
-                logger.debug("MOIN MOIN")
-                return SendMessage(message.chat.id, self.texts["MOIN"])
-            else:
-                logger.debug("Unknown text")
-                return SendMessage(message.chat.id, self.texts["unknown"])
+            return SendMessage(message.chat.id, self.texts.get_response_for_unknown(message.text))
         else:
             return SendMessage(message.chat.id, self.texts["send-only-text"])
 
@@ -169,10 +160,8 @@ def run_bot_listener(logger_name, token, db_bot_class: Type[DatabaseBot], db_con
         settings = json.load(f)
     logger.info("Starting bot...")
     with open("bot/texts.json", "r", encoding="utf-8") as f:
-        texts_all = json.load(f)
-    texts = texts_all["common"]
-    texts.update(texts_all[bot_texts_name])
-    texts = BotTexts(texts)
+        texts = json.load(f)
+    texts = BotTexts(texts, bot_texts_name)
     db_bot = db_bot_class(token, db_connection)
     db_bot.chats.try_create_table()
     bot_listener = bot_listener_class(db_bot, texts, settings["available_settings"], settings[settings_command_key])
