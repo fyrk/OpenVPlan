@@ -90,7 +90,7 @@
 		"class-automatically-set": "Die von dir auf der Webseite ausgewählte Klasse <i>{}</i> wurde automatisch ausgewählt. Du kannst die Auswahl mit dem /klassen-Befehl anpassen.",
 		"classes-automatically-set": "Die von dir auf der Webseite ausgewählten Klassen <i>{}</i> wurden automatisch ausgewählt. Du kannst die Auswahl mit dem /klassen-Befehl anpassen.",
 		"send-me-selection": [
-			"Schicke mir alle Klassen, für die du benachrichtigt werden willst, durch Kommata getrennt (z.B. \"6A, 11C\") als Antwort.",
+			"Schicke mir alle Klassen, für die du benachrichtigt werden willst, durch Kommata getrennt (z.B. „6A, 11C“) als Antwort.",
 			"Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. "
 		],
 		"settings-info-selected-class": "Du hast die Klasse <i>{}</i> ausgewählt. \n",
@@ -115,7 +115,7 @@
 		],
 		"teacher-abbr-automatically-set": "Deine Auswahl von der Webseite für Vertretungen von <i>{}</i> wurde automatisch gesetzt. Du kannst die Auswahl mit dem /auswahl-Befehl anpassen.",
 		"send-me-selection": [
-			"Schicke mir das Lehrer*innenkürzel, für das du über Vertretungen benachrichtigt werden willst (z.B. \"ABC\") als Antwort.",
+			"Schicke mir das Lehrer*innenkürzel, für das du über Vertretungen benachrichtigt werden willst (z.B. „ABC“) als Antwort.",
 			"Die Auswahl wird auf dem Server gespeichert und diesem Chat zugeordnet. "
 		],
 		"settings-info-selected-teacher-abbr": "Du wirst über Vertretungen von <i>{}</i> benachrichtigt. \n",
