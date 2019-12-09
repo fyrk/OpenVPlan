@@ -112,7 +112,7 @@ class SubstitutionsBotListener:
 
     async def reset(self, message):
         logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /reset ({message.from_.first_name})")
-        self.bot.chats.get_from_msg(message).remove_all_messages()
+        await self.bot.chats.get_from_msg(message).remove_all_messages()
         self.bot.chats.reset_chat(message.chat.id)
         logger.debug("Reset successful for chat id '" + str(message.chat.id) + "'")
         return SendMessage(message.chat.id, self.texts["reset-successful"])

@@ -138,30 +138,31 @@ class DatabaseChat:
         self.cursor.execute("UPDATE {} SET sent_messages=? WHERE chat_id=?".format(self.bot.chats.table_name),
                             (json.dumps(self.sent_messages), self._chat_id))
 
-    def remove_all_messages(self):
+    async def remove_all_messages(self):
+        tasks = []
         for day, messages in self._sent_messages.items():
             for message_id in messages:
-                yield self.bot.edit_message_text("Alte Nachrichten zum Vertretungsplan werden gelöscht. ",
-                                                 self.chat_id, message_id)
+                tasks.append(self._delete_message(message_id))
+        await asyncio.gather(*tasks)
+
+    async def _delete_message(self, message_id):
+        try:
+            await self.bot.delete_message(self.chat_id, message_id)
+        except BotAPIException:
+            logger.exception("Deleting message did not work, try editing")
+            try:
+                await self.bot.edit_message_text(
+                    "Alte Nachrichten zum Vertretungsplan werden gelöscht. ", self.chat_id, message_id)
+            except BotAPIException:
+                logger.exception(f"Exception editing message {message_id} in chat {self.chat_id}")
 
     async def remove_old_messages(self, min_time):
-        async def one_task(message_id):
-            try:
-                await self.bot.delete_message(self.chat_id, message_id)
-            except BotAPIException:
-                logger.exception("Deleting message did not work, try editing")
-                try:
-                    await self.bot.edit_message_text(
-                        "Alte Nachrichten zum Vertretungsplan werden gelöscht. ", self.chat_id, message_id)
-                except BotAPIException:
-                    logger.exception(f"Exception editing message {message_id} in chat {self.chat_id}")
-
         new_sent_messages = self.sent_messages.copy()
         tasks = []
         for day, messages in self.sent_messages.items():
             if int(day) <= min_time:
                 for message_id in messages:
-                    tasks.append(one_task(message_id))
+                    tasks.append(self._delete_message(message_id))
                     logger.info("Deleted {} from {}".format(message_id, self.chat_id))
                 del new_sent_messages[day]
         await asyncio.gather(*tasks)
