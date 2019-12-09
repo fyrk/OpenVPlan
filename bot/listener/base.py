@@ -163,7 +163,6 @@ def run_bot_listener(logger_name, token, db_bot_class: Type[DatabaseBot], db_con
         texts = json.load(f)
     texts = BotTexts(texts, bot_texts_name)
     db_bot = db_bot_class(token, db_connection)
-    db_bot.chats.try_create_table()
     bot_listener = bot_listener_class(db_bot, texts, settings["available_settings"], settings[settings_command_key])
     try:
         logger.info("Polling")
