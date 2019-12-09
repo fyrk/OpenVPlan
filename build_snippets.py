@@ -15,7 +15,7 @@ minifier = htmlmin.Minifier(remove_comments=True, remove_empty_space=True, remov
 snippets = {}
 for filename in sorted(filename[:-5] for filename in list(os.walk(SOURCE_PATH))[0][2]
                        if filename.endswith(".html") and not filename.startswith(".")):
-    with open(SOURCE_PATH + filename + ".html", "r") as f:
+    with open(SOURCE_PATH + filename + ".html", "r", encoding="utf-8") as f:
         snippet = f.read()
     do_minify = True
     if snippet.startswith("<!-- extends "):
@@ -53,5 +53,5 @@ for filename in sorted(filename[:-5] for filename in list(os.walk(SOURCE_PATH))[
             do_minify = False
     snippets[filename] = minifier.minify(snippet) if do_minify else snippet
     if "${" not in snippets[filename]:
-        with open(os.path.join(DST_PATH + filename + ".html"), "w") as f:
+        with open(os.path.join(DST_PATH + filename + ".html"), "w", encoding="utf-8") as f:
             f.write(snippets[filename])

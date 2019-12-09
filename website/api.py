@@ -22,7 +22,7 @@ class SubstitutionAPI:
 
         # noinspection PyBroadException
         try:
-            if path != "/classes" and path != "/teachers":
+            if path != "/status" and path != "/classes" and path != "/teachers":
                 return handle_error("404 Not Found")
 
             # parse request data
@@ -44,21 +44,25 @@ class SubstitutionAPI:
 
             self.substitution_plan.update_data()
             current_timestamp = create_date_timestamp(datetime.datetime.now())
-            if path == "/classes":
+            if path == "/status":
+                data = {"ok": True, "status": self.substitution_plan.current_status_string}
+            elif path == "/classes":
                 if "selection" in request_data:
                     selection = [split_class_name_lower(c) for c in parse_selection(request_data["selection"])]
                 else:
                     selection = None
-                data = {"ok": True, "days": [d.to_dict(selection) for d in self.substitution_plan.data_students
-                                             if d.timestamp >= current_timestamp]}
+                data = {"ok": True, "status": self.substitution_plan.current_status_string,
+                        "days": [d.to_dict(selection) for d in self.substitution_plan.data_students
+                                 if d.timestamp >= current_timestamp]}
             else:
                 assert path == "/teachers"
                 if "selection" in request_data:
                     selection = request_data["selection"].strip().upper()
                 else:
                     selection = None
-                data = {"ok": True, "days": [d.to_dict(selection) for d in self.substitution_plan.data_teachers
-                                             if d.timestamp >= current_timestamp]}
+                data = {"ok": True, "status": self.substitution_plan.current_status_string,
+                        "days": [d.to_dict(selection) for d in self.substitution_plan.data_teachers
+                                 if d.timestamp >= current_timestamp]}
             pretty = "pretty" in request_data and (request_data["pretty"] == "True" or request_data["pretty"] == "true")
             content = json.dumps(data, indent=4 if pretty else None).encode("utf-8")
             start_response("200 OK", [("Content-Type", "application/json;charset=utf-8"),
