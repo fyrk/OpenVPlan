@@ -149,12 +149,9 @@ class SubstitutionsBotListener:
                                        reply_markup=self.create_settings_keyboard(chat))
 
 
-def run_bot_listener(logger_name, token, db_bot_class: Type[DatabaseBot], db_connection, db_commands,
+def run_bot_listener(token, db_bot_class: Type[DatabaseBot], db_connection, db_commands,
                      bot_listener_class: Type[SubstitutionsBotListener], bot_texts_name, settings_command_key):
     import json
-    from logging_tool import create_logger
-
-    logger = create_logger(logger_name)
 
     with open("bot/settings.json", "r", encoding="utf-8") as f:
         settings = json.load(f)

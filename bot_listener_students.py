@@ -7,16 +7,18 @@ from bot.db.students import StudentDatabaseBot
 from bot.listener.base import run_bot_listener
 from bot.listener.students import StudentBotListener
 from common.db_connector import get_connection
+from logging_tool import create_logger
 
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
+create_logger("bot-listener-students")
 
 with open("bot/secret.json") as f:
     secret = json.load(f)
 
-connection, connection_commands = get_connection(secret)
+connection, commands = get_connection(secret)
 try:
-    run_bot_listener("bot-listener-students", secret["token_students"], StudentDatabaseBot, connection,
-                     connection_commands, StudentBotListener, "students", "student_commands")
+    run_bot_listener(secret["token_students"], StudentDatabaseBot, connection, commands,
+                     StudentBotListener, "students", "student_commands")
 finally:
     connection.close()
