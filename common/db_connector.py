@@ -28,6 +28,7 @@ def get_connection(secret):
         return connection, COMMANDS_MySQL
     except Exception:
         import sqlite3
-        logger.exception("Using MySQL database failed, using SQLite instead")
+        logger.exception("Using MySQL database failed")
+        logger.info("Using MySQL database")
         connection = sqlite3.connect(**secret["database_sqlite"])
         return connection, COMMANDS_SQLITE
