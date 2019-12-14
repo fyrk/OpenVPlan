@@ -23,11 +23,11 @@ class COMMANDS_MySQL:
 def get_connection(secret):
     try:
         import mysql.connector
-        logger.info("Try to connect to MySQL")
         connection = mysql.connector.connect(**secret["database_mysql"])
+        logger.info("Using MySQL database")
         return connection, COMMANDS_MySQL
     except Exception:
         import sqlite3
-        logger.exception("Using MySQL database failed, using SQLITE instead")
+        logger.exception("Using MySQL database failed, using SQLite instead")
         connection = sqlite3.connect(**secret["database_sqlite"])
         return connection, COMMANDS_SQLITE
