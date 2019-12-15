@@ -27,7 +27,7 @@ class BaseConnection:
         try:
             self.cursor.execute(operation.format(table=table_name), args)
         except Exception:
-            logger.exception("Database error")
+            logger.exception(f"Database error: {operation} {table_name} {args} {try_again}")
             if try_again:
                 logger.info("Trying to reconnect")
                 self.connection.close()
