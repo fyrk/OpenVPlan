@@ -1,12 +1,13 @@
 import asyncio
 import json
 import logging
-import sqlite3
 from typing import Optional
 
 import asynctelebot
 from asynctelebot.api import BotAPIException
 from asynctelebot.types import Message
+
+from common.db_connector import BaseConnection
 
 logger = logging.getLogger()
 
@@ -14,9 +15,8 @@ logger = logging.getLogger()
 class DatabaseBot(asynctelebot.Bot):
     chats: "DatabaseChatList"
 
-    def __init__(self, api_token, chat_list, db_commands):
+    def __init__(self, api_token, chat_list):
         self.chats = chat_list
-        self.db_commands = db_commands
         super().__init__(api_token)
 
 
@@ -24,21 +24,13 @@ class DatabaseBot(asynctelebot.Bot):
 class DatabaseChatList:
     CLASS_CHAT = None
 
-    def __init__(self, connection, table_name, bot: DatabaseBot):
+    def __init__(self, connection: BaseConnection, table_name, bot: DatabaseBot):
         self._connection = connection
         self.table_name = table_name
-        self.cursor = self._connection.cursor()
         self.bot = bot
 
     def try_create_table(self):
-        self.cursor.execute("""CREATE TABLE IF NOT EXISTS {} (
-                                chat_id INTEGER primary key,
-                                status TEXT,
-                                selection TEXT,
-                                send_news INTEGER,
-                                send_absent_classes INTEGER,
-                                send_absent_teachers INTEGER,
-                                sent_messages TEXT)""".format(self.table_name))
+        self._connection.try_create_table(self.table_name)
 
     def _chat_from_row(self, row):
         raise NotImplementedError
@@ -48,8 +40,7 @@ class DatabaseChatList:
 
     def try_get(self, chat_id: int) -> Optional["DatabaseChat"]:
         logger.debug(f"Try get chat {chat_id}")
-        self.cursor.execute(self.bot.db_commands.GET_CHAT.format(self.table_name), (chat_id,))
-        chat = self.cursor.fetchone()
+        chat = self._connection.get_chat(self.table_name, chat_id)
         if chat is not None:
             return self._chat_from_row(chat)
         return None
@@ -62,20 +53,17 @@ class DatabaseChatList:
         if chat is not None:
             return chat
         logger.debug("Unknown chat, creating new")
-        self.cursor.execute(self.bot.db_commands.NEW_CHAT.format(self.table_name),
-                            (chat_id, "", "", 1, 1, 1, ""))
+        self._connection.new_chat(chat_id, "", "", 1, 1, 1, "")
         return self._new_chat(chat_id)
 
     def get_from_msg(self, message: Message) -> "DatabaseChat":
         return self.get(message.chat.id)
 
     def all_chats(self):
-        self.cursor.execute("""SELECT * FROM {}""".format(self.table_name))
-        for row in self.cursor.fetchall():
-            yield self._chat_from_row(row)
+        return (self._chat_from_row(row) for row in self._connection.all_chats(self.table_name))
 
     def reset_chat(self, chat_id: int):
-        self.cursor.execute(self.bot.db_commands.DELETE_CHAT.format(self.table_name), (chat_id,))
+        self._connection.delete_chat(self.table_name, chat_id)
 
     async def remove_old_messages(self, min_time):
         print(await asyncio.gather(*(chat.remove_old_messages(min_time) for chat in self.all_chats())))
@@ -83,13 +71,13 @@ class DatabaseChatList:
 
 # noinspection SqlNoDataSourceInspection,SqlResolve
 class DatabaseChat:
-    cursor: sqlite3.Cursor
+    connection: BaseConnection
 
-    def __init__(self, bot: DatabaseBot, cursor,
+    def __init__(self, bot: DatabaseBot, connection,
                  chat_id: int, status="", selection=None, send_news=True,
                  send_absent_classes=True, send_absent_teachers=True, sent_messages=None):
         self.bot = bot
-        self.cursor = cursor
+        self.connection = connection
         self._chat_id = chat_id
         self._status = status
         if selection is None:
@@ -136,8 +124,7 @@ class DatabaseChat:
 
     def save_sent_messages(self):
         logger.debug(f"Set sent substitutions of {self.chat_id} to {repr(self.sent_messages)}")
-        self.cursor.execute(self.bot.db_commands.SET_SENT_SUBSTITUTIONS.format(self.bot.chats.table_name),
-                            (json.dumps(self.sent_messages), self._chat_id))
+        self.connection.set_sent_substitutions(self.bot.chats.table_name, json.dumps(self.sent_messages), self._chat_id)
 
     async def remove_all_messages(self):
         tasks = []
@@ -176,8 +163,7 @@ class DatabaseChat:
     def set(self, property_name, value):
         self.__dict__["_" + property_name] = value
         assert " " not in property_name
-        self.cursor.execute(self.bot.db_commands.UPDATE_CHAT.format(self.bot.chats.table_name, property_name),
-                            (value, self._chat_id))
+        self.connection.update_chat(self.bot.chats.table_name, property_name, value, self._chat_id)
 
     @property
     def chat_id(self):

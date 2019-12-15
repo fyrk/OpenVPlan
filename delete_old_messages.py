@@ -20,9 +20,9 @@ def create_date_timestamp(date):
 
 with open("bot/secret.json", "r") as f:
     secret = json.load(f)
-    connection, commands = get_connection(secret)
-    bot_students = StudentDatabaseBot(secret["token_students"], connection, commands)
-    bot_teachers = TeacherDatabaseBot(secret["token_teachers"], connection, commands)
+    connection = get_connection(secret)
+    bot_students = StudentDatabaseBot(secret["token_students"], connection)
+    bot_teachers = TeacherDatabaseBot(secret["token_teachers"], connection)
 
 min_time = create_date_timestamp(datetime.datetime.strftime(datetime.datetime.now(), "%d.%m.%Y"))
 

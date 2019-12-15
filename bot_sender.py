@@ -22,7 +22,8 @@ class BotSender(FileSystemEventHandler):
     def __init__(self, bot_token_students, bot_token_teachers, create_connection_callback, loop):
         self.__bot_token_students = bot_token_students
         self.__bot_token_teachers = bot_token_teachers
-        self.connection = None
+        self.connection_students = None
+        self.connection_teachers = None
         self.bot_students = None
         self.bot_teachers = None
         self.sender_students = None
@@ -37,8 +38,8 @@ class BotSender(FileSystemEventHandler):
         if self.connection:
             self.connection.close()
         self.connection, db_commands = self.create_connection()
-        self.bot_students = StudentDatabaseBot(self.__bot_token_students, self.connection, db_commands)
-        self.bot_teachers = TeacherDatabaseBot(self.__bot_token_teachers, self.connection, db_commands)
+        self.bot_students = StudentDatabaseBot(self.__bot_token_students, self.connection)
+        self.bot_teachers = TeacherDatabaseBot(self.__bot_token_teachers, self.connection)
         self.sender_students = StudentMessageSender(self.bot_students, "data/sent_messages_students.json")
         self.sender_teachers = TeacherMessageSender(self.bot_teachers, "data/sent_messages_teachers.json")
 

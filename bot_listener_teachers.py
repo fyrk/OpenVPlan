@@ -16,9 +16,9 @@ create_logger("bot-listener-teachers")
 with open("bot/secret.json") as f:
     secret = json.load(f)
 
-connection, commands = get_connection(secret)
+connection = get_connection(secret)
 try:
-    run_bot_listener(secret["token_teachers"], TeacherDatabaseBot, connection, commands,
-                     TeacherBotListener, "teachers", "teacher_commands")
+    run_bot_listener(secret["token_teachers"], TeacherDatabaseBot, connection, TeacherBotListener, "teachers",
+                     "teacher_commands")
 finally:
     connection.close()

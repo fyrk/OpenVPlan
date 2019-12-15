@@ -6,16 +6,16 @@ logger = logging.getLogger()
 
 
 class TeacherDatabaseBot(DatabaseBot):
-    def __init__(self, api_token, db_connection, db_commands):
-        super().__init__(api_token, TeacherDatabaseChatList(db_connection, "teachers", self), db_commands)
+    def __init__(self, api_token, db_connection):
+        super().__init__(api_token, TeacherDatabaseChatList(db_connection, "teachers", self))
 
 
 class TeacherDatabaseChatList(DatabaseChatList):
     def _chat_from_row(self, row):
-        return TeacherDatabaseChat.from_row(self.cursor, row, self.bot)
+        return TeacherDatabaseChat.from_row(self._connection, row, self.bot)
 
     def _new_chat(self, chat_id):
-        return TeacherDatabaseChat(self.bot, self.cursor, chat_id)
+        return TeacherDatabaseChat(self.bot, self._connection, chat_id)
 
 
 class TeacherDatabaseChat(DatabaseChat):

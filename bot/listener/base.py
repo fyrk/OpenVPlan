@@ -149,7 +149,7 @@ class SubstitutionsBotListener:
                                        reply_markup=self.create_settings_keyboard(chat))
 
 
-def run_bot_listener(token, db_bot_class: Type[DatabaseBot], db_connection, db_commands,
+def run_bot_listener(token, db_bot_class: Type[DatabaseBot], db_connection,
                      bot_listener_class: Type[SubstitutionsBotListener], bot_texts_name, settings_command_key):
     import json
 
@@ -159,7 +159,7 @@ def run_bot_listener(token, db_bot_class: Type[DatabaseBot], db_connection, db_c
     with open("bot/texts.json", "r", encoding="utf-8") as f:
         texts = json.load(f)
     texts = BotTexts(texts, bot_texts_name)
-    db_bot = db_bot_class(token, db_connection, db_commands)
+    db_bot = db_bot_class(token, db_connection)
     bot_listener = bot_listener_class(db_bot, texts, settings["available_settings"], settings[settings_command_key])
     try:
         logger.info("Polling")

@@ -16,9 +16,9 @@ create_logger("bot-listener-test")
 with open("bot/secret.json") as f:
     secret = json.load(f)
 
-connection, commands = get_connection(secret)
+connection = get_connection(secret)
 try:
-    run_bot_listener(secret["token_test"], StudentDatabaseBot, connection, commands,
-                     StudentBotListener, "students", "student_commands")
+    run_bot_listener(secret["token_test"], StudentDatabaseBot, connection, StudentBotListener, "students",
+                     "student_commands")
 finally:
     connection.close()
