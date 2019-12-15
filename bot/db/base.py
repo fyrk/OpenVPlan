@@ -136,7 +136,7 @@ class DatabaseChat:
 
     def save_sent_messages(self):
         logger.debug(f"Set sent substitutions of {self.chat_id} to {repr(self.sent_messages)}")
-        self.cursor.execute(self.bot.db_commands.SET_SEND_SUBSTITUTIONS.format(self.bot.chats.table_name),
+        self.cursor.execute(self.bot.db_commands.SET_SENT_SUBSTITUTIONS.format(self.bot.chats.table_name),
                             (json.dumps(self.sent_messages), self._chat_id))
 
     async def remove_all_messages(self):
