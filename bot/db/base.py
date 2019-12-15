@@ -53,7 +53,7 @@ class DatabaseChatList:
         if chat is not None:
             return chat
         logger.debug("Unknown chat, creating new")
-        self._connection.new_chat(chat_id, "", "", 1, 1, 1, "")
+        self._connection.new_chat(self.table_name, chat_id, "", "", 1, 1, 1, "")
         return self._new_chat(chat_id)
 
     def get_from_msg(self, message: Message) -> "DatabaseChat":
