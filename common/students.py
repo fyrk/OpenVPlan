@@ -41,29 +41,31 @@ class StudentSubstitution(BaseSubstitution):
 
     @lru_cache()
     def get_html_first_of_group(self, group_substitution_count, group_name, snippets, add_lesson_num):
-        return snippets.get("substitution-row-first-students").format(
-            group_substitution_count,
-            group_name,
-            self.teacher,
-            self.substitute,
-            self.lesson,
-            self.subject,
-            self.room,
-            self.subs_from,
-            self.hint,
+        return snippets.get(
+            "substitution-row-first-students",
+            substitution_count=group_substitution_count,
+            group_name=group_name,
+            teacher=self.teacher,
+            substitute=self.substitute,
+            lesson=self.lesson,
+            subject=self.subject,
+            room=self.room,
+            subs_from=self.subs_from,
+            hint=self.hint,
             lesson_num=("lesson" + str(self.lesson_num)) if add_lesson_num else ""
         )
 
     @lru_cache()
     def get_html(self, snippets, add_lesson_num):
-        return snippets.get("substitution-row-students").format(
-            self.teacher,
-            self.substitute,
-            self.lesson,
-            self.subject,
-            self.room,
-            self.subs_from,
-            self.hint,
+        return snippets.get(
+            "substitution-row-students",
+            teacher=self.teacher,
+            substitute=self.substitute,
+            lesson=self.lesson,
+            subject=self.subject,
+            room=self.room,
+            subs_from=self.subs_from,
+            hint=self.hint,
             lesson_num=("lesson" + str(self.lesson_num)) if add_lesson_num else ""
         )
 

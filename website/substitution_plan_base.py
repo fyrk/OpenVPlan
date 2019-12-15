@@ -252,28 +252,31 @@ class BaseHTMLCreator:
         raise NotImplementedError
 
     def create_day_container(self, day: SubstitutionDay, substitutions: str):
-        absent_classes = (self.snippets.get("absent-classes").format(day.absent_classes)
+        absent_classes = (self.snippets.get("absent-classes", absent_classes=day.absent_classes)
                           if day.absent_classes else "")
-        absent_teachers = (self.snippets.get("absent-teachers").format(day.absent_teachers)
+        absent_teachers = (self.snippets.get("absent-teachers", absent_teachers=day.absent_teachers)
                            if day.absent_teachers in day else "")
         if day.news:
-            day_info = self.snippets.get("day-info-all").format(
+            day_info = self.snippets.get(
+                "day-info-all",
                 day_name=day.day_name,
                 date=day.date,
                 week=day.week,
-                news=self.snippets.get("news").format(day.news),
+                news=self.snippets.get("news", news=day.news),
                 absent_teachers=absent_teachers,
                 absent_classes=absent_classes
             )
         else:
-            day_info = self.snippets.get("day-info-only-absent").format(
+            day_info = self.snippets.get(
+                "day-info-only-absent",
                 day_name=day.day_name,
                 date=day.date,
                 week=day.week,
                 absent_teachers=absent_teachers,
                 absent_classes=absent_classes
             )
-        return self.snippets.get("day-container").format(
+        return self.snippets.get(
+            "day-container",
             day_info=day_info,
             substitutions=substitutions
         )
@@ -296,19 +299,19 @@ class BaseHTMLCreator:
                     for substitution in substitutions_group.substitutions[1:]:
                         substitution_rows += substitution.get_html(self.snippets, i == 1)
                 if substitution_rows:
-                    substitutions = self.snippets.get(self.snippet_substitution_table).format(substitution_rows)
+                    substitutions = self.snippets.get(self.snippet_substitution_table, content=substitution_rows)
                     if selection:
-                        substitutions += self.snippets.get(self.snippet_notice_selection).format(selection_string)
+                        substitutions += self.snippets.get(self.snippet_notice_selection, selection=selection_string)
                 else:
-                    substitutions = self.snippets.get(self.snippet_no_substitutions_reset_selection) \
-                        .format(selection_string)
+                    substitutions = self.snippets.get(self.snippet_no_substitutions_reset_selection,
+                                                      selection=selection_string)
                 containers += self.create_day_container(day, substitutions)
         if selection:
             telegram_link = "?start=" + base64.urlsafe_b64encode(selection_string.encode("utf-8")).replace(b"=", b"") \
                 .decode("utf-8")
         else:
             telegram_link = ""
-        return self.snippets.get((self.snippet_base + "-selected") if selection else (self.snippet_base + "-index")) \
-            .format("" if selection else self.snippets.get(self.snippet_select),
-                    containers, status=status_string,
-                    telegram_link=telegram_link)
+        return self.snippets.get((self.snippet_base + "-selected") if selection else (self.snippet_base + "-index"),
+                                 select_container="" if selection else self.snippets.get(self.snippet_select),
+                                 containers=containers, status=status_string,
+                                 telegram_link=telegram_link)

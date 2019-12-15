@@ -17,7 +17,11 @@ for filename in sorted(filename[:-5] for filename in list(os.walk(SOURCE_PATH))[
                        if filename.endswith(".html") and not filename.startswith(".")):
     with open(SOURCE_PATH + filename + ".html", "r", encoding="utf-8") as f:
         snippet = f.read()
-    do_minify = True
+    if snippet.startswith("<!-- SAVE -->\n"):
+        snippet = snippet[14:]
+        do_save = True
+    else:
+        do_save = False
     if snippet.startswith("<!-- extends "):
         first_line, snippet_from_first_line = snippet.split("\n", 1)
         if first_line.endswith(" -->"):
@@ -31,7 +35,7 @@ for filename in sorted(filename[:-5] for filename in list(os.walk(SOURCE_PATH))[
                 line = next(snippet_lines)
             else:
                 save_to = None
-            assert line.startswith("<!-- SET ") and line.endswith(" -->")
+            assert line.startswith("<!-- SET ") and line.endswith(" -->"), f"error in {filename}"
             current_key = line[9:-4]
             current_content = []
             formatting = {}
@@ -50,8 +54,9 @@ for filename in sorted(filename[:-5] for filename in list(os.walk(SOURCE_PATH))[
                 current_content = []
             snippet = string.Template(parent_snippet)
             snippet = snippet.safe_substitute(formatting)
-            do_minify = False
-    snippets[filename] = minifier.minify(snippet) if do_minify else snippet
-    if "${" not in snippets[filename]:
+    if do_save:
+        snippets[filename] = minifier.minify(snippet)
         with open(os.path.join(DST_PATH + filename + ".html"), "w", encoding="utf-8") as f:
             f.write(snippets[filename])
+    else:
+        snippets[filename] = snippet
