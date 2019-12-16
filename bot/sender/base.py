@@ -62,8 +62,7 @@ class BaseMessageSender:
                     self._build_substitutions(day.substitution_groups, day.date))
                 for day in days if day.timestamp >= current_timestamp):
             self.logger.debug(f"Sending day: {day}")
-
-            await asyncio.gather(*(await self._send_message_to(chat, day)
+            await asyncio.gather(*(self._send_message_to(chat, day)
                                    for chat in self.bot.chats.all_chats()))
 
     async def _send_message_to(self, chat: DatabaseChat, day: Day):

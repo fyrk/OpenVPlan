@@ -23,7 +23,8 @@ class BaseConnection:
     def close(self):
         self.connection.close()
 
-    def _execute(self, operation, table_name, args=(), try_again=True):
+    def _execute(self, operation, table_name, args=(), try_again=False):
+        logger.debug(f"DB: {repr(operation.format(table=table_name))} {repr(args)}")
         try:
             self.cursor.execute(operation.format(table=table_name), args)
         except Exception:
@@ -53,7 +54,7 @@ class BaseConnection:
 
     def all_chats(self, table_name):
         logger.info("all_chats 1...")
-        self._execute("SELECT * FROM {}", table_name)
+        self._execute("SELECT * FROM {table}", table_name)
         logger.info("all_chats 2...")
         for row in self.cursor.fetchall():
             logger.info(f"chat {row}")
