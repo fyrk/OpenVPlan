@@ -54,6 +54,7 @@ class BaseConnection:
     def all_chats(self, table_name):
         self._execute("SELECT * FROM {}", table_name)
         for row in self.cursor.fetchall():
+            logger.info(f"chat {row}")
             yield row
 
     def delete_chat(self, table_name, chat_id):
