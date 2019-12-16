@@ -53,6 +53,7 @@ class BaseConnection:
 
     def all_chats(self, table_name):
         self._execute("SELECT * FROM {}", table_name)
+        logger.info("all_chats...")
         for row in self.cursor.fetchall():
             logger.info(f"chat {row}")
             yield row
