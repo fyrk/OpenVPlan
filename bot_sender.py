@@ -24,11 +24,11 @@ class BotSender(FileSystemEventHandler):
         self.__bot_token_teachers = bot_token_teachers
         self.connection_students = None
         self.connection_teachers = None
+        self.connection = connection
         self.bot_students = StudentDatabaseBot(self.__bot_token_students, self.connection)
         self.bot_teachers = TeacherDatabaseBot(self.__bot_token_teachers, self.connection)
         self.sender_students = StudentMessageSender(self.bot_students, "data/sent_messages_students.json")
         self.sender_teachers = TeacherMessageSender(self.bot_teachers, "data/sent_messages_teachers.json")
-        self.connection = connection
         self.loop = loop
 
         self.last_status = None
@@ -79,7 +79,12 @@ if __name__ == "__main__":
     observer.schedule(sender, "data/substitutions")
     observer.start()
     try:
+        i = 0
         while True:
+            i += 1
+            if i == 5:
+                i = 0
+                logger.debug("Waiting...")
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
