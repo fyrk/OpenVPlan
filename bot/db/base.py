@@ -60,6 +60,7 @@ class DatabaseChatList:
         return self.get(message.chat.id)
 
     def all_chats(self):
+        logger.info("all_chats from ChatList...")
         return (self._chat_from_row(row) for row in self._connection.all_chats(self.table_name))
 
     def reset_chat(self, chat_id: int):

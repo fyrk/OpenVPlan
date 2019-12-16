@@ -52,8 +52,9 @@ class BaseConnection:
         raise NotImplementedError
 
     def all_chats(self, table_name):
+        logger.info("all_chats 1...")
         self._execute("SELECT * FROM {}", table_name)
-        logger.info("all_chats...")
+        logger.info("all_chats 2...")
         for row in self.cursor.fetchall():
             logger.info(f"chat {row}")
             yield row
