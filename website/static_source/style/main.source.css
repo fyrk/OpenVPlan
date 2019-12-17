@@ -166,6 +166,18 @@ nav a.active {
     }
 }
 
+p#author {
+    display: flow-root;
+}
+
+p#author span {
+    float: left;
+}
+
+p#author a {
+    float: right;
+}
+
 .container {
     max-width: 1000px;
     background-color: white;
