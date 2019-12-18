@@ -48,22 +48,19 @@ class BotSender(FileSystemEventHandler):
             self.on_substitutions_modified()
 
     def on_substitutions_modified(self, *_):
-        logger.info("Substitutions changed")
         try:
             with open("data/substitutions/substitutions.pickle", "rb") as f:
                 status, data_students, data_teachers = pickle.load(f)
         except EOFError:
             logger.exception("Could not read substitutions.pickle, writing not finished yet")
-            time.sleep(10)
+            time.sleep(0.5)
             self.on_substitutions_modified()
         else:
+            logger.debug(f"New status is {repr(status)}, old is {repr(self.last_status)}")
             if status != self.last_status:
-                logger.info(f"Status changed, sending messages {data_students}")
                 self._create_bots_if_necessary()
                 self.last_status = status
-                logger.info("set event loop")
                 asyncio.set_event_loop(self.loop)
-                logger.info("Starting loop")
                 self.loop.run_until_complete(asyncio.gather(
                     self.sender_students.send_messages(data_students),
                     self.sender_teachers.send_messages(data_teachers)

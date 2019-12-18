@@ -40,7 +40,7 @@ class SubstitutionsBotListener:
         raise NotImplementedError
 
     async def start(self, message):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /start ({message.from_.first_name})")
+        logger.info(f"START: {message.chat.id} ({message.from_.first_name})")
         # noinspection PyBroadException
         try:
             text = message.text.strip()
@@ -55,15 +55,16 @@ class SubstitutionsBotListener:
                 chat.set_selection_from_string(selection_string)
                 if chat.has_selection():
                     await chat.send(self.texts["help"])
+                    logger.debug(f"start: {message.chat.id}: selection from website is {chat.get_parsed_selection()}")
                     return self.send_selection_set(chat.chat_id, chat.get_pretty_selection(), True)
         return await self.help(message)
 
     async def help(self, message):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /help ({message.from_.first_name})")
+        logger.info(f"HELP: {message.chat.id}")
         return SendMessage(message.chat.id, self.texts["help"])
 
     async def do_select(self, message):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND select ({message.from_.first_name})")
+        logger.info(f"SELECT: {message.chat.id}")
         chat = self.bot.chats.get_from_msg(message)
         sent_message = (await chat.send(self.texts["send-me-selection"], reply_markup=ForceReply()))
         chat.status = "do-select:" + str(sent_message.message_id)
@@ -105,28 +106,27 @@ class SubstitutionsBotListener:
         return message
 
     async def show_settings(self, message: Message):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /einst ({message.from_.first_name})")
+        logger.info(f"SETTINGS: {message.chat.id}")
         chat = self.bot.chats.get_from_msg(message)
         return SendMessage(message.chat.id, self.create_settings_text(chat),
                            parse_mode="html",
                            reply_markup=self.create_settings_keyboard(chat))
 
     async def reset(self, message):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} COMMAND /reset ({message.from_.first_name})")
+        logger.info(f"RESET: {message.chat.id}")
         await self.bot.chats.get_from_msg(message).remove_all_messages()
         self.bot.chats.reset_chat(message.chat.id)
-        logger.debug("Reset successful for chat id '" + str(message.chat.id) + "'")
+        logger.debug(f"reset: successful for chat id {message.chat.id}")
         return SendMessage(message.chat.id, self.texts["reset-successful"])
 
     async def all_messages(self, message: Message):
-        logger.info(f"{message.chat.id} {str_from_timestamp(message.date)} ALL MESSAGES ({message.from_.first_name})")
         if determine_message_content_type(message) == "text":
-            logger.debug("Message: " + message.text)
+            logger.info(f"ALL: {message.chat.id}, {repr(message.text)}")
             chat = self.bot.chats.try_get_from_msg(message)
             if chat is not None and chat.status.startswith("do-select:") and message.reply_to_message:
                 message_id = int(chat.status.split(":", 1)[1])
                 if message.reply_to_message.message_id == message_id:
-                    logger.debug("Chat '{}' selected '{}'".format(chat.chat_id, message.text))
+                    logger.debug("all: selected")
                     chat.set_selection_from_string(message.text)
                     return self.send_selection_set(chat.chat_id, chat.get_pretty_selection())
             return SendMessage(message.chat.id, self.texts.get_response_for_unknown(message.text))

@@ -167,7 +167,7 @@ class BaseSubstitutionLoader:
     async def _load_data_from_site(self, new_data: dict, current_timestamp: int, session: aiohttp.ClientSession,
                                    site_num: int, plan: str):
         async with session.get(self.url.format(site_num)) as response:
-            logger.debug(f"Got response for {plan}/subst_" + str(site_num) + ".htm")
+            logger.debug(f"Response {response.status} for {plan}/subst_" + str(site_num) + ".htm")
             if response.status != 200:
                 return True
             response_data = await response.text("iso-8859-1")

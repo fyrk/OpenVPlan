@@ -60,7 +60,6 @@ class DatabaseChatList:
         return self.get(message.chat.id)
 
     def all_chats(self):
-        logger.info("all_chats from ChatList...")
         return (self._chat_from_row(row) for row in self._connection.all_chats(self.table_name))
 
     def reset_chat(self, chat_id: int):
@@ -124,7 +123,6 @@ class DatabaseChat:
         self.save_sent_messages()
 
     def save_sent_messages(self):
-        logger.debug(f"Set sent substitutions of {self.chat_id} to {repr(self.sent_messages)}")
         self.connection.set_sent_substitutions(self.bot.chats.table_name, json.dumps(self.sent_messages), self._chat_id)
 
     async def remove_all_messages(self):
@@ -152,7 +150,7 @@ class DatabaseChat:
             if int(day) <= min_time:
                 for message_id in messages:
                     tasks.append(self._delete_message(message_id))
-                    logger.info("Deleted {} from {}".format(message_id, self.chat_id))
+                    logger.debug(f"Deleted {message_id} from {self.chat_id}")
                 del new_sent_messages[day]
         await asyncio.gather(*tasks)
         self._sent_messages = new_sent_messages

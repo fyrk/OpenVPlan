@@ -47,9 +47,9 @@ class SubstitutionPlan:
             with open(self.FILENAME_SUBSTITUTIONS, "rb") as f:
                 self.current_status_string, self.data_students, self.data_teachers = pickle.load(f)
         except Exception:
-            self.logger.error("Could not load substitutions from file")
+            self.logger.warning("Could not load substitutions from file")
         else:
-            logger.info(f"Loaded substitutions from file (status is '{self.current_status_string}')")
+            logger.info(f"Loaded substitutions from file, status is {repr(self.current_status_string)}")
             self.index_site_students = self.html_creator_students.create_html(self.data_students,
                                                                               self.current_status_string)
             self.index_site_teachers = self.html_creator_teachers.create_html(self.data_teachers,
@@ -63,24 +63,23 @@ class SubstitutionPlan:
         self.index_site_teachers = ""
 
     async def _load_data(self, first_site):
-        logger.debug("Creating new data...")
-        t1 = time.perf_counter()
+        logger.info("Loading new data...")
+        t1 = time.perf_counter_ns()
         self.data_students, self.data_teachers = await asyncio.gather(
             self.substitution_loader_students.load_data("klassen", first_site),
             self.substitution_loader_teachers.load_data("lehrer")
         )
-        t2 = time.perf_counter()
-        self.logger.debug(f"New data created in {t2 - t1:.3f} {self.data_students}")
+        t2 = time.perf_counter_ns()
+        self.logger.debug(f"New data created in {t2 - t1}ns")
 
     def update_data(self):
         self.logger.debug("Requesting subst_001.htm ...")
-        t1 = time.perf_counter()
+        t1 = time.perf_counter_ns()
         with urllib.request.urlopen(self.URL_FIRST_SITE) as site:
             text = site.read()
-        t2 = time.perf_counter()
+        t2 = time.perf_counter_ns()
         new_status_string = get_status_string(text)
-        self.logger.debug(f"Got answer in {t2 - t1:.3f}: {new_status_string}")
-        self.logger.debug(f"Old status is {self.current_status_string}")
+        self.logger.debug(f"Got answer in {t2 - t1}ns, status is {repr(new_status_string)}, old: {repr(self.current_status_string)}")
         status_changed = False
         if new_status_string != self.current_status_string:
             # status changed, load new data
@@ -108,13 +107,13 @@ class SubstitutionPlan:
         logger.info("Wrote substitutions to file")
 
     def _create_sites(self):
-        t1 = time.perf_counter()
+        t1 = time.perf_counter_ns()
         self.index_site_students = self.html_creator_students.create_html(self.data_students,
                                                                           self.current_status_string)
         self.index_site_teachers = self.html_creator_teachers.create_html(self.data_teachers,
                                                                           self.current_status_string)
-        t2 = time.perf_counter()
-        self.logger.debug("Sites created in {:.3f}".format(t2 - t1))
+        t2 = time.perf_counter_ns()
+        self.logger.debug(f"Index sites created in {t2 - t1}ns")
 
     def get_site_students(self, storage):
         # noinspection PyBroadException
@@ -164,15 +163,15 @@ substitution_plan = SubstitutionPlan(logger)
 def application(environ, start_response):
     if environ["PATH_INFO"].startswith("/api"):
         return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
-    t1 = time.perf_counter()
+    t1 = time.perf_counter_ns()
     if environ["REQUEST_METHOD"] == "GET":
         if environ["PATH_INFO"] == "/":
             logger.info("GET /")
             storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
             response, content = substitution_plan.get_site_students(storage)
             content = content.encode("utf-8")
-            t2 = time.perf_counter()
-            logger.debug(f"Time for handling request: {t2 - t1}")
+            t2 = time.perf_counter_ns()
+            logger.debug(f"Time for handling request: {t2 - t1}ns")
             start_response(response, [("Content-Type", "text/html;charset=utf-8"),
                                       ("Content-Length", str(len(content)))])
             return [content]
@@ -182,8 +181,8 @@ def application(environ, start_response):
             storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
             response, content = substitution_plan.get_site_teachers(storage)
             content = content.encode("utf-8")
-            t2 = time.perf_counter()
-            logger.debug(f"Time for handling request: {t2 - t1}")
+            t2 = time.perf_counter_ns()
+            logger.debug(f"Time for handling request: {t2 - t1}ns")
             start_response(response, [("Content-Type", "text/html;charset=utf-8"),
                                       ("Content-Length", str(len(content)))])
             return [content]
@@ -195,8 +194,6 @@ def application(environ, start_response):
                                       ("Content-Length", str(len(content)))])
             return [content]
 
-        t2 = time.perf_counter()
-        logger.debug(f"Time for handling request: {t2 - t1}")
         content = substitution_plan.snippets.get("error-404").encode("utf-8")
         start_response("404 Not Found", [("Content-Type", "text/html;charset=utf-8"),
                                          ("Content-Length", str(len(content)))])
@@ -206,13 +203,13 @@ def application(environ, start_response):
         logger.info("POST /")
         response, content = substitution_plan.get_current_status()
         content = content.encode("utf-8")
-        t2 = time.perf_counter()
-        logger.debug(f"Time for handling request: {t2 - t1}")
+        t2 = time.perf_counter_ns()
+        logger.debug(f"Time for handling request: {t2 - t1}ns")
         start_response(response, [("Content-Type", "text/text;charset=utf-8"),
                                   ("Content-Length", str(len(content)))])
         return [content]
 
     content = "Error: 405 Method Not Allowed".encode("utf-8")
     start_response("405	Method Not Allowed", [("Content-Type", "text/text;charset=utf-8"),
-                                                 ("Content-Length", str(len(content)))])
+                                              ("Content-Length", str(len(content)))])
     return [content]

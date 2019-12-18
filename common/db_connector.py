@@ -23,17 +23,13 @@ class BaseConnection:
     def close(self):
         self.connection.close()
 
-    def _execute(self, operation, table_name, args=(), try_again=False):
-        logger.debug(f"DB: {repr(operation.format(table=table_name))} {repr(args)}")
+    def _execute(self, operation, table_name, args=()):
+        operation = operation.format(table=table_name)
+        logger.debug(f"DB: {repr(operation)} {repr(args)}")
         try:
-            self.cursor.execute(operation.format(table=table_name), args)
+            self.cursor.execute(operation, args)
         except Exception:
-            logger.exception(f"Database error: {repr(operation.format(table=table_name))} {repr(args)} {try_again}")
-            if try_again:
-                logger.info("Trying to reconnect")
-                self.connection.close()
-                self._connect()
-                self._execute(operation, table_name, args, try_again=False)
+            logger.exception(f"Database error: {repr(operation)} {repr(args)}")
 
     def try_create_table(self, table_name):
         self._execute("""CREATE TABLE IF NOT EXISTS {table} (
@@ -53,11 +49,8 @@ class BaseConnection:
         raise NotImplementedError
 
     def all_chats(self, table_name):
-        logger.info("all_chats 1...")
         self._execute("SELECT * FROM {table}", table_name)
-        logger.info("all_chats 2...")
         for row in self.cursor.fetchall():
-            logger.info(f"chat {row}")
             yield row
 
     def delete_chat(self, table_name, chat_id):

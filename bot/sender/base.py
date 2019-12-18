@@ -53,7 +53,6 @@ class BaseMessageSender:
             }, f)
 
     async def send_messages(self, days: List[SubstitutionDay]):
-        self.logger.info(f"Send messages {days}")
         current_timestamp = create_date_timestamp(datetime.datetime.now())
         for day in (
                 Day(day.timestamp,
@@ -61,7 +60,7 @@ class BaseMessageSender:
                     self._build_day_info(day),
                     self._build_substitutions(day.substitution_groups, day.date))
                 for day in days if day.timestamp >= current_timestamp):
-            self.logger.debug(f"Sending day: {day}")
+            self.logger.debug(f"Sending day: {day.timestamp}")
             await asyncio.gather(*(self._send_message_to(chat, day)
                                    for chat in self.bot.chats.all_chats()))
 
@@ -105,7 +104,7 @@ class BaseMessageSender:
                     absent_teachers = day.absent_teachers
                     self.sent_absent_teachers.append(absent_teachers_hash)
         except Exception:
-            self.logger.exception("Sending news failed")
+            self.logger.exception("Building day info failed")
         return DayInfo(news, absent_classes, absent_teachers)
 
     def _build_substitutions_for_group(self, substitution_group: BaseSubstitutionGroup, date):
