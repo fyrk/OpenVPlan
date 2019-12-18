@@ -54,14 +54,14 @@ class SubstitutionsBotListener:
                 chat = self.bot.chats.get_from_msg(message)
                 chat.set_selection_from_string(selection_string)
                 if chat.has_selection():
-                    await chat.send(self.texts["help"])
+                    await chat.send(self.texts["help"], parse_mode="html")
                     logger.debug(f"start: {message.chat.id}: selection from website is {chat.get_parsed_selection()}")
                     return self.send_selection_set(chat.chat_id, chat.get_pretty_selection(), True)
         return await self.help(message)
 
     async def help(self, message):
         logger.info(f"HELP: {message.chat.id}")
-        return SendMessage(message.chat.id, self.texts["help"])
+        return SendMessage(message.chat.id, self.texts["help"], parse_mode="html")
 
     async def do_select(self, message):
         logger.info(f"SELECT: {message.chat.id}")
@@ -117,7 +117,7 @@ class SubstitutionsBotListener:
         await self.bot.chats.get_from_msg(message).remove_all_messages()
         self.bot.chats.reset_chat(message.chat.id)
         logger.debug(f"reset: successful for chat id {message.chat.id}")
-        return SendMessage(message.chat.id, self.texts["reset-successful"])
+        return SendMessage(message.chat.id, self.texts["reset-successful"], parse_mode="html")
 
     async def all_messages(self, message: Message):
         if determine_message_content_type(message) == "text":
