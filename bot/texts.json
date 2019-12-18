@@ -110,7 +110,7 @@
 			"",
 			"Der Bot für Schüler*innen heißt @GaWVertretungBot. ",
 			"",
-			"Dieser Bot gehört zum Vertretungsplan unter gawvertretung.florian-raediker.de und ist nicht offiziell.",
+			"Dieser Bot gehört zum Vertretungsplan unter <a href=\"https://gawvertretung.florian-raediker.de/teachers\">gawvertretung.florian-raediker.de</a> und ist nicht offiziell.",
 			"Alle Angaben ohne Gewähr. Es gibt keine Garantie, dass Benachrichtigungen zuverlässig verschickt werden."
 		],
 		"teacher-abbr-automatically-set": "Deine Auswahl von der Webseite für Vertretungen von <i>{}</i> wurde automatisch gesetzt. Du kannst die Auswahl mit dem /auswahl-Befehl anpassen.",
