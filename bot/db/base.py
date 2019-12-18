@@ -144,14 +144,15 @@ class DatabaseChat:
                 logger.exception(f"Exception editing message {message_id} in chat {self.chat_id}")
 
     async def remove_old_messages(self, min_time):
+        logger.info(f"Deleting messages of chat {self.chat_id}: {self.sent_messages}")
         new_sent_messages = self.sent_messages.copy()
         tasks = []
         for day, messages in self.sent_messages.items():
             if int(day) <= min_time:
                 for message_id in messages:
                     tasks.append(self._delete_message(message_id))
-                    logger.debug(f"Deleted {message_id} from {self.chat_id}")
                 del new_sent_messages[day]
+        logger.info(f"new sent messages for {self.chat_id}: {new_sent_messages}")
         await asyncio.gather(*tasks)
         self._sent_messages = new_sent_messages
         self.save_sent_messages()
