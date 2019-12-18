@@ -89,7 +89,6 @@ class SubstitutionPlan:
             asyncio.run(self._load_data(text))
             self._create_sites()
             self.send_substitutions_to_bot()
-            self.stats.save()
         today = datetime.datetime.now().date()
         if today > self.current_status_date:
             self.current_status_date = today
@@ -161,7 +160,11 @@ substitution_plan = SubstitutionPlan(logger)
 
 
 def application(environ, start_response):
+    print(environ)
+    substitution_plan.stats.new_request(environ["REQUEST_METHOD"] + " " + environ["PATH_INFO"],
+                                        environ.get("HTTP_USER_AGENT", "none"))
     if environ["PATH_INFO"].startswith("/api"):
+        substitution_plan.stats.save()
         return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
     t1 = time.perf_counter_ns()
     if environ["REQUEST_METHOD"] == "GET":
@@ -172,6 +175,7 @@ def application(environ, start_response):
             content = content.encode("utf-8")
             t2 = time.perf_counter_ns()
             logger.debug(f"Time for handling request: {t2 - t1}ns")
+            substitution_plan.stats.save()
             start_response(response, [("Content-Type", "text/html;charset=utf-8"),
                                       ("Content-Length", str(len(content)))])
             return [content]
@@ -183,6 +187,7 @@ def application(environ, start_response):
             content = content.encode("utf-8")
             t2 = time.perf_counter_ns()
             logger.debug(f"Time for handling request: {t2 - t1}ns")
+            substitution_plan.stats.save()
             start_response(response, [("Content-Type", "text/html;charset=utf-8"),
                                       ("Content-Length", str(len(content)))])
             return [content]
@@ -190,11 +195,13 @@ def application(environ, start_response):
         if environ["PATH_INFO"] == "/about":
             response = "200 OK"
             content = substitution_plan.snippets.get("about").encode("utf-8")
+            substitution_plan.stats.save()
             start_response(response, [("Content-Type", "text/html;charset=utf-8"),
                                       ("Content-Length", str(len(content)))])
             return [content]
 
         content = substitution_plan.snippets.get("error-404").encode("utf-8")
+        substitution_plan.stats.save()
         start_response("404 Not Found", [("Content-Type", "text/html;charset=utf-8"),
                                          ("Content-Length", str(len(content)))])
         return [content]
@@ -205,11 +212,13 @@ def application(environ, start_response):
         content = content.encode("utf-8")
         t2 = time.perf_counter_ns()
         logger.debug(f"Time for handling request: {t2 - t1}ns")
+        substitution_plan.stats.save()
         start_response(response, [("Content-Type", "text/text;charset=utf-8"),
                                   ("Content-Length", str(len(content)))])
         return [content]
 
     content = "Error: 405 Method Not Allowed".encode("utf-8")
+    substitution_plan.stats.save()
     start_response("405	Method Not Allowed", [("Content-Type", "text/text;charset=utf-8"),
                                               ("Content-Length", str(len(content)))])
     return [content]
