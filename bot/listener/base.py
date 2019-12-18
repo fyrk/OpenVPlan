@@ -66,7 +66,7 @@ class SubstitutionsBotListener:
     async def do_select(self, message):
         logger.info(f"SELECT: {message.chat.id}")
         chat = self.bot.chats.get_from_msg(message)
-        sent_message = (await chat.send(self.texts["send-me-selection"], reply_markup=ForceReply()))
+        sent_message = (await chat.send(self.texts["send-me-selection"], reply_markup=ForceReply(), parse_mode="html"))
         chat.status = "do-select:" + str(sent_message.message_id)
 
     def create_settings_keyboard(self, chat):
@@ -129,9 +129,9 @@ class SubstitutionsBotListener:
                     logger.debug("all: selected")
                     chat.set_selection_from_string(message.text)
                     return self.send_selection_set(chat.chat_id, chat.get_pretty_selection())
-            return SendMessage(message.chat.id, self.texts.get_response_for_unknown(message.text))
+            return SendMessage(message.chat.id, self.texts.get_response_for_unknown(message.text), parse_mode="html")
         else:
-            return SendMessage(message.chat.id, self.texts["send-only-text"])
+            return SendMessage(message.chat.id, self.texts["send-only-text"], parse_mode="html")
 
     async def all_callbacks(self, callback: asynctelebot.types.CallbackQuery):
         logger.info(f"{callback.message.chat.id} {str_from_timestamp(callback.message.date)} CALLBACK "
