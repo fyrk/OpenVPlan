@@ -170,11 +170,11 @@ p#author {
     display: flow-root;
 }
 
-p#author span {
+p#author span:first-child {
     float: left;
 }
 
-p#author a {
+p#author span:last-child {
     float: right;
 }
 
