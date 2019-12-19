@@ -20,9 +20,9 @@ class BaseConnection:
         self.connection.close()
 
     def _execute(self, operation, table_name, args=(), sensitive=None):
-        def obfuscate_arg(arg, mode):
+        def obfuscate_arg(arg, mode) -> str:
             if not mode:
-                return arg
+                return str(arg)
             if mode == "obfuscate":
                 return "*" * len(str(arg))
             if mode == "chat_id":
