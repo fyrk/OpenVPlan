@@ -7,6 +7,7 @@ logging.captureWarnings(True)
 
 def create_logger(logging_type):
     logger = logging.getLogger()
+    logger.handlers.clear()
     logger.setLevel(logging.DEBUG)
     log_formatter = logging.Formatter("{asctime} [{levelname:^8}]: {message}", "%Y.%m.%e %H:%M:%S",
                                       style="{")
@@ -14,6 +15,7 @@ def create_logger(logging_type):
     file_logger.setFormatter(log_formatter)
     logger.addHandler(file_logger)
     stdout_logger = logging.StreamHandler(sys.stdout)
+    stdout_logger.setLevel(logging.ERROR)
     stdout_logger.setFormatter(log_formatter)
     logger.addHandler(stdout_logger)
     return logger

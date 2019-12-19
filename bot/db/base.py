@@ -39,7 +39,6 @@ class DatabaseChatList:
         raise NotImplementedError
 
     def try_get(self, chat_id: int) -> Optional["DatabaseChat"]:
-        logger.debug(f"Try get chat {chat_id}")
         chat = self._connection.get_chat(self.table_name, chat_id)
         if chat is not None:
             return self._chat_from_row(chat)

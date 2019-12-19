@@ -10,6 +10,7 @@ from asynctelebot.utils import determine_message_content_type
 
 from bot.db.base import DatabaseBot, DatabaseChat
 from bot.listener.texts import BotTexts
+from common.utils import obfuscate_chat_id
 
 logger = logging.getLogger()
 
@@ -40,7 +41,7 @@ class SubstitutionsBotListener:
         raise NotImplementedError
 
     async def start(self, message):
-        logger.info(f"START: {message.chat.id} ({message.from_.first_name})")
+        logger.info(f"START: {obfuscate_chat_id(message.chat.id)} ({message.from_.first_name})")
         # noinspection PyBroadException
         try:
             text = message.text.strip()
@@ -60,11 +61,11 @@ class SubstitutionsBotListener:
         return await self.help(message)
 
     async def help(self, message):
-        logger.info(f"HELP: {message.chat.id}")
+        logger.info(f"HELP: {obfuscate_chat_id(message.chat.id)}")
         return SendMessage(message.chat.id, self.texts["help"], parse_mode="html")
 
     async def do_select(self, message):
-        logger.info(f"SELECT: {message.chat.id}")
+        logger.info(f"SELECT: {obfuscate_chat_id(message.chat.id)}")
         chat = self.bot.chats.get_from_msg(message)
         sent_message = (await chat.send(self.texts["send-me-selection"], reply_markup=ForceReply(), parse_mode="html"))
         chat.status = "do-select:" + str(sent_message.message_id)
@@ -106,14 +107,14 @@ class SubstitutionsBotListener:
         return message
 
     async def show_settings(self, message: Message):
-        logger.info(f"SETTINGS: {message.chat.id}")
+        logger.info(f"SETTINGS: {obfuscate_chat_id(message.cha.idt)}")
         chat = self.bot.chats.get_from_msg(message)
         return SendMessage(message.chat.id, self.create_settings_text(chat),
                            parse_mode="html",
                            reply_markup=self.create_settings_keyboard(chat))
 
     async def reset(self, message):
-        logger.info(f"RESET: {message.chat.id}")
+        logger.info(f"RESET: {obfuscate_chat_id(message.chat.id)}")
         await self.bot.chats.get_from_msg(message).remove_all_messages()
         self.bot.chats.reset_chat(message.chat.id)
         logger.debug(f"reset: successful for chat id {message.chat.id}")
@@ -121,7 +122,7 @@ class SubstitutionsBotListener:
 
     async def all_messages(self, message: Message):
         if determine_message_content_type(message) == "text":
-            logger.info(f"ALL: {message.chat.id}, {repr(message.text)}")
+            logger.info(f"ALL: {obfuscate_chat_id(message.chat.id)}, {'*' * len(message.text)}")
             chat = self.bot.chats.try_get_from_msg(message)
             if chat is not None and chat.status.startswith("do-select:") and message.reply_to_message:
                 message_id = int(chat.status.split(":", 1)[1])
@@ -134,8 +135,7 @@ class SubstitutionsBotListener:
             return SendMessage(message.chat.id, self.texts["send-only-text"], parse_mode="html")
 
     async def all_callbacks(self, callback: asynctelebot.types.CallbackQuery):
-        logger.info(f"{callback.message.chat.id} {str_from_timestamp(callback.message.date)} CALLBACK "
-                    f"({callback.message.chat.first_name})")
+        logger.info(f"CALLBACK: {obfuscate_chat_id(callback.message.chat.id)}, {repr(callback.data)}")
         chat = self.bot.chats.try_get(callback.message.chat.id)
         if chat is not None and callback.data.startswith("setting-"):
             name, value_string = callback.data[8:].split("-", 1)

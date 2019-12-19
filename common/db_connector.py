@@ -1,11 +1,7 @@
 import logging
 import sqlite3
 
-try:
-    import mysql.connector
-except ModuleNotFoundError:
-    mysql = None
-
+from common.utils import obfuscate_chat_id
 
 logger = logging.getLogger()
 
@@ -23,13 +19,29 @@ class BaseConnection:
     def close(self):
         self.connection.close()
 
-    def _execute(self, operation, table_name, args=()):
+    def _execute(self, operation, table_name, args=(), sensitive=None):
+        def obfuscate_arg(arg, mode):
+            if not mode:
+                return arg
+            if mode == "obfuscate":
+                return "*" * len(str(arg))
+            if mode == "chat_id":
+                return obfuscate_chat_id(arg)
+            return "?"
         operation = operation.format(table=table_name)
-        logger.debug(f"DB: {repr(operation)} {repr(args)}")
+        if len(args) != 0:
+            if sensitive:
+                args_info = "(" + ", ".join(obfuscate_arg(arg, s) for arg, s in zip(args, sensitive)) + ")"
+            else:
+                args_info = str(args)
+        else:
+            args_info = "()"
+        logger.debug(f"DB: {repr(operation)} {args_info}")
+        # noinspection PyBroadException
         try:
             self.cursor.execute(operation, args)
         except Exception:
-            logger.exception(f"Database error: {repr(operation)} {repr(args)}")
+            logger.exception(f"Database error: {repr(operation)} {args_info}")
 
     def try_create_table(self, table_name):
         self._execute("""CREATE TABLE IF NOT EXISTS {table} (
@@ -63,66 +75,34 @@ class BaseConnection:
         raise NotImplementedError
 
 
-class MySQLConnection(BaseConnection):
-    def _connect(self):
-        self.connection = mysql.connector.connect(**self._connection_kwargs)
-        self.connection.autocommit = True
-        self.cursor = self.connection.cursor()
-
-    def get_chat(self, table_name, chat_id):
-        self._execute("SELECT * FROM {table} WHERE chat_id=%s", table_name, (chat_id,))
-        return self.cursor.fetchone()
-
-    def new_chat(self, table_name, chat_id: int, status: str, selection: str, send_news: int, send_absent_classes: int,
-                 send_absent_teachers: int, sent_messages: str):
-        self._execute("INSERT INTO {table} VALUES (%s,%s,%s,%s,%s,%s,%s)", table_name, (chat_id, status, selection,
-                                                                                        send_news, send_absent_classes,
-                                                                                        send_absent_teachers,
-                                                                                        sent_messages))
-
-    def delete_chat(self, table_name, chat_id):
-        self._execute("DELETE FROM {table} WHERE chat_id=%s", table_name, chat_id)
-
-    def set_sent_substitutions(self, table_name, sent_messages, chat_id):
-        self._execute("UPDATE {table} SET sent_messages=%s WHERE chat_id=%s", table_name, (sent_messages, chat_id))
-
-    def update_chat(self, table_name, key, value, chat_id):
-        assert " " not in key
-        self._execute("UPDATE {table} SET " + key + "=%s WHERE chat_id=%s", table_name, (value, chat_id))
-
-
 class SQLiteConnection(BaseConnection):
     def _connect(self):
         self.connection = sqlite3.connect(**self._connection_kwargs)
         self.cursor = self.connection.cursor()
 
     def get_chat(self, table_name, chat_id):
-        self._execute("SELECT * FROM {table} WHERE chat_id=?", table_name, (chat_id,))
+        self._execute("SELECT * FROM {table} WHERE chat_id=?", table_name, (chat_id,), ("chat_id",))
         return self.cursor.fetchone()
 
     def new_chat(self, table_name, chat_id: int, status: str, selection: str, send_news: int, send_absent_classes: int,
                  send_absent_teachers: int, sent_messages: str):
-        self._execute("INSERT INTO {table} VALUES (?,?,?,?,?,?,?)", table_name, (chat_id, status, selection, send_news,
-                                                                                 send_absent_classes,
-                                                                                 send_absent_teachers, sent_messages))
+        self._execute("INSERT INTO {table} VALUES (?,?,?,?,?,?,?)", table_name,
+                      (chat_id, status, selection, send_news, send_absent_classes, send_absent_teachers, sent_messages),
+                      ("chat_id", False, False,    False,     False,               False,                False))
 
     def delete_chat(self, table_name, chat_id):
-        self._execute("DELETE FROM {table} WHERE chat_id=?", table_name, (chat_id,))
+        self._execute("DELETE FROM {table} WHERE chat_id=?", table_name, (chat_id,), ("chat_id",))
 
     def set_sent_substitutions(self, table_name, sent_messages, chat_id):
-        self._execute("UPDATE {table} SET sent_messages=? WHERE chat_id=?", table_name, (sent_messages, chat_id))
+        self._execute("UPDATE {table} SET sent_messages=? WHERE chat_id=?", table_name,
+                      (sent_messages, chat_id), (False, "chat_id"))
 
     def update_chat(self, table_name, key, value, chat_id):
-        self._execute("UPDATE {table} SET " + key + "=? WHERE chat_id=?", table_name, (value, chat_id))
+        self._execute("UPDATE {table} SET " + key + "=? WHERE chat_id=?", table_name,
+                      (value, chat_id), ("obfuscate", "chat_id"))
 
 
 def get_connection(secret):
-    try:
-        connection = MySQLConnection(**secret["database_mysql"])
-        logger.info("Using MySQL database")
-        return connection
-    except Exception:
-        logger.exception("Using MySQL database failed")
-        logger.info("Using SQLite database")
-        connection = SQLiteConnection(**secret["database_sqlite"])
-        return connection
+    logger.info("Using SQLite database")
+    connection = SQLiteConnection(**secret["database_sqlite"])
+    return connection
