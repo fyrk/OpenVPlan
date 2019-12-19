@@ -107,7 +107,7 @@ class SubstitutionsBotListener:
         return message
 
     async def show_settings(self, message: Message):
-        logger.info(f"SETTINGS: {obfuscate_chat_id(message.cha.idt)}")
+        logger.info(f"SETTINGS: {obfuscate_chat_id(message.chat.id)}")
         chat = self.bot.chats.get_from_msg(message)
         return SendMessage(message.chat.id, self.create_settings_text(chat),
                            parse_mode="html",
