@@ -4,7 +4,7 @@ import logging
 from typing import Type
 
 import asynctelebot
-from asynctelebot.methods import SendMessage, EditMessageText
+from asynctelebot.methods import SendMessage, EditMessageText, AnswerCallbackQuery
 from asynctelebot.types import ForceReply, Message
 from asynctelebot.utils import determine_message_content_type
 
@@ -148,6 +148,8 @@ class SubstitutionsBotListener:
                 return EditMessageText(self.create_settings_text(chat), callback.message.chat.id,
                                        callback.message.message_id, parse_mode="html",
                                        reply_markup=self.create_settings_keyboard(chat))
+            else:
+                return AnswerCallbackQuery(callback.id)
 
 
 def run_bot_listener(token, db_bot_class: Type[DatabaseBot], db_connection,
