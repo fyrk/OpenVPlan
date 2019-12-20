@@ -41,7 +41,7 @@ class SubstitutionsBotListener:
         raise NotImplementedError
 
     async def start(self, message):
-        logger.info(f"START: {obfuscate_chat_id(message.chat.id)} ({message.from_.first_name})")
+        logger.info(f"START: {obfuscate_chat_id(message.chat.id)}")
         # noinspection PyBroadException
         try:
             text = message.text.strip()
