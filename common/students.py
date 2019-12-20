@@ -1,3 +1,4 @@
+import dataclasses
 import hashlib
 from functools import lru_cache
 
@@ -18,26 +19,19 @@ class StudentSubstitutionGroup(BaseSubstitutionGroup):
         return is_class_selected(self.group_name, parsed_selection)
 
 
+@dataclasses.dataclass(unsafe_hash=True)
 class StudentSubstitution(BaseSubstitution):
-    def __init__(self, teacher, substitute, lesson, subject, room, subs_from, hint):
-        super().__init__(lesson)
-        self.teacher = teacher
-        self.substitute = substitute
-        self.subject = subject
-        self.room = room
-        self.subs_from = subs_from
-        self.hint = hint
-
-    def __repr__(self):
-        return f"StudentSubstitution({self.lesson}, {self.teacher}, {self.substitute}, {self.subject}, {self.room}, " \
-               f"{self.subs_from}, {self.hint})"
+    teacher: str
+    substitute: str
+    lesson: str
+    subject: str
+    room: str
+    subs_from: str
+    hint: str
+    lesson_num: int = dataclasses.field(init=False, repr=False)
 
     def to_dict(self):
-        return {name: value for name, value in (("lesson", self.lesson), ("lesson_num", self.lesson_num),
-                                                ("teacher", self.teacher), ("substitute", self.substitute),
-                                                ("subject", self.subject), ("room", self.room),
-                                                ("subs_from", self.subs_from), ("hint", self.hint)
-                                                ) if value is not None}
+        return dataclasses.asdict(self, dict_factory=lambda x: {k: v for k, v in x if v is not None})
 
     @lru_cache()
     def get_html_first_of_group(self, group_substitution_count, group_name, snippets, add_lesson_num):
@@ -69,6 +63,7 @@ class StudentSubstitution(BaseSubstitution):
             lesson_num=("lesson" + str(self.lesson_num)) if add_lesson_num else ""
         )
 
+    @lru_cache()
     def get_hash(self, date, class_name):
         return hashlib.sha1((date + "-" + class_name + "-" + self.teacher + "." + self.substitute + "." + self.lesson +
                              "." + self.subject + "." + self.room + "." + self.subs_from + "." + self.hint)

@@ -46,9 +46,8 @@ class BaseSubstitutionGroup(NamedTuple):
 
 
 class BaseSubstitution:
-    def __init__(self, lesson):
-        self.lesson = lesson
-        self.lesson_num = get_lesson_num(self.lesson)
+    def __post_init__(self):
+        self.__setattr__("lesson_num", get_lesson_num(self.lesson))
 
     def to_dict(self):
         raise NotImplementedError

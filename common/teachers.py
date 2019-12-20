@@ -1,3 +1,4 @@
+import dataclasses
 import hashlib
 from functools import lru_cache
 
@@ -12,27 +13,24 @@ class TeacherSubstitutionGroup(BaseSubstitutionGroup):
         return self.group_name[0] == parsed_selection
 
 
+@dataclasses.dataclass(unsafe_hash=True)
 class TeacherSubstitution(BaseSubstitution):
-    def __init__(self, lesson, class_name, teacher, subject, room, subs_from, hint, is_substitute_striked):
-        super().__init__(lesson)
-        self.class_name = class_name
-        self.teacher = teacher
-        self.subject = subject
-        self.room = room
-        self.subs_from = subs_from
-        self.hint = hint
-        self.is_substitute_striked = is_substitute_striked
+    lesson: str
+    class_name: str
+    teacher: str
+    subject: str
+    room: str
+    subs_from: str
+    hint: str
+    is_substitute_striked: bool
+    lesson_num: int = dataclasses.field(init=False, repr=False)
 
     def __repr__(self):
         return f"TeacherSubstitution({self.lesson}, {self.class_name}, {self.teacher}, {self.subject}, {self.room}, " \
                f"{self.subs_from}, {self.hint}, {self.is_substitute_striked})"
 
     def to_dict(self):
-        return {name: value for name, value in (("lesson", self.lesson), ("class", self.class_name),
-                                                ("teacher", self.teacher), ("subject", self.subject),
-                                                ("room", self.room), ("subs_from", self.subs_from), ("hint", self.hint),
-                                                ("is_substitute_striked", self.is_substitute_striked)
-                                                ) if value is not None}
+        return dataclasses.asdict(self, dict_factory=lambda x: {k: v for k, v in x.items() if v is not None})
 
     @lru_cache()
     def get_html_first_of_group(self, group_substitution_count, group, snippets, add_lesson_num):
