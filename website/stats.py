@@ -5,7 +5,8 @@ from collections import Counter
 
 
 class Stats:
-    _DATA_BASE = {"statuses": [], "last-sites": [], "requests": {}, "bot_requests":  []}
+    _DATA_BASE = {"statuses": [], "last-sites": [], "requests": {}, "bot_requests":  [], "requests_not_found": {},
+                  "requests_method_not_allowed": {}}
     _BOT_USER_AGENTS = ["bot",     # GoogleBots,  Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
                         "spider",  # Baiduspider, Sogou Spider
                         "crawl",   # ia_archiver (Alexa)
@@ -16,9 +17,12 @@ class Stats:
     def __init__(self, filename):
         if os.path.exists(filename):
             self.data = self._DATA_BASE
-            with open(filename, "r") as f:
-                self.data.update(json.load(f))
-            self.data["requests"] = {time: {path: Counter(user_agent) for path, user_agent in time_data.items()}
+            try:
+                with open(filename, "r") as f:
+                    self.data.update(json.load(f))
+            except json.JSONDecodeError:
+                pass
+            self.data["requests"] = {time: {user_agent: Counter(paths) for user_agent, paths in time_data.items()}
                                      for time, time_data in self.data["requests"].items()}
         else:
             self.data = self._DATA_BASE
@@ -41,9 +45,23 @@ class Stats:
             time = datetime.datetime.now().strftime("%Y-%m-%d")
             if time not in self.data["requests"]:
                 self.data["requests"][time] = {}
-            if path not in self.data["requests"][time]:
-                self.data["requests"][time][path] = Counter()
-            self.data["requests"][time][path][user_agent] += 1
+            if user_agent not in self.data["requests"][time]:
+                self.data["requests"][time][user_agent] = Counter()
+            self.data["requests"][time][user_agent][path] += 1
+
+    def _new_bad_request(self, environ, type_):
+        time = datetime.datetime.now().strftime("%Y-%m-%d %X")
+        environ_str = str(environ)
+        if environ["PATH_INFO"] not in self.data[type_]:
+            self.data[type_][environ["PATH_INFO"]] = {time: environ_str}
+        else:
+            self.data[type_][environ["PATH_INFO"]][time] = environ_str
+
+    def new_not_found(self, environ):
+        self._new_bad_request(environ, "requests_not_found")
+
+    def new_method_not_allowed(self, environ):
+        self._new_bad_request(environ, "requests_method_not_allowed")
 
     def add_last_site(self, site_num):
         if self.status_was_new:

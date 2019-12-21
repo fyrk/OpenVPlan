@@ -160,7 +160,6 @@ substitution_plan = SubstitutionPlan(logger)
 
 
 def application(environ, start_response):
-    print(environ)
     substitution_plan.stats.new_request(environ["REQUEST_METHOD"] + " " + environ["PATH_INFO"],
                                         environ.get("HTTP_USER_AGENT", "none"))
     if environ["PATH_INFO"].startswith("/api"):
@@ -168,22 +167,27 @@ def application(environ, start_response):
         return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
     t1 = time.perf_counter_ns()
     if environ["REQUEST_METHOD"] == "GET":
+        content = None
+
         if environ["PATH_INFO"] == "/":
             logger.info("GET /")
             storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
             response, content = substitution_plan.get_site_students(storage)
-            content = content.encode("utf-8")
-            t2 = time.perf_counter_ns()
-            logger.debug(f"Time for handling request: {t2 - t1}ns")
-            substitution_plan.stats.save()
-            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
-                                      ("Content-Length", str(len(content)))])
-            return [content]
 
         if environ["PATH_INFO"] == "/teachers":
             logger.info("GET /teachers")
             storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
             response, content = substitution_plan.get_site_teachers(storage)
+
+        if environ["PATH_INFO"] == "/about":
+            response = "200 OK"
+            content = substitution_plan.snippets.get("about")
+
+        if environ["PATH_INFO"] == "/privacy":
+            response = "200 OK"
+            content = substitution_plan.snippets.get("privacy")
+
+        if content is not None:
             content = content.encode("utf-8")
             t2 = time.perf_counter_ns()
             logger.debug(f"Time for handling request: {t2 - t1}ns")
@@ -192,22 +196,7 @@ def application(environ, start_response):
                                       ("Content-Length", str(len(content)))])
             return [content]
 
-        if environ["PATH_INFO"] == "/about":
-            response = "200 OK"
-            content = substitution_plan.snippets.get("about").encode("utf-8")
-            substitution_plan.stats.save()
-            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
-                                      ("Content-Length", str(len(content)))])
-            return [content]
-
-        if environ["PATH_INFO"] == "/privacy":
-            response = "200 OK"
-            content = substitution_plan.snippets.get("privacy").encode("utf-8")
-            substitution_plan.stats.save()
-            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
-                                      ("Content-Length", str(len(content)))])
-            return [content]
-
+        substitution_plan.stats.new_not_found(environ)
         substitution_plan.stats.save()
         start_response("303 See Other", [("Content-Type", "text/html;charset=utf-8"),
                                          ("Location", "/")])
@@ -225,6 +214,7 @@ def application(environ, start_response):
         return [content]
 
     content = "Error: 405 Method Not Allowed".encode("utf-8")
+    substitution_plan.stats.new_method_not_allowed(environ)
     substitution_plan.stats.save()
     start_response("405	Method Not Allowed", [("Content-Type", "text/text;charset=utf-8"),
                                               ("Content-Length", str(len(content)))])
