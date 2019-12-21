@@ -164,6 +164,15 @@ class BaseSubstitutionLoader:
         self.url = url
         self.stats = stats
 
+    def _load_new_data(self, new_data, response_data, current_timestamp):
+        parser = self.substitutions_parser(new_data, current_timestamp)
+        try:
+            parser.feed(response_data)
+            parser.close()
+        except ValueError:
+            pass
+        return parser.is_last_site()
+
     async def _load_data_from_site(self, new_data: dict, current_timestamp: int, session: aiohttp.ClientSession,
                                    site_num: int, plan: str):
         async with session.get(self.url.format(site_num)) as response:
@@ -171,48 +180,37 @@ class BaseSubstitutionLoader:
             if response.status != 200:
                 return True
             response_data = await response.text("iso-8859-1")
-            parser = self.substitutions_parser(new_data, current_timestamp)
-            try:
-                parser.feed(response_data)
-                parser.close()
-            except ValueError:
-                pass
-            if self.stats:
-                is_last_site = parser.is_last_site()
-                if is_last_site:
-                    self.stats.add_last_site(site_num)
-                return is_last_site
-            return parser.is_last_site()
+            return self._load_new_data(new_data, response_data, current_timestamp)
+
+    SITE_LOAD_COUNT = 5  # first site has already been loaded (at least for students)
 
     async def load_data(self, plan: str, first_site: bytes = None):
         new_data = {}
         current_timestamp = create_date_timestamp(datetime.datetime.now())
         if first_site:
-            parser = self.substitutions_parser(new_data, current_timestamp)
-            try:
-                parser.feed(first_site.decode("iso-8859-1"))
-                parser.close()
-            except ValueError:
-                pass
-            if parser.next_site == "subst_001.htm":
-                if self.stats:
-                    self.stats.add_last_site(1)
-                return self._data_postprocessing(new_data)
+            if self._load_new_data(new_data, first_site.decode("iso-8859-1"), current_timestamp):
+                return self._data_postprocessing(new_data, 1)
             i = 2
+            site_load_count = self.SITE_LOAD_COUNT
         else:
             i = 1
+            site_load_count = self.SITE_LOAD_COUNT + 1  # load one site more for teachers
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         session = aiohttp.ClientSession()
+
         while True:
             if True in await asyncio.gather(
                     *(self._load_data_from_site(new_data, current_timestamp, session, site_num, plan)
-                      for site_num in range(i, i + 4))):
+                      for site_num in range(i, i + site_load_count))):
                 await session.close()
-                return self._data_postprocessing(new_data)
-            i += 4
+                return self._data_postprocessing(new_data, i)
+            i += site_load_count
 
-    def _data_postprocessing(self, data: dict):
+    def _data_postprocessing(self, data: dict, site_count: int):
+        if self.stats:
+            self.stats.add_last_site(site_count)
         return sorted(
             SubstitutionDay(
                 timestamp,
