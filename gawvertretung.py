@@ -208,11 +208,10 @@ def application(environ, start_response):
                                       ("Content-Length", str(len(content)))])
             return [content]
 
-        content = substitution_plan.snippets.get("error-404").encode("utf-8")
         substitution_plan.stats.save()
-        start_response("404 Not Found", [("Content-Type", "text/html;charset=utf-8"),
-                                         ("Content-Length", str(len(content)))])
-        return [content]
+        start_response("303 See Other", [("Content-Type", "text/html;charset=utf-8"),
+                                         ("Location", "/")])
+        return []
 
     if environ["REQUEST_METHOD"] == "POST" and environ["PATH_INFO"] == "/":
         logger.info("POST /")
