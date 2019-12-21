@@ -73,6 +73,7 @@ function update() {
     clearInterval(updateInterval);
     updateStatusElement.textContent = "Aktualisiere...";
     if ((new Date).getDate() !== lastUpdateTime.getDate()) {
+        window.location.reload();
         return;
     }
     fetch("/", {
