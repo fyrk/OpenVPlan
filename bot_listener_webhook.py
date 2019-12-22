@@ -23,6 +23,7 @@ with open("bot/settings.json", "r", encoding="utf-8") as f:
 logger.info("Starting bot...")
 with open("bot/texts.json", "r", encoding="utf-8") as f:
     texts = json.load(f)
+
 texts_students = BotTexts(texts, "students")
 texts_teachers = BotTexts(texts, "teachers")
 
@@ -32,9 +33,9 @@ try:
 
     db_bot_students = StudentDatabaseBot(secret["token_students"], connection)
     db_bot_teachers = TeacherDatabaseBot(secret["token_teachers"], connection)
-    bot_listener_students = StudentBotListener(db_bot_students, texts, settings["available_settings"],
+    bot_listener_students = StudentBotListener(db_bot_students, texts_students, settings["available_settings"],
                                                settings["student_commands"])
-    bot_listener_teachers = TeacherBotListener(db_bot_teachers, texts, settings["available_settings"],
+    bot_listener_teachers = TeacherBotListener(db_bot_teachers, texts_teachers, settings["available_settings"],
                                                settings["teacher_commands"])
 
     def application(environ, start_response):
