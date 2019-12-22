@@ -27,26 +27,28 @@ with open("bot/texts.json", "r", encoding="utf-8") as f:
 texts_students = BotTexts(texts, "students")
 texts_teachers = BotTexts(texts, "teachers")
 
-connection = get_connection(secret)
 
-try:
+db_bot_students = StudentDatabaseBot(secret["token_students"], None)
+db_bot_teachers = TeacherDatabaseBot(secret["token_teachers"], None)
+bot_listener_students = StudentBotListener(db_bot_students, texts_students, settings["available_settings"],
+                                           settings["student_commands"])
+bot_listener_teachers = TeacherBotListener(db_bot_teachers, texts_teachers, settings["available_settings"],
+                                           settings["teacher_commands"])
 
-    db_bot_students = StudentDatabaseBot(secret["token_students"], connection)
-    db_bot_teachers = TeacherDatabaseBot(secret["token_teachers"], connection)
-    bot_listener_students = StudentBotListener(db_bot_students, texts_students, settings["available_settings"],
-                                               settings["student_commands"])
-    bot_listener_teachers = TeacherBotListener(db_bot_teachers, texts_teachers, settings["available_settings"],
-                                               settings["teacher_commands"])
 
-    def application(environ, start_response):
-        logger.info(f"Request: {environ}")
-        if environ["PATH_INFO"] == "/teachers":
-            return bot_listener_teachers.handler.wsgi_application(environ, start_response)
-        elif environ["PATH_INFO"] == "/students":
-            return bot_listener_students.handler.wsgi_application(environ, start_response)
+def application(environ, start_response):
+    connection = get_connection(secret)
+    logger.info(f"Request: {environ}")
+    if environ["PATH_INFO"] == "/students":
+        db_bot_students.chats.connection = connection
+        result = bot_listener_students.handler.wsgi_application(environ, start_response)
+        connection.close()
+        return result
+    elif environ["PATH_INFO"] == "/teachers":
+        db_bot_teachers.chats.connection = connection
+        result = bot_listener_teachers.handler.wsgi_application(environ, start_response)
+        connection.close()
+        return result
 
-        start_response("303 See Other", [("Location", "https://gawvertretung.florian-raediker.de")])
-        return []
-
-finally:
-    connection.close()
+    start_response("303 See Other", [("Location", "https://gawvertretung.florian-raediker.de")])
+    return []
