@@ -8,11 +8,11 @@ from functools import partial
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
+from bot.db.connector import get_connection
 from bot.db.students import StudentDatabaseBot
 from bot.db.teachers import TeacherDatabaseBot
 from bot.sender.students import StudentMessageSender
 from bot.sender.teachers import TeacherMessageSender
-from common.db_connector import get_connection
 from logging_tool import create_logger
 
 os.chdir(os.path.abspath(os.path.dirname(__file__)))

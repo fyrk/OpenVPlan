@@ -1,5 +1,7 @@
 from asynctelebot.methods import SendMessage
+from asynctelebot.types import Message
 
+from bot.listener.admin import Admin
 from bot.listener.base import SubstitutionsBotListener
 from bot.listener.texts import BotTexts
 
@@ -7,6 +9,16 @@ from bot.listener.texts import BotTexts
 class StudentBotListener(SubstitutionsBotListener):
     def __init__(self, bot, texts: BotTexts, available_settings, commands):
         super().__init__(bot, texts, available_settings, commands)
+        self.admin_handler = Admin(self.bot.chats.connection)
+
+    async def all_messages(self, message: Message):
+        if message.from_.id == 854107292 and message.text.startswith("/admin"):
+            if not message.text.startswith("/admin"):
+                text = "Admin command must start with '/admin'"
+            else:
+                text = self.admin_handler.handle_command(message.text[7:])
+            return SendMessage(854107292, text)
+        return await super().all_messages(message)
 
     def _create_selection_info_text(self, selection):
         return self.texts["settings-info-selected-class" if len(selection) == 1 else "settings-info-selected-classes"] \

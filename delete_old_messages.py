@@ -3,9 +3,9 @@ import datetime
 import json
 import os
 
+from bot.db.connector import get_connection
 from bot.db.students import StudentDatabaseBot
 from bot.db.teachers import TeacherDatabaseBot
-from common.db_connector import get_connection
 from common.utils import create_date_timestamp
 from logging_tool import create_logger
 

@@ -12,10 +12,10 @@ class TeacherDatabaseBot(DatabaseBot):
 
 class TeacherDatabaseChatList(DatabaseChatList):
     def _chat_from_row(self, row):
-        return TeacherDatabaseChat.from_row(self._connection, row, self.bot)
+        return TeacherDatabaseChat.from_row(self.connection, row, self.bot)
 
     def _new_chat(self, chat_id):
-        return TeacherDatabaseChat(self.bot, self._connection, chat_id)
+        return TeacherDatabaseChat(self.bot, self.connection, chat_id)
 
 
 class TeacherDatabaseChat(DatabaseChat):

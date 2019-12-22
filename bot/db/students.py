@@ -13,10 +13,10 @@ class StudentDatabaseBot(DatabaseBot):
 
 class StudentDatabaseChatList(DatabaseChatList):
     def _chat_from_row(self, row):
-        return StudentDatabaseChat.from_row(self._connection, row, self.bot)
+        return StudentDatabaseChat.from_row(self.connection, row, self.bot)
 
     def _new_chat(self, chat_id):
-        return StudentDatabaseChat(self.bot, self._connection, chat_id)
+        return StudentDatabaseChat(self.bot, self.connection, chat_id)
 
 
 class StudentDatabaseChat(DatabaseChat):

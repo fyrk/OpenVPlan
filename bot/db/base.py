@@ -7,7 +7,7 @@ import asynctelebot
 from asynctelebot.api import BotAPIException
 from asynctelebot.types import Message
 
-from common.db_connector import BaseConnection
+from bot.db.connector import BaseConnection
 from common.utils import obfuscate_chat_id
 
 logger = logging.getLogger()
@@ -26,12 +26,12 @@ class DatabaseChatList:
     CLASS_CHAT = None
 
     def __init__(self, connection: BaseConnection, table_name, bot: DatabaseBot):
-        self._connection = connection
+        self.connection = connection
         self.table_name = table_name
         self.bot = bot
 
     def try_create_table(self):
-        self._connection.try_create_table(self.table_name)
+        self.connection.try_create_table(self.table_name)
 
     def _chat_from_row(self, row):
         raise NotImplementedError
@@ -40,7 +40,7 @@ class DatabaseChatList:
         raise NotImplementedError
 
     def try_get(self, chat_id: int) -> Optional["DatabaseChat"]:
-        chat = self._connection.get_chat(self.table_name, chat_id)
+        chat = self.connection.get_chat(self.table_name, chat_id)
         if chat is not None:
             return self._chat_from_row(chat)
         return None
@@ -53,17 +53,17 @@ class DatabaseChatList:
         if chat is not None:
             return chat
         logger.debug("Unknown chat, creating new")
-        self._connection.new_chat(self.table_name, chat_id, "", "", 1, 1, 1, "")
+        self.connection.new_chat(self.table_name, chat_id, "", "", 1, 1, 1, "")
         return self._new_chat(chat_id)
 
     def get_from_msg(self, message: Message) -> "DatabaseChat":
         return self.get(message.chat.id)
 
     def all_chats(self):
-        return (self._chat_from_row(row) for row in self._connection.all_chats(self.table_name))
+        return (self._chat_from_row(row) for row in self.connection.all_chats(self.table_name))
 
     def reset_chat(self, chat_id: int):
-        self._connection.delete_chat(self.table_name, chat_id)
+        self.connection.delete_chat(self.table_name, chat_id)
 
     async def remove_old_messages(self, min_time):
         print(await asyncio.gather(*(chat.remove_old_messages(min_time) for chat in self.all_chats())))
@@ -123,7 +123,8 @@ class DatabaseChat:
         self.save_sent_messages()
 
     def save_sent_messages(self):
-        self.connection.set_sent_substitutions(self.bot.chats.table_name, json.dumps(self.sent_messages), self._chat_id)
+        self.connection.update_chat(self.bot.chats.table_name, "sent_messages", json.dumps(self.sent_messages),
+                                    self._chat_id)
 
     async def remove_all_messages(self):
         tasks = []

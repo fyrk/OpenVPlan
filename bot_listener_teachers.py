@@ -3,10 +3,10 @@
 import json
 import os
 
+from bot.db.connector import get_connection
 from bot.db.teachers import TeacherDatabaseBot
 from bot.listener.base import run_bot_listener
 from bot.listener.teachers import TeacherBotListener
-from common.db_connector import get_connection
 from logging_tool import create_logger
 
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
