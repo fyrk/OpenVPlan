@@ -70,6 +70,7 @@ nav a.active {
         /*noinspection CssInvalidPropertyValue*/
         width: -webkit-fill-available;
         width: available;
+        width: -moz-available;
         max-width: 320px;
     }
 
