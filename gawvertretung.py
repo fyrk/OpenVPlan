@@ -198,8 +198,7 @@ def application(environ, start_response):
 
         substitution_plan.stats.new_not_found(environ)
         substitution_plan.stats.save()
-        start_response("303 See Other", [("Content-Type", "text/html;charset=utf-8"),
-                                         ("Location", "/")])
+        start_response("303 See Other", [("Location", "/")])
         return []
 
     if environ["REQUEST_METHOD"] == "POST" and environ["PATH_INFO"] == "/":

@@ -39,11 +39,14 @@ try:
                                                settings["teacher_commands"])
 
     def application(environ, start_response):
-        logger.info(f"Request: {environ['PATH_INFO']}")
+        logger.info(f"Request: {environ}")
         if environ["PATH_INFO"] == "/teachers":
             return bot_listener_teachers.handler.wsgi_application(environ, start_response)
         elif environ["PATH_INFO"] == "/students":
             return bot_listener_students.handler.wsgi_application(environ, start_response)
+
+        start_response("303 See Other", [("Location", "https://gawvertretung.florian-raediker.de")])
+        return []
 
 finally:
     connection.close()
