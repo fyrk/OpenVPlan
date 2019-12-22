@@ -38,13 +38,14 @@ bot_listener_teachers = TeacherBotListener(db_bot_teachers, texts_teachers, sett
 
 def application(environ, start_response):
     connection = get_connection(secret)
-    logger.info(f"Request: {environ}")
     if environ["PATH_INFO"] == "/students":
+        logger.info("Update for STUDENTS")
         db_bot_students.chats.connection = connection
         result = bot_listener_students.handler.wsgi_application(environ, start_response)
         connection.close()
         return result
     elif environ["PATH_INFO"] == "/teachers":
+        logger.info("Update for TEACHERS")
         db_bot_teachers.chats.connection = connection
         result = bot_listener_teachers.handler.wsgi_application(environ, start_response)
         connection.close()
