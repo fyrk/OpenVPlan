@@ -56,7 +56,7 @@ class SubstitutionsBotListener:
                 chat.set_selection_from_string(selection_string)
                 if chat.has_selection():
                     await chat.send(self.texts["help"], parse_mode="html")
-                    logger.debug(f"start: {message.chat.id}: selection from website is {chat.get_parsed_selection()}")
+                    logger.debug("start: has selection from website")
                     return self.send_selection_set(chat.chat_id, chat.get_pretty_selection(), True)
         return await self.help(message)
 
