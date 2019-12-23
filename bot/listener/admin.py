@@ -7,9 +7,10 @@ from bot.db.connector import BaseConnection
 
 
 class Admin:
-    def __init__(self, db_connection: BaseConnection):
+    def __init__(self, db_connection: BaseConnection, florian_pwd: str):
         self.connection = db_connection
         self.logger = logging.getLogger()
+        self.__florian_pwd = florian_pwd
 
     def handle_command(self, text):
         try:
@@ -76,6 +77,7 @@ class Admin:
     def _log(self, args):
         ARG_TO_FILENAME = {
             "sender": "log-bot-sender.txt",
+            "listener": "log-bot-listener-webhook.txt",
             "listener-students": "log-bot-listener-students.txt",
             "listener-teachers": "log-bot-listener-teachers.txt",
             "website": "log-website.txt",
