@@ -39,9 +39,10 @@ bot_listener_teachers = TeacherBotListener(db_bot_teachers, texts_teachers, sett
 
 def on_bot_error(environ, start_response, data: dict):
     # try to get chat id and say sorry...
-    if isinstance(data, dict):
+    if not isinstance(data, dict):
         logger.error(f"Expected 'data' arg for on_bot_error to be dict, not '{data}'")
-        return
+        start_response(f"500 Internal Server Error")
+        return []
     if "message" in data:
         message = data["message"]
         if "chat" in message:
