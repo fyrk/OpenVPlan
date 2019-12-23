@@ -27,8 +27,8 @@ class Admin:
                 result = f"Unknown command '{parts[0]}'"
             if not result:
                 result = "No data available"
-            if len(result) > 4096:
-                result = "…" + result[-4095:]
+            if len(result) > 4000:
+                result = "…" + result[-4000:]
             return result
         except Exception as e:
             logging.exception("Exception while processing admin command")
