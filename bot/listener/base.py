@@ -25,7 +25,6 @@ class SubstitutionsBotListener:
         self.texts = texts
         self.available_settings = available_settings
         self.handler = asynctelebot.UpdateHandler(self.bot)
-        self.handler.add_restriction_allowed_language_codes("de", help_text=self.texts["wrong-language-code"])
         self.handler.subscribe_message(commands=commands["start"])(self.start)
         self.handler.subscribe_message(commands=commands["help"])(self.help)
         self.handler.subscribe_message(commands=commands["select"])(self.do_select)
