@@ -162,9 +162,6 @@ substitution_plan = SubstitutionPlan(logger)
 def application(environ, start_response):
     substitution_plan.stats.new_request(environ["REQUEST_METHOD"] + " " + environ["PATH_INFO"],
                                         environ.get("HTTP_USER_AGENT", "none"))
-    if environ["PATH_INFO"] == "/errortest" and environ["HTTP_USER_AGENT"] == "Me":
-        raise ValueError("Just an error test...")
-        return
     if environ["PATH_INFO"].startswith("/api"):
         substitution_plan.stats.save()
         return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
