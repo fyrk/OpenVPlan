@@ -30,7 +30,7 @@ class TeacherSubstitution(BaseSubstitution):
                f"{self.subs_from}, {self.hint}, {self.is_substitute_striked})"
 
     def to_dict(self):
-        return dataclasses.asdict(self, dict_factory=lambda x: {k: v for k, v in x.items() if v is not None})
+        return dataclasses.asdict(self, dict_factory=lambda x: {k: v for k, v in x if v is not None})
 
     @lru_cache()
     def get_html_first_of_group(self, group_substitution_count, group, snippets, add_lesson_num):
