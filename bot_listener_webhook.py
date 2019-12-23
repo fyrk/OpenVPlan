@@ -42,6 +42,7 @@ def application(environ, start_response):
         if environ["PATH_INFO"] == "/students":
             logger.info("Update for STUDENTS")
             db_bot_students.chats.connection = connection
+            bot_listener_students.admin_handler.connection = connection
             result = bot_listener_students.handler.wsgi_application(environ, start_response)
             connection.close()
             return result
