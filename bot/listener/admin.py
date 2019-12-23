@@ -12,6 +12,7 @@ class Admin:
         self.logger = logging.getLogger()
 
     def handle_command(self, text):
+        self.logger.info(f"ADMIN COMMAND: '{text}'")
         try:
             parts = [a for a in text.split(" ") if a]
             if len(parts) == 0:
