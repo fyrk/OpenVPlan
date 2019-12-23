@@ -34,7 +34,6 @@
 		}
 	],
 	"common": {
-		"wrong-language-code": "Sorry, this bot is only for users with language code \"de\"",
 		"reset-successful": "Die diesem Chat zugeordneten Daten wurden gelöscht. ",
 		"table": "Tabelle",
 		"text": "Text",
