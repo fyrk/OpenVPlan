@@ -7,10 +7,9 @@ from bot.db.connector import BaseConnection
 
 
 class Admin:
-    def __init__(self, db_connection: BaseConnection, florian_pwd: str):
+    def __init__(self, db_connection: BaseConnection):
         self.connection = db_connection
         self.logger = logging.getLogger()
-        self.__florian_pwd = florian_pwd
 
     def handle_command(self, text):
         try:
