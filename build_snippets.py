@@ -31,11 +31,6 @@ for filename in sorted(filename[:-5] for filename in list(os.walk(SOURCE_PATH))[
             parent_snippet = snippets[parent_snippet]
             snippet_lines = iter(snippet.split("\n"))
             line = next(snippet_lines)
-            if line.startswith("<!-- save to ") and line.endswith(" -->"):
-                save_to = line[13:-4]
-                line = next(snippet_lines)
-            else:
-                save_to = None
             assert line.startswith("<!-- SET ") and line.endswith(" -->"), f"error in {filename}"
             current_key = line[9:-4]
             current_content = []
