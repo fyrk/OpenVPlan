@@ -168,4 +168,5 @@ def run_bot_listener(token, db_bot_class: Type[DatabaseBot], db_connection,
         bot_listener.handler.polling(infinite=True, error_wait=10)
     finally:
         db_connection.close()
+        db_bot.close()
         logger.error("Error occurred, saving and closing")

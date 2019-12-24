@@ -11,8 +11,10 @@ with open("secret.json", "r") as f:
 
 async def delete_webhooks():
     await asyncio.gather(
-        await bot_students.delete_webhook(),
-        await bot_teachers.delete_webhook()
+        bot_students.delete_webhook(),
+        bot_teachers.delete_webhook()
     )
 
 asyncio.run(delete_webhooks())
+bot_students.close()
+bot_teachers.close()

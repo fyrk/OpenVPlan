@@ -8,6 +8,7 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 SOURCE_PATH = "website/snippets_source/"
 DST_PATH = "website/snippets/"
+ERROR_PATH = "website/static/error/"
 
 minifier = htmlmin.Minifier(remove_comments=True, remove_empty_space=True, remove_all_empty_space=True,
                             remove_optional_attribute_quotes=False, reduce_boolean_attributes=True)
@@ -58,5 +59,8 @@ for filename in sorted(filename[:-5] for filename in list(os.walk(SOURCE_PATH))[
         snippets[filename] = minifier.minify(snippet)
         with open(os.path.join(DST_PATH + filename + ".html"), "w", encoding="utf-8") as f:
             f.write(snippets[filename])
+        if filename.startswith("error-"):
+            with open(os.path.join(ERROR_PATH + filename + ".html"), "w", encoding="utf-8") as f:
+                f.write(snippets[filename])
     else:
         snippets[filename] = snippet
