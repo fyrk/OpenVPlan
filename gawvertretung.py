@@ -165,41 +165,27 @@ def application(environ, start_response):
     if environ["PATH_INFO"].startswith("/api"):
         substitution_plan.stats.save()
         return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
+
     t1 = time.perf_counter_ns()
     if environ["REQUEST_METHOD"] == "GET":
-        content = None
-
         if environ["PATH_INFO"] == "/":
             logger.info("GET /")
             storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
             response, content = substitution_plan.get_site_students(storage)
-
-        if environ["PATH_INFO"] == "/teachers":
+        elif environ["PATH_INFO"] == "/teachers":
             logger.info("GET /teachers")
             storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
             response, content = substitution_plan.get_site_teachers(storage)
+        else:
+            raise ValueError(f"gawvertretung.py shouldn't be called for path '{environ['PATH_INFO']}'")
 
-        if environ["PATH_INFO"] == "/about":
-            response = "200 OK"
-            content = substitution_plan.snippets.get("about")
-
-        if environ["PATH_INFO"] == "/privacy":
-            response = "200 OK"
-            content = substitution_plan.snippets.get("privacy")
-
-        if content is not None:
-            content = content.encode("utf-8")
-            t2 = time.perf_counter_ns()
-            logger.debug(f"Time for handling request: {t2 - t1}ns")
-            substitution_plan.stats.save()
-            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
-                                      ("Content-Length", str(len(content)))])
-            return [content]
-
-        substitution_plan.stats.new_not_found(environ)
+        content = content.encode("utf-8")
+        t2 = time.perf_counter_ns()
+        logger.debug(f"Time for handling request: {t2 - t1}ns")
         substitution_plan.stats.save()
-        start_response("303 See Other", [("Location", "/")])
-        return []
+        start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                  ("Content-Length", str(len(content)))])
+        return [content]
 
     if environ["REQUEST_METHOD"] == "POST" and environ["PATH_INFO"] == "/":
         logger.info("POST /")
