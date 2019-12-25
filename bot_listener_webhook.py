@@ -53,7 +53,7 @@ def on_bot_error(environ, start_response, data: dict):
                 message = SendMessage(chat_id, "Der Bot funktioniert im Moment leider nicht richtig. "
                                                "Bitte versuche es später noch einmal.")
                 return [message.get_webhook_response().encode("utf-8")]
-    logger.error("Could not find chat id in data, response: 500")
+    logger.error(f"Could not find chat id in data (data is is {data}), response: 500")
     start_response(f"500 Internal Server Error", [])
     return []
 
