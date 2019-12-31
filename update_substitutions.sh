@@ -1,2 +1,2 @@
 #!/bin/bash
-curl -X POST 'localhost'
+curl -X POST 'https://gawvertretung.florian-raediker.de'
