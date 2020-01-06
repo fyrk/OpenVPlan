@@ -40,7 +40,7 @@
 		"news": "Nachrichten",
 		"absent_classes": "abwesende Klassen",
 		"absent_teachers": "abwesende Lehrer*innen",
-		"send-only-text": "Ich kann nur mit Textnachrichten umgehen...",
+		"send-only-text": "Ich kann nur mit Textnachrichten umgehen.",
 		"settings-info-enabled": "Du wirst über {} informiert. \n",
 		"settings-info-disabled": "Du wirst nicht über {} informiert. \n",
 		"setting-info-format": "Vertretungen werden als {} verschickt. ",

@@ -218,10 +218,10 @@ class BaseSubstitutionLoader:
                 day["date"],
                 day["week"],
                 day["news"] if "news" in day else None,
-                ", ".join(sorted(day["absent-classes"].split(", "), key=sort_classes))
-                if "absent-classes" in day else None,
-                ", ".join(sorted(day["absent-teachers"].split(", ")))
-                if "absent-teachers" in day else None,
+                ", ".join(sorted(set(day["absent-classes"].split(", ")), key=sort_classes))
+                    if "absent-classes" in day else None,
+                ", ".join(sorted(set(day["absent-teachers"].split(", "))))
+                    if "absent-teachers" in day else None,
                 self._sort_substitutions(day["substitutions"])
             )
             for timestamp, day in data.items()
