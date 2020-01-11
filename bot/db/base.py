@@ -119,7 +119,7 @@ class DatabaseChat:
             self.sent_messages[day_timestamp].append(message.message_id)
         except KeyError:
             self.sent_messages[day_timestamp] = [message.message_id]
-        logger.debug("Sent substitution to {}: {}".format(self.chat_id, message.message_id))
+        logger.debug("Sent substitution to {}: {}".format(obfuscate_chat_id(self.chat_id), message.message_id))
         self.save_sent_messages()
 
     def save_sent_messages(self):
@@ -142,7 +142,7 @@ class DatabaseChat:
                 await self.bot.edit_message_text(
                     "Alte Nachrichten zum Vertretungsplan werden gelöscht. ", self.chat_id, message_id)
             except BotAPIException:
-                logger.exception(f"Exception editing message {message_id} in chat {self.chat_id}")
+                logger.exception(f"Exception editing message {message_id} in chat {obfuscate_chat_id(self.chat_id)}")
 
     async def remove_old_messages(self, min_time):
         obfuscated = obfuscate_chat_id(self.chat_id)

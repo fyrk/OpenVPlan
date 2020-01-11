@@ -84,7 +84,9 @@
 			"Der Bot für Lehrer*innen heißt @GaWVertretungLehrerBot. ",
 			"",
 			"Dieser Bot gehört zum Vertretungsplan unter gawvertretung.florian-raediker.de und ist nicht offiziell.",
-			"Alle Angaben ohne Gewähr. Es gibt keine Garantie, dass Benachrichtigungen zuverlässig verschickt werden."
+			"Die <a href=\"https://gawvertretung.florian-raediker.de/privacy#telegram-bot-info\">Hinweise zu Telegram-Bots</a> der Datenschutzerklärung sind zu beachten.",
+			"",
+			"Programmiert von Florian Rädiker"
 		],
 		"class-automatically-set": "Die von dir auf der Webseite ausgewählte Klasse <i>{}</i> wurde automatisch ausgewählt. Du kannst die Auswahl mit dem /klassen-Befehl anpassen.",
 		"classes-automatically-set": "Die von dir auf der Webseite ausgewählten Klassen <i>{}</i> wurden automatisch ausgewählt. Du kannst die Auswahl mit dem /klassen-Befehl anpassen.",
@@ -110,7 +112,9 @@
 			"Der Bot für Schüler*innen heißt @GaWVertretungBot. ",
 			"",
 			"Dieser Bot gehört zum Vertretungsplan unter gawvertretung.florian-raediker.de und ist nicht offiziell.",
-			"Alle Angaben ohne Gewähr. Es gibt keine Garantie, dass Benachrichtigungen zuverlässig verschickt werden."
+			"Die <a href=\"https://gawvertretung.florian-raediker.de/privacy#telegram-bot-info\">Hinweise zu Telegram-Bots</a> der Datenschutzerklärung sind zu beachten.",
+			"",
+			"Programmiert von Florian Rädiker"
 		],
 		"teacher-abbr-automatically-set": "Deine Auswahl von der Webseite für Vertretungen von <i>{}</i> wurde automatisch gesetzt. Du kannst die Auswahl mit dem /auswahl-Befehl anpassen.",
 		"send-me-selection": [
