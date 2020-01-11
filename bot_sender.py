@@ -75,21 +75,26 @@ class BotSender(FileSystemEventHandler):
 
 if __name__ == "__main__":
     logger = create_logger("bot-sender")
-
-    with open("bot/secret.json", "r") as f:
-        secret = json.load(f)
-
-    sender = BotSender(secret["token_students"], secret["token_teachers"], partial(get_connection, secret=secret),
-                       asyncio.new_event_loop())
-    observer = Observer()
-    observer.schedule(sender, "data/substitutions")
-    observer.start()
+    logger.info("Starting bot sender...")
     try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+
+        with open("bot/secret.json", "r") as f:
+            secret = json.load(f)
+
+        sender = BotSender(secret["token_students"], secret["token_teachers"], partial(get_connection, secret=secret),
+                           asyncio.new_event_loop())
+        observer = Observer()
+        observer.schedule(sender, "data/substitutions")
+        logger.info("Bot sender started")
+        observer.start()
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            observer.stop()
+        observer.join()
+    except Exception:
+        logger.exception("Exception occured")
 else:
     import logging
 
