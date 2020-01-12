@@ -11,9 +11,7 @@ from logging_tool import create_logger
 
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
-
 logger = create_logger("delete-old-msg")
-
 
 with open("bot/secret.json", "r") as f:
     secret = json.load(f)

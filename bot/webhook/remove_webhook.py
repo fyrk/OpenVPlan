@@ -15,6 +15,7 @@ async def delete_webhooks():
         bot_teachers.delete_webhook()
     )
 
+
 asyncio.new_event_loop().run_until_complete(delete_webhooks())
 bot_students.close()
 bot_teachers.close()

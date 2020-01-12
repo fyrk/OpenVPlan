@@ -28,6 +28,7 @@ class BaseConnection:
             if mode == "chat_id":
                 return obfuscate_chat_id(arg)
             return "?"
+
         operation = operation.format(table=table_name)
         if len(args) != 0:
             if sensitive:
@@ -88,7 +89,7 @@ class SQLiteConnection(BaseConnection):
                  send_absent_teachers: int, sent_messages: str):
         self._execute("INSERT INTO {table} VALUES (?,?,?,?,?,?,?)", table_name,
                       (chat_id, status, selection, send_news, send_absent_classes, send_absent_teachers, sent_messages),
-                      ("chat_id", False, False,    False,     False,               False,                False))
+                      ("chat_id", False, False, False, False, False, False))
 
     def delete_chat(self, table_name, chat_id):
         self._execute("DELETE FROM {table} WHERE chat_id=?", table_name, (chat_id,), ("chat_id",))

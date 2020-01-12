@@ -21,6 +21,7 @@ async def set_webhooks():
         )
     )
 
+
 asyncio.run(set_webhooks())
 bot_students.close()
 bot_teachers.close()

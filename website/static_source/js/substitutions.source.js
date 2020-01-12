@@ -45,17 +45,17 @@ function greySubstitutions() {
         const b2 = now.getHours();
         const c2 = now.getMinutes();
         for (let i of [
-                        ["1", 8, 35],
-                        ["2", 9, 25],
-                        ["3", 10, 30],
-                        ["4", 11, 15],
-                        ["5", 12, 20],
-                        ["6", 13, 10],
-                        ["7", 14, 35],
-                        ["8", 15, 25],
-                        ["9", 16, 20],
-                        ["10", 17, 5]
-                    ]) {
+            ["1", 8, 35],
+            ["2", 9, 25],
+            ["3", 10, 30],
+            ["4", 11, 15],
+            ["5", 12, 20],
+            ["6", 13, 10],
+            ["7", 14, 35],
+            ["8", 15, 25],
+            ["9", 16, 20],
+            ["10", 17, 5]
+        ]) {
             if (i[1] < b2 || (i[1] === b2 && i[2] <= c2)) {
                 for (let x of document.getElementsByClassName("lesson" + i[0])) {
                     x.classList.add("grey");
@@ -67,6 +67,7 @@ function greySubstitutions() {
         }
     }
 }
+
 greySubstitutions();
 
 function update() {
@@ -82,20 +83,21 @@ function update() {
         .then(function (p) {
             return p.text();
         }).then(function (p) {
-            if (!(statusContainer.innerHTML.includes(p))) {
-                window.location.reload()
-            } else {
-                lastUpdateTime = new Date();
-                updateInterval = setInterval(showUpdateStatus, 60000);
-                showUpdateStatus();
-                greySubstitutions();
-            }
-        }).catch(function () {
-            updateStatusElement.textContent = "Aktualisierung fehlgeschlagen ";
-            const a1 = document.createElement("a");
-            a1.textContent = "Nochmal versuchen";
-            a1.onclick = update;
-            updateStatusElement.appendChild(a1);
-        });
+        if (!(statusContainer.innerHTML.includes(p))) {
+            window.location.reload()
+        } else {
+            lastUpdateTime = new Date();
+            updateInterval = setInterval(showUpdateStatus, 60000);
+            showUpdateStatus();
+            greySubstitutions();
+        }
+    }).catch(function () {
+        updateStatusElement.textContent = "Aktualisierung fehlgeschlagen ";
+        const a1 = document.createElement("a");
+        a1.textContent = "Nochmal versuchen";
+        a1.onclick = update;
+        updateStatusElement.appendChild(a1);
+    });
 }
+
 window.onfocus = update;

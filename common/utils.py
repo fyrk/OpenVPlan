@@ -37,4 +37,3 @@ def obfuscate_chat_id(chat_id) -> str:
     return hashlib.sha224(int(chat_id).to_bytes(5, "big", signed=True) +
                           int(time.mktime(datetime.datetime.now().date().timetuple()))
                           .to_bytes(5, "big")).hexdigest()[:7]
-

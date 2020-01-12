@@ -79,7 +79,8 @@ class SubstitutionPlan:
             text = site.read()
         t2 = time.perf_counter_ns()
         new_status_string = get_status_string(text)
-        self.logger.debug(f"Got answer in {t2 - t1}ns, status is {repr(new_status_string)}, old: {repr(self.current_status_string)}")
+        self.logger.debug(f"Got answer in {t2 - t1}ns, status is {repr(new_status_string)}, "
+                          f"old: {repr(self.current_status_string)}")
         status_changed = False
         if new_status_string != self.current_status_string:
             # status changed, load new data
