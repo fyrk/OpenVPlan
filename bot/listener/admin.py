@@ -1,4 +1,3 @@
-import datetime
 import json
 import logging
 import math
@@ -17,8 +16,10 @@ class Admin:
             parts = [a for a in text.split(" ") if a]
             if len(parts) == 0:
                 result = "No command provided"
-            elif parts[0] == "stats":
-                result = self._stats(parts[1:])
+            elif parts[0] == "statuses":
+                result = self._statuses(parts[1:])
+            elif parts[0] == "requests":
+                result = self._requests(parts[1:])
             elif parts[0] == "log":
                 result = self._log(parts[1:])
             elif parts[0] == "db":
@@ -40,41 +41,44 @@ class Admin:
                 raise TypeError(f"Expected {min_length} to {max_length} args, but got {len(args)}")
         else:
             if len(args) != min_length:
-                raise TypeError(f"Expected {min_length} arguments, but got {len(args)}")
+                raise TypeError(f"Expected {min_length} args, but got {len(args)}")
 
     def _parse_int(self, args, num):
         try:
             return int(args[num])
         except ValueError:
-            raise ValueError(f"Expected argument {num} to be int, got '{args[num]}'")
+            raise ValueError(f"Expected arg {num} to be int, got '{args[num]}'")
 
-    def _stats(self, args):
-        with open("data/stats.json", "r") as f:
-            stats = json.load(f)
-        self._assert_arg_length(args, 1, math.inf)
-        if args[0] == "statuses":
-            self._assert_arg_length(args, 1)
-            return ", ".join(stats["statuses"])
-        if args[0] == "last-sites":
-            self._assert_arg_length(args, 1)
-            return ", ".join(stats["last-sites"])
-        if args[0] == "requests":
-            if len(args) == 1:
-                time = datetime.datetime.now().strftime("%Y-%m-%d")
-                if time not in stats["requests"]:
-                    return f"No requests for {args[1]}"
-                return "\n".join(user_agent + "\n" + "\n".join(f'  "{path}": {count}'
-                                                               for path, count in requests.items())
-                                 for user_agent, requests in stats["requests"][time].items())
-            self._assert_arg_length(args, 2, math.inf)
-            if args[1] == "bots":
-                if len(args) >= 3:
-                    self._assert_arg_length(args, 3)
-                    count = self._parse_int(args, 2)
-                else:
-                    count = 0
-                return "\n".join(" - ".join(r) for r in stats["bot_requests"][-count:])
-            raise ValueError(f"Unknown argument '{args[1]}'")
+    def _read_last_lines_of_file(self, f, line_count):
+        lines = f.readlines()
+        return "".join(lines[:-line_count])
+
+    def _statuses(self, args):
+        self._assert_arg_length(args, 0, 1)
+        if len(args) == 1:
+            count = self._parse_int(args, 0)
+        else:
+            count = 32
+        with open("data/stats/statuses.json", "r", encoding="utf-8") as f:
+            statuses = json.load(f)["statuses"]
+            return "\n".join(status[0] + " - " + str(status[1]) for status in statuses)
+
+    def _requests(self, args):
+        self._assert_arg_length(args, 0, 2)
+        if len(args) == 0:
+            with open("data/stats/requests.json", "r", encoding="utf-8") as f:
+                return f.read()
+        if len(args) == 2:
+            count = self._parse_int(args, 1)
+        else:
+            count = 32
+        if args[0] == "bot":
+            with open("data/stats/bot_requests.txt", "r", encoding="utf-8") as f:
+                return self._read_last_lines_of_file(f, count)
+        elif args[0] == "bad":
+            with open("data/stats/bad_requests.txt", "r", encoding="utf-8") as f:
+                return self._read_last_lines_of_file(f, count)
+        raise ValueError(f"Unknown argument '{args[0]}'")
 
     def _log(self, args):
         ARG_TO_FILENAME = {
@@ -94,8 +98,7 @@ class Admin:
         else:
             count = 16
         with open("logs/" + ARG_TO_FILENAME[args[0]], "r", encoding="utf-8", errors="replace") as f:
-            lines = f.readlines()
-        return "".join(lines[-count:])
+            return self._read_last_lines_of_file(f, count)
 
     def _db(self, args):
         def delete(table_name, chat_id):
