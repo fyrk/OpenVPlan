@@ -162,8 +162,6 @@ substitution_plan = SubstitutionPlan(logger, Stats(SubstitutionPlan.PATH_STATS))
 
 def application(environ, start_response):
     try:
-        print(environ.get("REMOTE_ADDR"))
-        print(environ.get("HTTP_X_FORWARDED_FOR"))
         substitution_plan.stats.new_request(environ)
         if environ["PATH_INFO"].startswith("/api"):
             return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)

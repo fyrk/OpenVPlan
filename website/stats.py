@@ -40,8 +40,6 @@ class Stats:
         self._bot_requests_file = os.path.join(self._directory, "bot_requests.txt")
 
     def save(self):
-        print("saving stats")
-
         def save_json(path, data):
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
@@ -63,27 +61,28 @@ class Stats:
         return ip_address, (hashlib.sha256(ip_address.encode("utf-8")).hexdigest()[:12] if ip_address else "unknown")
 
     def new_request(self, environ):
-        path = environ["REQUEST_METHOD"][0] + environ["PATH_INFO"]
         ip_address, ip_hash = self._get_ip(environ)
-        user_agent = environ.get("HTTP_USER_AGENT", "unknown")
-        referer = environ.get("HTTP_REFERER")
-        user_agent_lower = user_agent.lower()
-        time = datetime.datetime.now().strftime("%Y-%m-%d %X")
-        if any(agent in user_agent_lower for agent in self._BOT_USER_AGENTS):
-            text = time + " " + path + " " + ip_address + " " + user_agent
-            if referer:
-                text += ", Referer: " + referer
-            with open(self._bot_requests_file, "a", encoding="utf-8") as f:
-                f.write(text + "\n")
-        else:
-            if ip_hash not in self._requests_data["users"]:
-                self._requests_data["users"][ip_hash] = {}
-            if user_agent not in self._requests_data["users"][ip_hash]:
-                self._requests_data["users"][ip_hash][user_agent] = []
-            text = time + " " + path
-            if referer:
-                text += ", Referer: " + referer
-            self._requests_data["users"][ip_hash][user_agent].append(text)
+        if ip_hash != "edbd6af54a1c":  # hash for own web server, curl is ignored
+            path = environ["REQUEST_METHOD"][0] + environ["PATH_INFO"]
+            referer = environ.get("HTTP_REFERER")
+            user_agent = environ.get("HTTP_USER_AGENT", "unknown")
+            user_agent_lower = user_agent.lower()
+            time = datetime.datetime.now().strftime("%Y-%m-%d %X")
+            if any(agent in user_agent_lower for agent in self._BOT_USER_AGENTS):
+                text = time + " " + path + " " + ip_address + " " + user_agent
+                if referer:
+                    text += ", Referer: " + referer
+                with open(self._bot_requests_file, "a", encoding="utf-8") as f:
+                    f.write(text + "\n")
+            else:
+                if ip_hash not in self._requests_data["users"]:
+                    self._requests_data["users"][ip_hash] = {}
+                if user_agent not in self._requests_data["users"][ip_hash]:
+                    self._requests_data["users"][ip_hash][user_agent] = []
+                text = time + " " + path
+                if referer:
+                    text += ", Referer: " + referer
+                self._requests_data["users"][ip_hash][user_agent].append(text)
 
     def _new_bad_request(self, environ, type_):
         _, ip_hash = self._get_ip(environ)

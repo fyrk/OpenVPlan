@@ -51,7 +51,7 @@ class Admin:
 
     def _read_last_lines_of_file(self, f, line_count):
         lines = f.readlines()
-        return "".join(lines[:-line_count])
+        return "".join(lines[-line_count:])
 
     def _statuses(self, args):
         self._assert_arg_length(args, 0, 1)
@@ -72,7 +72,7 @@ class Admin:
             count = self._parse_int(args, 1)
         else:
             count = 32
-        if args[0] == "bot":
+        if args[0] == "bots":
             with open("data/stats/bot_requests.txt", "r", encoding="utf-8") as f:
                 return self._read_last_lines_of_file(f, count)
         elif args[0] == "bad":
