@@ -198,6 +198,25 @@ def application(environ, start_response):
                                       ("Content-Length", str(len(content)))])
             return [content]
 
+        if environ["REQUEST_METHOD"] == "HEAD":
+            if environ["PATH_INFO"] == "/":
+                logger.info("HEAD /")
+                storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
+                response, content = substitution_plan.get_site_students(storage)
+            elif environ["PATH_INFO"] == "/teachers":
+                logger.info("HEAD /teachers")
+                storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
+                response, content = substitution_plan.get_site_teachers(storage)
+            else:
+                raise ValueError(f"gawvertretung.py shouldn't be called for path '{environ['PATH_INFO']}'")
+
+            content = content.encode("utf-8")
+            t2 = time.perf_counter_ns()
+            logger.debug(f"Time for handling request: {t2 - t1}ns")
+            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                      ("Content-Length", str(len(content)))])
+            return []
+
         content = "Error: 405 Method Not Allowed".encode("utf-8")
         substitution_plan.stats.new_method_not_allowed(environ)
         start_response("405 Method Not Allowed", [("Content-Type", "text/text;charset=utf-8"),
