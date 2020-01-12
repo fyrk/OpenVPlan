@@ -163,6 +163,7 @@ class BaseSubstitutionLoader:
         self.substitutions_parser = substitutions_parser_class
         self.url = url
         self.stats = stats
+        self._last_site_num = None
 
     def _load_new_data(self, new_data, response_data, current_timestamp):
         parser = self.substitutions_parser(new_data, current_timestamp)
@@ -180,7 +181,10 @@ class BaseSubstitutionLoader:
             if response.status != 200:
                 return True
             response_data = await response.text("iso-8859-1")
-            return self._load_new_data(new_data, response_data, current_timestamp)
+            if self._load_new_data(new_data, response_data, current_timestamp):
+                self._last_site_num = site_num
+                return True
+            return False
 
     SITE_LOAD_COUNT = 5  # first site has already been loaded (at least for students)
 
@@ -200,12 +204,13 @@ class BaseSubstitutionLoader:
         asyncio.set_event_loop(loop)
         session = aiohttp.ClientSession()
 
+        self._last_site_num = None
         while True:
             if True in await asyncio.gather(
                     *(self._load_data_from_site(new_data, current_timestamp, session, site_num, plan)
                       for site_num in range(i, i + site_load_count))):
                 await session.close()
-                return self._data_postprocessing(new_data, i)
+                return self._data_postprocessing(new_data, self._last_site_num)
             i += site_load_count
 
     def _data_postprocessing(self, data: dict, site_count: int):

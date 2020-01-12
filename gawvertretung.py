@@ -27,12 +27,12 @@ class SubstitutionPlan:
     URL_FIRST_SITE = URL_STUDENTS.format(1)
 
     FILENAME_SUBSTITUTIONS = "data/substitutions/substitutions.pickle"
-    FILENAME_STATS = "data/stats.json"
+    PATH_STATS = "data/stats/"
 
     PATH_SNIPPETS = "website/snippets/"
 
-    def __init__(self, logger):
-        self.stats = Stats(self.FILENAME_STATS)
+    def __init__(self, logger, stats: Stats):
+        self.stats = stats
         self.logger = logger
         self.substitution_loader_students = StudentSubstitutionLoader(self.URL_STUDENTS, self.stats)
         self.substitution_loader_teachers = TeacherSubstitutionLoader(self.URL_TEACHERS)
@@ -157,51 +157,51 @@ class SubstitutionPlan:
 
 logger = create_logger("website")
 
-substitution_plan = SubstitutionPlan(logger)
+substitution_plan = SubstitutionPlan(logger, Stats(SubstitutionPlan.PATH_STATS))
 
 
 def application(environ, start_response):
-    substitution_plan.stats.new_request(environ["REQUEST_METHOD"] + " " + environ["PATH_INFO"],
-                                        environ.get("HTTP_USER_AGENT", "none"))
-    if environ["PATH_INFO"].startswith("/api"):
-        substitution_plan.stats.save()
-        return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
+    try:
+        print(environ.get("REMOTE_ADDR"))
+        print(environ.get("HTTP_X_FORWARDED_FOR"))
+        substitution_plan.stats.new_request(environ)
+        if environ["PATH_INFO"].startswith("/api"):
+            return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
 
-    t1 = time.perf_counter_ns()
-    if environ["REQUEST_METHOD"] == "GET":
-        if environ["PATH_INFO"] == "/":
-            logger.info("GET /")
-            storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
-            response, content = substitution_plan.get_site_students(storage)
-        elif environ["PATH_INFO"] == "/teachers":
-            logger.info("GET /teachers")
-            storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
-            response, content = substitution_plan.get_site_teachers(storage)
-        else:
-            raise ValueError(f"gawvertretung.py shouldn't be called for path '{environ['PATH_INFO']}'")
+        t1 = time.perf_counter_ns()
+        if environ["REQUEST_METHOD"] == "GET":
+            if environ["PATH_INFO"] == "/":
+                logger.info("GET /")
+                storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
+                response, content = substitution_plan.get_site_students(storage)
+            elif environ["PATH_INFO"] == "/teachers":
+                logger.info("GET /teachers")
+                storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
+                response, content = substitution_plan.get_site_teachers(storage)
+            else:
+                raise ValueError(f"gawvertretung.py shouldn't be called for path '{environ['PATH_INFO']}'")
 
-        content = content.encode("utf-8")
-        t2 = time.perf_counter_ns()
-        logger.debug(f"Time for handling request: {t2 - t1}ns")
-        substitution_plan.stats.save()
-        start_response(response, [("Content-Type", "text/html;charset=utf-8"),
-                                  ("Content-Length", str(len(content)))])
+            content = content.encode("utf-8")
+            t2 = time.perf_counter_ns()
+            logger.debug(f"Time for handling request: {t2 - t1}ns")
+            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                      ("Content-Length", str(len(content)))])
+            return [content]
+
+        if environ["REQUEST_METHOD"] == "POST" and environ["PATH_INFO"] == "/":
+            logger.info("POST /")
+            response, content = substitution_plan.get_current_status()
+            content = content.encode("utf-8")
+            t2 = time.perf_counter_ns()
+            logger.debug(f"Time for handling request: {t2 - t1}ns")
+            start_response(response, [("Content-Type", "text/text;charset=utf-8"),
+                                      ("Content-Length", str(len(content)))])
+            return [content]
+
+        content = "Error: 405 Method Not Allowed".encode("utf-8")
+        substitution_plan.stats.new_method_not_allowed(environ)
+        start_response("405 Method Not Allowed", [("Content-Type", "text/text;charset=utf-8"),
+                                                  ("Content-Length", str(len(content)))])
         return [content]
-
-    if environ["REQUEST_METHOD"] == "POST" and environ["PATH_INFO"] == "/":
-        logger.info("POST /")
-        response, content = substitution_plan.get_current_status()
-        content = content.encode("utf-8")
-        t2 = time.perf_counter_ns()
-        logger.debug(f"Time for handling request: {t2 - t1}ns")
+    finally:
         substitution_plan.stats.save()
-        start_response(response, [("Content-Type", "text/text;charset=utf-8"),
-                                  ("Content-Length", str(len(content)))])
-        return [content]
-
-    content = "Error: 405 Method Not Allowed".encode("utf-8")
-    substitution_plan.stats.new_method_not_allowed(environ)
-    substitution_plan.stats.save()
-    start_response("405	Method Not Allowed", [("Content-Type", "text/text;charset=utf-8"),
-                                              ("Content-Length", str(len(content)))])
-    return [content]

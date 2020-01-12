@@ -1,72 +1,104 @@
 import datetime
+import hashlib
 import json
 import os.path
-from collections import Counter
 
 
 class Stats:
-    _DATA_BASE = {"statuses": [], "last-sites": [], "requests": {}, "bot_requests": [], "requests_not_found": {},
-                  "requests_method_not_allowed": {}}
-    _BOT_USER_AGENTS = ["bot",     # GoogleBots,  Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
-                        "spider",  # Baiduspider, Sogou Spider
-                        "crawl",   # ia_archiver (Alexa)
-                        "yahoo",   # Slurp (Yahoo)
-                        "google"   # Google Image Proxy 11
-                        ]
+    _BOT_USER_AGENTS = [
+        "bot",     # GoogleBots,  Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
+        "spider",  # Baiduspider, Sogou Spider
+        "crawl",   # ia_archiver (Alexa)
+        "yahoo",   # Slurp (Yahoo)
+        "google"   # Google Image Proxy 11
+    ]
 
-    def __init__(self, filename):
-        if os.path.exists(filename):
-            self.data = self._DATA_BASE
-            try:
-                with open(filename, "r") as f:
-                    self.data.update(json.load(f))
-            except json.JSONDecodeError:
-                pass
-            self.data["requests"] = {time: {user_agent: Counter(paths) for user_agent, paths in time_data.items()}
-                                     for time, time_data in self.data["requests"].items()}
-        else:
-            self.data = self._DATA_BASE
-        self.filename = filename
-        self.status_was_new = False
+    def __init__(self, stats_dir):
+        self._directory = stats_dir
 
-    def add_status(self, status):
-        if status not in self.data["statuses"]:
-            self.data["statuses"].append(status)
-            self.status_was_new = True
-        else:
-            self.status_was_new = False
+        def from_json_data(path, base_data):
+            if os.path.exists(path):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        base_data.update(json.load(f))
+                except json.JSONDecodeError:
+                    pass
+            return base_data
 
-    def new_request(self, path, user_agent):
-        user_agent_lower = user_agent.lower()
-        if any(agent in user_agent_lower for agent in self._BOT_USER_AGENTS):
-            time = datetime.datetime.now().strftime("%Y-%m-%d %X")
-            self.data["bot_requests"].append([time, path, user_agent])
-        else:
-            time = datetime.datetime.now().strftime("%Y-%m-%d")
-            if time not in self.data["requests"]:
-                self.data["requests"][time] = {}
-            if user_agent not in self.data["requests"][time]:
-                self.data["requests"][time][user_agent] = Counter()
-            self.data["requests"][time][user_agent][path] += 1
+        # STATUSES
+        self._path_statuses_data = os.path.join(self._directory, "statuses.json")
+        self._statuses_data = from_json_data(self._path_statuses_data, {"statuses": []})
 
-    def _new_bad_request(self, environ, type_):
-        time = datetime.datetime.now().strftime("%Y-%m-%d %X")
-        environ_str = str(environ)
-        if environ["PATH_INFO"] not in self.data[type_]:
-            self.data[type_][environ["PATH_INFO"]] = {time: environ_str}
-        else:
-            self.data[type_][environ["PATH_INFO"]][time] = environ_str
+        # USER REQUESTS
+        self._path_requests_data = os.path.join(self._directory, "requests.json")
+        self._requests_data = from_json_data(self._path_requests_data, {"users": {}})
 
-    def new_not_found(self, environ):
-        self._new_bad_request(environ, "requests_not_found")
+        # BAD REQUESTS
+        self._bad_requests_file = os.path.join(self._directory, "bad_requests.txt")
 
-    def new_method_not_allowed(self, environ):
-        self._new_bad_request(environ, "requests_method_not_allowed")
-
-    def add_last_site(self, site_num):
-        if self.status_was_new:
-            self.data["last-sites"].append(site_num)
+        # BOT REQUESTS
+        self._bot_requests_file = os.path.join(self._directory, "bot_requests.txt")
 
     def save(self):
-        with open(self.filename, "w") as f:
-            json.dump(self.data, f, indent=4)
+        print("saving stats")
+
+        def save_json(path, data):
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+
+        save_json(self._path_statuses_data, self._statuses_data)
+        save_json(self._path_requests_data, self._requests_data)
+
+    def add_status(self, status):
+        self._statuses_data["statuses"].append([status])
+
+    def add_last_site(self, site_num):
+        if len(self._statuses_data["statuses"][-1]) == 1:
+            self._statuses_data["statuses"][-1].append(site_num)
+
+    def _get_ip(self, environ):
+        ip_address = environ.get("REMOTE_ADDR")
+        if not ip_address:
+            ip_address = environ.get("HTTP_X_FORWARDED_FOR")
+        return ip_address, (hashlib.sha256(ip_address.encode("utf-8")).hexdigest()[:12] if ip_address else "unknown")
+
+    def new_request(self, environ):
+        path = environ["REQUEST_METHOD"][0] + environ["PATH_INFO"]
+        ip_address, ip_hash = self._get_ip(environ)
+        user_agent = environ.get("HTTP_USER_AGENT", "unknown")
+        referer = environ.get("HTTP_REFERER")
+        user_agent_lower = user_agent.lower()
+        time = datetime.datetime.now().strftime("%Y-%m-%d %X")
+        if any(agent in user_agent_lower for agent in self._BOT_USER_AGENTS):
+            text = time + " " + path + " " + ip_address + " " + user_agent
+            if referer:
+                text += ", Referer: " + referer
+            with open(self._bot_requests_file, "a", encoding="utf-8") as f:
+                f.write(text + "\n")
+        else:
+            if ip_hash not in self._requests_data["users"]:
+                self._requests_data["users"][ip_hash] = {}
+            if user_agent not in self._requests_data["users"][ip_hash]:
+                self._requests_data["users"][ip_hash][user_agent] = []
+            text = time + " " + path
+            if referer:
+                text += ", Referer: " + referer
+            self._requests_data["users"][ip_hash][user_agent].append(text)
+
+    def _new_bad_request(self, environ, type_):
+        _, ip_hash = self._get_ip(environ)
+        path = environ["REQUEST_METHOD"][0] + environ["PATH_INFO"]
+        user_agent = environ.get("HTTP_USER_AGENT", "unknown")
+        referer = environ.get("HTTP_REFERER")
+        time = datetime.datetime.now().strftime("%Y-%m-%d %X")
+        text = type_ + " " + time + " " + path + " " + ip_hash + " " + user_agent
+        if referer:
+            text += ", Referer: " + referer
+        with open(self._bad_requests_file, "a", encoding="utf-8") as f:
+            f.write(text + "\n")
+
+    def new_not_found(self, environ):
+        self._new_bad_request(environ, "NOT FOUND")
+
+    def new_method_not_allowed(self, environ):
+        self._new_bad_request(environ, "METHOD NOT ALLOWED")
