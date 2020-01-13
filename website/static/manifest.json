@@ -1,6 +1,9 @@
 {
 	"name": "Vertretungsplan Gymnasium am Wall Verden",
 	"short_name": "GaW VPlan",
+	"theme_color": "#e67b10",
+	"background_color": "#e67b10",
+	"display": "standalone",
 	"icons": [
 		{
 			"src": "/favicon.svg",
@@ -72,8 +75,5 @@
 			"sizes": "512x512",
 			"type": "image/png"
 		}
-	],
-	"theme_color": "#e67b10",
-	"background_color": "#e67b10",
-	"display": "standalone"
+	]
 }
