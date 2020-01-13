@@ -45,9 +45,11 @@ class BotSender(FileSystemEventHandler):
 
     def on_modified(self, event):
         if event.src_path == "data/substitutions/substitutions.pickle":
+            logger.info("SUBSTITUTIONS CHANGED")
             self.on_substitutions_modified()
 
     def on_substitutions_modified(self, *_):
+        logger.info("on_substitutions_modified")
         try:
             with open("data/substitutions/substitutions.pickle", "rb") as f:
                 status, data_students, data_teachers = pickle.load(f)
