@@ -44,9 +44,12 @@ class BotSender(FileSystemEventHandler):
         self.sender_teachers = TeacherMessageSender(self.bot_teachers, "data/sent_messages_teachers.json")
 
     def on_modified(self, event):
-        if event.src_path == "data/substitutions/substitutions.pickle":
-            logger.info("SUBSTITUTIONS CHANGED")
-            self.on_substitutions_modified()
+        try:
+            if event.src_path == "data/substitutions/substitutions.pickle":
+                logger.info("SUBSTITUTIONS CHANGED")
+                self.on_substitutions_modified()
+        except Exception:
+            logger.exception("Exception occurred while processing file update")
 
     def on_substitutions_modified(self, *_):
         logger.info("on_substitutions_modified")
