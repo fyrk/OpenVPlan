@@ -65,6 +65,8 @@ class Stats:
         if ip_hash != "edbd6af54a1c":  # hash for own web server, curl is ignored
             path = environ["REQUEST_METHOD"][0] + environ["PATH_INFO"]
             referer = environ.get("HTTP_REFERER")
+            if referer.endswith(environ["PATH_INFO"]) or referer.endswith(environ["QUERY_STRING"]):
+                referer = None
             user_agent = environ.get("HTTP_USER_AGENT", "unknown")
             user_agent_lower = user_agent.lower()
             time = datetime.datetime.now().strftime("%Y-%m-%d %X")
