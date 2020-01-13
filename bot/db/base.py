@@ -110,15 +110,20 @@ class DatabaseChat:
         raise NotImplementedError
 
     async def send(self, text, reply_markup=None, parse_mode=None):
-        return await self.bot.send_message(self.chat_id, text, reply_markup=reply_markup, parse_mode=parse_mode)
+        try:
+            return await self.bot.send_message(self.chat_id, text, reply_markup=reply_markup, parse_mode=parse_mode)
+        except BotAPIException:
+            logger.exception("Exception while sending message to user")
+            return None
 
     async def send_substitution(self, day_timestamp, text, reply_markup=None, parse_mode=None):
         day_timestamp = str(day_timestamp)
         message = await self.send(text, reply_markup, parse_mode)
-        try:
-            self.sent_messages[day_timestamp].append(message.message_id)
-        except KeyError:
-            self.sent_messages[day_timestamp] = [message.message_id]
+        if message is not None:
+            try:
+                self.sent_messages[day_timestamp].append(message.message_id)
+            except KeyError:
+                self.sent_messages[day_timestamp] = [message.message_id]
         logger.debug("Sent substitution to {}: {}".format(obfuscate_chat_id(self.chat_id), message.message_id))
         self.save_sent_messages()
 
