@@ -120,9 +120,9 @@ class DatabaseChat:
                 logger.info("Deleted the chat which caused the Forbidden exception")
             return None
 
-    async def send_substitution(self, day_timestamp, text, reply_markup=None, parse_mode=None):
+    async def send_substitution(self, day_timestamp, text):
         day_timestamp = str(day_timestamp)
-        message = await self.send(text, reply_markup, parse_mode)
+        message = await self.send(text, parse_mode="html")
         if message is not None:
             try:
                 self.sent_messages[day_timestamp].append(message.message_id)
