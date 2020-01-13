@@ -50,8 +50,8 @@ class TeacherSubstitutionParser(BaseSubstitutionParser):
         if tag == "strike":
             self.is_in_strike = False
 
-    def handle_data_mon_list(self, data):
-        if self.is_in_tag_td:
+    def handle_substitution_data(self, data):
+        if self.is_in_td:
             self.current_strikes.append(self.is_in_strike)
             self.current_substitution.append(data)
 
