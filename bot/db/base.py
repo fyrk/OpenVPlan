@@ -112,8 +112,12 @@ class DatabaseChat:
     async def send(self, text, reply_markup=None, parse_mode=None):
         try:
             return await self.bot.send_message(self.chat_id, text, reply_markup=reply_markup, parse_mode=parse_mode)
-        except BotAPIException:
+        except BotAPIException as e:
             logger.exception("Exception while sending message to user")
+            if e.error_code == 403 and e.response_data.get("description") == "Forbidden: bot was blocked by the user":
+                # bot has been blocked by this user, delete the user
+                self.bot.chats.reset_chat(self.chat_id)
+                logger.info("Deleted the chat which caused the Forbidden exception")
             return None
 
     async def send_substitution(self, day_timestamp, text, reply_markup=None, parse_mode=None):
@@ -124,7 +128,7 @@ class DatabaseChat:
                 self.sent_messages[day_timestamp].append(message.message_id)
             except KeyError:
                 self.sent_messages[day_timestamp] = [message.message_id]
-        logger.debug("Sent substitution to {}: {}".format(obfuscate_chat_id(self.chat_id), message.message_id))
+            logger.debug("Sent substitution to {}: {}".format(obfuscate_chat_id(self.chat_id), message.message_id))
         self.save_sent_messages()
 
     def save_sent_messages(self):
