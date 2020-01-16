@@ -31,7 +31,7 @@ class BaseSubstitutionParser(HTMLParser):
         self.current_day_info = None
         self.is_in_tag = False
         self.is_in_td = False
-        self.is_in_format_tag = False
+        self.current_news_format_tag = None
         self.next_site = None
 
     def error(self, message):
@@ -70,12 +70,10 @@ class BaseSubstitutionParser(HTMLParser):
             if len(attrs) == 2 and attrs[0] == ("http-equiv", "refresh") and attrs[1][0] == "content":
                 self.next_site = attrs[1][1].split("URL=")[1]
         elif self.current_section == "info-table":
-            if tag in ("b", "strong", "i", "em", "code", "pre"):  # all tags supported by Telegram except <a>
-                self.is_in_format_tag = True
-                if self.current_day_info in self.day_data:
-                    self.day_data[self.current_day_info] += "<" + tag + ">"
-                else:
-                    self.day_data[self.current_day_info] = "<" + tag + ">"
+            if (self.current_day_info is None or self.current_day_info == "news") and \
+                    tag in ("b", "strong", "i", "em", "code", "pre"):  # all tags supported by Telegram except <a>
+                self.current_day_info = "news"
+                self.current_news_format_tag = tag
         self.is_in_tag = True
 
     def get_current_group(self):
@@ -96,9 +94,6 @@ class BaseSubstitutionParser(HTMLParser):
                     self.day_data["substitutions"][group] = [substitution]
         if tag == "td":
             self.is_in_td = False
-        if self.is_in_format_tag:
-            self.day_data[self.current_day_info] += "</" + tag + ">"
-            self.is_in_format_tag = False
         self.is_in_tag = False
 
     def handle_data(self, data):
@@ -110,21 +105,29 @@ class BaseSubstitutionParser(HTMLParser):
                 print("is in td")
                 if self.current_day_info:
                     if self.current_day_info == "news":
-                        self.day_data["news"] += data
+                        if self.current_news_format_tag:
+                            self.day_data["news"] += "<" + self.current_news_format_tag + ">" + \
+                                                     data + \
+                                                     "</" + self.current_news_format_tag + ">"
+                            self.current_news_format_tag = None
+                        else:
+                            # this is not the first, but the second, third, ... td that contains news on this site
+                            self.day_data["news"] += data
                     else:
                         self.day_data[self.current_day_info] = data
-                        if self.current_day_info == "absent-classes":
-                            self.current_day_info = "news"
-                        else:
-                            self.current_day_info = None
+                        self.current_day_info = None
                 else:
                     print("data", data)
-                    data = data.strip()
-                    if data != "Nachrichten zum Tag":
-                        if data == "Abwesende Lehrer":
+                    data_stripped = data.strip()
+                    if data_stripped != "Nachrichten zum Tag":
+                        if data_stripped == "Abwesende Lehrer":
                             self.current_day_info = "absent-teachers"
-                        elif data == "Abwesende Klassen":
+                        elif data_stripped == "Abwesende Klassen":
                             self.current_day_info = "absent-classes"
+                        else:
+                            # data is the first td on the site that contains news
+                            self.current_day_info = "news"
+                            self.day_data["news"] = data
                 print(self.current_day_info, self.day_data)
         elif self.current_section == "title":
             match = self.REGEX_TITLE.search(data)
