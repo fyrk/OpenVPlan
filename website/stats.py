@@ -6,7 +6,7 @@ import os.path
 
 class Stats:
     _BOT_USER_AGENTS = [
-        "bot",     # GoogleBots,  Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
+        "bot",     # GoogleBots, Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
         "spider",  # Baiduspider, Sogou Spider
         "crawl",   # ia_archiver (Alexa)
         "yahoo",   # Slurp (Yahoo)
@@ -65,9 +65,6 @@ class Stats:
         if ip_hash != "edbd6af54a1c":  # hash for own web server, curl is ignored
             path = environ["REQUEST_METHOD"][0] + environ["PATH_INFO"]
             referer = environ.get("HTTP_REFERER")
-            if referer is not None and \
-                    (referer.endswith(environ["PATH_INFO"]) or referer.endswith(environ["QUERY_STRING"])):
-                referer = None
             user_agent = environ.get("HTTP_USER_AGENT", "unknown")
             user_agent_lower = user_agent.lower()
             time = datetime.datetime.now().strftime("%Y-%m-%d %X")

@@ -68,9 +68,7 @@ nav a.active {
 @media (min-width: 351px) {
     nav a {
         /*noinspection CssInvalidPropertyValue*/
-        width: -webkit-fill-available;
-        width: available;
-        width: -moz-available;
+        width: 100%;
         max-width: 320px;
     }
 
