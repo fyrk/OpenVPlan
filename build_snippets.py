@@ -53,8 +53,5 @@ for filename in sorted(filename[:-5] for filename in list(os.walk(SOURCE_PATH))[
         snippets[filename] = minifier.minify(snippet)
         with open(os.path.join(DST_PATH + filename + ".html"), "w", encoding="utf-8") as f:
             f.write(snippets[filename])
-        if filename.startswith("error-"):
-            with open(os.path.join(ERROR_PATH + filename + ".html"), "w", encoding="utf-8") as f:
-                f.write(snippets[filename])
     else:
         snippets[filename] = snippet
