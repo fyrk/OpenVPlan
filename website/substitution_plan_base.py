@@ -100,9 +100,7 @@ class BaseSubstitutionParser(HTMLParser):
         if self.is_in_tag and self.current_section == "substitution-table":
             self.handle_substitution_data(data)
         elif self.current_section == "info-table":
-            print("is in info-table", self.current_day_info, self.day_data)
             if self.is_in_td:
-                print("is in td")
                 if self.current_day_info:
                     if self.current_day_info == "news":
                         if self.current_news_format_tag:
@@ -117,7 +115,6 @@ class BaseSubstitutionParser(HTMLParser):
                         self.day_data[self.current_day_info] = data
                         self.current_day_info = None
                 else:
-                    print("data", data)
                     data_stripped = data.strip()
                     if data_stripped != "Nachrichten zum Tag":
                         if data_stripped == "Abwesende Lehrer":
@@ -128,7 +125,6 @@ class BaseSubstitutionParser(HTMLParser):
                             # data is the first td on the site that contains news
                             self.current_day_info = "news"
                             self.day_data["news"] = data
-                print(self.current_day_info, self.day_data)
         elif self.current_section == "title":
             match = self.REGEX_TITLE.search(data)
             if match:
@@ -219,7 +215,6 @@ class BaseSubstitutionLoader:
                     *(self._load_data_from_site(new_data, current_timestamp, session, site_num, plan)
                       for site_num in range(i, i + site_load_count))):
                 await session.close()
-                print("new data", new_data)
                 return self._data_postprocessing(new_data, self._last_site_num)
             i += site_load_count
 
