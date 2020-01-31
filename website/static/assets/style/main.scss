@@ -13,7 +13,7 @@
 @import "../node_modules/bootstrap/scss/code";
 @import "../node_modules/bootstrap/scss/grid";*/
 
-@import "bootstrap/scss/functions";
+@import "../../../../node_modules/bootstrap/scss/functions";
 
 $theme-colors: (
         "primary": #fc8600,
@@ -22,7 +22,7 @@ $theme-colors: (
 $body-bg: #fc8600;
 $table-accent-bg: rgba(map_get($theme-colors, "primary"), 0.034);
 
-@import "bootstrap/scss/bootstrap";
+@import "../../../../node_modules/bootstrap/scss/bootstrap";
 
 body {
     overflow-wrap: break-word;
@@ -148,6 +148,6 @@ a {
     width: 1.2rem;
     height: 1.2rem;
     background-color: theme-color("primary");
-    mask-image: url("/img/bootstrap/bookmark.svg");
-    -webkit-mask-image: url("/img/bootstrap/bookmark.svg");
+    mask-image: url("/static/assets/img/bootstrap/bookmark.svg");
+    -webkit-mask-image: url("/static/assets/img/bootstrap/bookmark.svg");
 }
