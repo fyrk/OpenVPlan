@@ -1,10 +1,14 @@
 import dataclasses
 import hashlib
+import logging
 import re
 from functools import lru_cache
-from typing import NamedTuple, List, Any
+from typing import NamedTuple, List, Any, Tuple, Union
 
-from substitution_plan.utils import REGEX_CLASS, sort_classes
+from substitution_plan.utils import parse_class_name
+
+
+logger = logging.getLogger()
 
 
 class SubstitutionDay(NamedTuple):
@@ -18,6 +22,15 @@ class SubstitutionDay(NamedTuple):
 
     def __lt__(self, other):
         return self.timestamp < other.timestamp
+
+    def iter_groups(self, selection: Union[List[Tuple[str, str]], str]):
+        if selection is None:
+            for group in self.substitution_groups:
+                yield group
+        else:
+            for group in self.substitution_groups:
+                if group.is_selected(selection):
+                    yield group
 
     def to_dict(self, selection=None):
         groups = self.filter_groups(selection) if selection else self.substitution_groups
@@ -33,9 +46,10 @@ class SubstitutionDay(NamedTuple):
                 yield group
 
 
-class BaseSubstitutionGroup(NamedTuple):
+class BaseSubstitutionGroup:
     name: Any
     substitutions: List["BaseSubstitution"]
+    group_name_can_be_selected: bool
 
     def __lt__(self, other):
         raise NotImplementedError
@@ -43,29 +57,60 @@ class BaseSubstitutionGroup(NamedTuple):
     def to_dict(self):
         return {"name": self.name, "substitutions": [s.to_dict() for s in self.substitutions]}
 
-    def is_selected(self, parsed_selection):
+    def get_raw_name(self):
+        return self.name
+
+    def get_html_name(self):
+        return self.name
+
+    def is_selected(self, selection):
         raise NotImplementedError
 
 
+@dataclasses.dataclass
 class StudentSubstitutionGroup(BaseSubstitutionGroup):
-    def __new__(cls, group_name, substitutions):
-        self = super().__new__(cls, group_name, substitutions)
-        self._sort_classes = sort_classes(self.name)
-        return self
+    name: str
+    substitutions: List["BaseSubstitution"]
+    split_group_name: Tuple = dataclasses.field(init=False)
+    group_name_can_be_selected: bool = dataclasses.field(init=False)
 
-    def __lt__(self, other):
-        return self._sort_classes < other._sort_classes
+    def __post_init__(self):
+        self.split_group_name = parse_class_name(self.name)
+        self.group_name_can_be_selected = self.name and \
+                                          (self.split_group_name[0] == 0 or len(self.split_group_name[1]) == 1)
 
-    def is_selected(self, parsed_selection):
-        return is_class_selected(self.name, parsed_selection)
+    def __lt__(self, other: "StudentSubstitutionGroup"):
+        return self.split_group_name < other.split_group_name
+
+    def is_selected(self, selection: List[Tuple[str, str]]):
+        name = self.name.lower()
+        return any((selected_class[0] in name and selected_class[1] in name)
+                   for selected_class in selection if selected_class[0] or selected_class[1])
 
 
+@dataclasses.dataclass
 class TeacherSubstitutionGroup(BaseSubstitutionGroup):
+    name: Tuple[str, bool]  # teacher abbr, is_striked
+    substitutions: List["BaseSubstitution"]
+    group_name_can_be_selected: bool = dataclasses.field(default=True, init=False)
+
+    def __post_init__(self):
+        self.group_name_can_be_selected = self.name[0] != "???"
+
     def __lt__(self, other):
         return self.name < other.name
 
-    def is_selected(self, parsed_selection):
-        return self.name[0] == parsed_selection
+    def get_raw_name(self):
+        return self.name[0]
+
+    def get_html_name(self):
+        if self.name[1]:
+            return "<strike>" + self.name[0] + "</strike>"
+        return self.name[0]
+
+    def is_selected(self, selection: str):
+        print(self.name[0].lower(), "==", selection)
+        return self.name[0].lower() == selection
 
 
 class BaseSubstitution:
@@ -76,14 +121,6 @@ class BaseSubstitution:
         raise NotImplementedError
 
     def to_dict(self):
-        raise NotImplementedError
-
-    @lru_cache()
-    def get_html_first_of_group(self, group_substitution_count, group, snippets, add_lesson_num):
-        raise NotImplementedError
-
-    @lru_cache()
-    def get_html(self, snippets, add_lesson_num):
         raise NotImplementedError
 
     def get_hash(self, date, group_name):
@@ -133,32 +170,6 @@ class StudentSubstitution(BaseSubstitution):
                             .encode()).hexdigest()
 
 
-def parse_selection(text):
-    if not text:
-        return []
-    selected_classes = []
-    for selected_class in "".join(text.split()).split(","):
-        if selected_class not in selected_classes:
-            selected_classes.append(selected_class)
-    return selected_classes
-
-
-def split_class_name_lower(class_name):
-    matches = REGEX_CLASS.search(class_name)
-    if matches:
-        return matches.group(1).lower(), matches.group(2).lower()
-    return "", class_name.lower()
-
-
-def is_class_selected(class_name, selection):
-    if not class_name.strip():
-        # class_name is empty, check if empty class name is in selection
-        return ("", "") in selection
-    class_name = class_name.lower()
-    return any((selected_class[0] in class_name and selected_class[1] in class_name)
-               for selected_class in selection if selected_class[0] or selected_class[1])
-
-
 @dataclasses.dataclass(unsafe_hash=True)
 class TeacherSubstitution(BaseSubstitution):
     lesson: str
@@ -171,7 +182,7 @@ class TeacherSubstitution(BaseSubstitution):
     is_substitute_striked: bool
     lesson_num: int = dataclasses.field(init=False)
 
-    #def __repr__(self):
+    # def __repr__(self):
     #    return f"TeacherSubstitution({self.lesson}, {self.class_name}, {self.teacher}, {self.subject}, {self.room}, " \
     #           f"{self.subs_from}, {self.hint}, {self.is_substitute_striked})"
 
@@ -185,7 +196,7 @@ class TeacherSubstitution(BaseSubstitution):
         yield self.subject
         yield self.room
         yield self.subs_from
-        yield self.lesson_num
+        yield self.hint
 
     def get_hash(self, date, group_name):
         return hashlib.sha1((date + "-" + group_name[0] + "-" + self.lesson + "." + self.class_name + "." +

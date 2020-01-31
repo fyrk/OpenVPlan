@@ -42,7 +42,7 @@ class BaseSubstitutionLoader:
 
         async def parse_site(num, request, stream, data, current_timestamp):
             logger.debug(f"{time.perf_counter_ns()-start_time}ns {self.plan_type}: Parsing {num}")
-            parser = StudentSubstitutionParser(data, current_timestamp)
+            parser = self.substitutions_parser(data, current_timestamp)
             while True:
                 r = (await stream.readany()).decode("iso-8859-1")
                 if not r:
@@ -172,6 +172,7 @@ class TeacherSubstitutionLoader(BaseSubstitutionLoader):
         super().__init__(plan_type, TeacherSubstitutionParser, url, stats)
 
     def _sort_substitutions(self, substitutions: dict):
+        print(substitutions)
         return sorted(TeacherSubstitutionGroup(group_name, substitutions)
                       for group_name, substitutions in substitutions.items())
 

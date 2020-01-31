@@ -1,31 +1,20 @@
-import re
 import datetime
-import hashlib
+import re
 import time
-
-
-REGEX_CLASS = re.compile(r"(?:\D|\A)(\d{1,3})([A-Za-z]*)(?:\D|\Z)")
-
-
-def sort_classes(class_name):
-    matches = REGEX_CLASS.search(class_name)
-    if matches:
-        return int(matches.group(1)), matches.group(2)
-    return 0, class_name
 
 
 def create_date_timestamp(date: datetime.datetime):
     return int(time.mktime(date.date().timetuple()))
 
 
-REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
+REGEX_CLASS = re.compile(r"(?:\D|\A)(\d{1,3})([A-Za-z]*)(?:\D|\Z)")
 
 
-def get_status_string(text):
-    status = REGEX_STATUS.search(text)
-    if status:
-        return status.group(1).decode("iso-8859-1")
-    raise ValueError
+def parse_class_name(class_name):
+    matches = REGEX_CLASS.search(class_name)
+    if matches:
+        return int(matches.group(1)), matches.group(2)
+    return 0, class_name
 
 
 def split_class_name(class_name):
@@ -35,7 +24,19 @@ def split_class_name(class_name):
     return "", class_name
 
 
-def obfuscate_chat_id(chat_id) -> str:
-    return hashlib.sha224(int(chat_id).to_bytes(5, "big", signed=True) +
-                          int(time.mktime(datetime.datetime.now().date().timetuple()))
-                          .to_bytes(5, "big")).hexdigest()[:7]
+def parse_class_selection(selection: str):
+    selection = selection.strip()
+    if not selection:
+        return None
+    selected_classes = []
+    for selected_class in "".join(selection.split()).split(","):
+        if selected_class not in selected_classes:
+            selected_classes.append(selected_class)
+    return selected_classes, [split_class_name_lower(class_name) for class_name in selected_classes]
+
+
+def split_class_name_lower(class_name):
+    matches = REGEX_CLASS.search(class_name)
+    if matches:
+        return matches.group(1), matches.group(2).lower()
+    return "", class_name.lower()

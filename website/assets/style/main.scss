@@ -136,3 +136,18 @@ body {
 a {
     @extend .text-decoration-none
 }
+
+// ICONS
+.i-bookmark::before {
+    display: inline-block;
+    content: "";
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    mask-size: 100%;
+    -webkit-mask-size: 100%;
+    width: 1.2rem;
+    height: 1.2rem;
+    background-color: theme-color("primary");
+    mask-image: url("/img/bootstrap/bookmark.svg");
+    -webkit-mask-image: url("/img/bootstrap/bookmark.svg");
+}

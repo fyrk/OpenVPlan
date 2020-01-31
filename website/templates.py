@@ -1,6 +1,8 @@
 import asyncio
+import traceback
 from typing import List
 
+import sys
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from substitution_plan.storage import SubstitutionDay
@@ -39,8 +41,14 @@ class Templates:
                 self._template_privacy.render_async()
             )
 
-    async def render_substitution_plan_students(self, status: str, days: List[SubstitutionDay]):
-        return await self._template_substitution_plan_students.render_async(status=status, days=days)
+    async def render_substitution_plan_students(self, status: str, days: List[SubstitutionDay], selection=None,
+                                                selection_str: str = None):
+        return await self._template_substitution_plan_students.render_async(status=status, days=days,
+                                                                            selection=selection,
+                                                                            selection_str=selection_str)
 
-    async def render_substitution_plan_teachers(self, status: str, days: List[SubstitutionDay]):
-        return await self._template_substitution_plan_teachers.render_async(status=status, days=days)
+    async def render_substitution_plan_teachers(self, status: str, days: List[SubstitutionDay], selection=None,
+                                                selection_str: str = None):
+        return await self._template_substitution_plan_teachers.render_async(status=status, days=days,
+                                                                            selection=selection,
+                                                                            selection_str=selection_str)

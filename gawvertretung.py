@@ -13,7 +13,8 @@ import aiohttp
 
 from logging_tool import create_logger
 from substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
-from substitution_plan.utils import get_status_string
+from substitution_plan.parser import get_status_string
+from substitution_plan.utils import parse_class_selection
 from website.api import SubstitutionAPI
 from website.stats import Stats
 from website.templates import Templates
@@ -28,7 +29,7 @@ class SubstitutionPlan:
     URL_FIRST_SITE = URL_STUDENTS.format(1)
 
     FILENAME_SUBSTITUTIONS = "data/substitutions/substitutions.pickle"
-    SUBSTITUTIONS_VERSION = 1
+    SUBSTITUTIONS_VERSION = 2
     PATH_STATS = "data/stats/"
 
     def __init__(self):
@@ -47,7 +48,8 @@ class SubstitutionPlan:
         self.index_site_teachers = ""
 
     async def async_init(self):
-        await asyncio.gather(self._try_load_substitutions_from_file(), self.templates.load_static())
+        await self.templates.load_static()
+        await self._try_load_substitutions_from_file()
 
     async def _try_load_substitutions_from_file(self):
         # noinspection PyBroadException
@@ -124,10 +126,13 @@ class SubstitutionPlan:
         # noinspection PyBroadException
         try:
             await self.update_data()
-            if "classes" in storage:
-                selection = storage["classes"][0]
+            if "s" in storage:
+                classes, selection = parse_class_selection(storage["s"][0].strip())
                 if selection:
-                    return "200 OK", ""
+                    return "200 OK", await self.templates.render_substitution_plan_students(self.current_status_string,
+                                                                                            self.data_students,
+                                                                                            selection,
+                                                                                            ", ".join(classes))
             return "200 OK", self.index_site_students
         except Exception:
             logger.exception("Exception occurred")
@@ -137,10 +142,13 @@ class SubstitutionPlan:
         # noinspection PyBroadException
         try:
             await self.update_data()
-            if "teacher" in storage:
-                selection = storage["teacher"][0]
+            if "s" in storage:
+                selection = storage["s"][0]
                 if selection:
-                    return "200 OK", ""
+                    return "200 OK", await self.templates.render_substitution_plan_teachers(self.current_status_string,
+                                                                                            self.data_teachers,
+                                                                                            selection.lower(),
+                                                                                            selection.upper())
             return "200 OK", self.index_site_teachers
         except Exception:
             logger.exception("Exception occurred")
