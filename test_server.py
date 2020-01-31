@@ -8,15 +8,10 @@ import gawvertretung
 
 
 def application_wrapper(environ, respond):
-    if environ["PATH_INFO"] == "/privacy":
-        environ["PATH_INFO"] = "/../snippets/privacy.html"
-    elif environ["PATH_INFO"] == "/about":
-        environ["PATH_INFO"] = "/../snippets/about.html"
     fn = os.path.join(path, environ['PATH_INFO'][1:])
     if '.' not in fn.split(os.path.sep)[-1]:
         fn = os.path.join(fn, 'index.html')
     type = mimetypes.guess_type(fn)[0]
-    print(fn)
     if os.path.exists(fn):
         respond('200 OK', [('Content-Type', type)])
         return util.FileWrapper(open(fn, "rb"))

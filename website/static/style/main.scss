@@ -1,0 +1,138 @@
+/*// Custom.scss
+// Option B: Include parts of Bootstrap
+
+// Required
+@import "../node_modules/bootstrap/scss/functions";
+@import "../node_modules/bootstrap/scss/variables";
+@import "../node_modules/bootstrap/scss/mixins";
+
+// Optional
+@import "../node_modules/bootstrap/scss/reboot";
+@import "../node_modules/bootstrap/scss/type";
+@import "../node_modules/bootstrap/scss/images";
+@import "../node_modules/bootstrap/scss/code";
+@import "../node_modules/bootstrap/scss/grid";*/
+
+@import "bootstrap/scss/functions";
+
+$theme-colors: (
+        "primary": #fc8600,
+        "secondary": #f7d45e
+);
+$body-bg: #fc8600;
+$table-accent-bg: rgba(map_get($theme-colors, "primary"), 0.034);
+
+@import "bootstrap/scss/bootstrap";
+
+body {
+    overflow-wrap: break-word;
+}
+
+.box {
+    background-color: color("white");
+    padding: 1rem 1.5rem;
+    @include media-breakpoint-up(sm) {
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+        border-radius: .2rem !important;
+        margin-bottom: 1rem !important;
+        margin-top: 1rem !important;
+    }
+}
+
+.title-box {
+    text-align: center;
+    background-color: theme-color("secondary");
+    padding: $spacer * .8;
+
+    .title {
+        font-size: $font-size-base * 1.65;
+    }
+}
+
+.status-box {
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+}
+
+@include media-breakpoint-down(xs) {
+    .main-container {
+        padding: 0;
+    }
+    .box {
+        box-shadow: none;
+        border-radius: 0;
+    }
+    .box:not(:last-child) {
+        border-bottom: 1px solid grey;
+    }
+    .box:last-child {
+        border-bottom-right-radius: $border-radius !important;
+        border-bottom-left-radius: $border-radius !important;
+        box-shadow: 0 5px 5px 0 #7575754f;
+    }
+    .box:first-child {
+        border-top-left-radius: $border-radius !important;
+        border-top-right-radius: $border-radius !important;
+    }
+    .d-xs-block {
+        display: block !important;
+    }
+}
+
+.nav {
+    font-size: $font-size-base * 1.15;
+    margin-top: $spacer;
+}
+
+.day-heading {
+    margin-bottom: -0.5rem;
+
+    .day-name {
+        font-size: $font-size-base * 2;
+        font-weight: 500;
+    }
+    .text-muted {
+        font-size: x-large;
+        font-style: italic;
+    }
+}
+
+.day-info {
+    margin-top: $spacer * .65;
+    display: block;
+    font-size: larger;
+    font-weight: bold;
+}
+
+.substitutions-table.table {
+    margin-top: $spacer;
+    white-space: nowrap;
+
+    thead {
+        th {
+            border-top: none;
+        }
+    }
+
+    tbody {
+        tr.first-of-group td {
+            border-top: $table-border-width solid $gray-500;
+        }
+
+        td {
+            vertical-align: middle;
+        }
+
+        tr.grey td:not(.group-name) {
+            color: $gray-400;
+        }
+    }
+
+    &.table-striped tbody tr:nth-of-type(odd) td.group-name {
+        background-color: white;
+    }
+}
+
+a {
+    @extend .text-decoration-none
+}

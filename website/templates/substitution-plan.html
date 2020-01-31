@@ -1,0 +1,65 @@
+{% extends "_base.html" %}
+{% block content %}
+    <div class="box status-box">
+        Stand: {{ status }}
+    </div>
+    {% set is_first_day = True %}
+    {% for day in days %}
+        <div class="box">
+            <div class="container p-0">
+                <div class="row">
+                    <div class="col-auto">
+                        <div class="day-heading">
+                            <span class="day-name">{{ day.day_name }}</span><span class="text-muted">, {{ day.date }}</span>
+                        </div>
+                        Woche {{ day.week }}
+                        {% if day.news %}
+                            <div>
+                                <span class="day-info">Nachrichten:</span>
+                                {% for news_line in day.news[:-1] %}
+                                    {{ news_line|safe }}<br>
+                                {% endfor %}
+                                {{ day.news[-1] }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col">
+                        {% for title, text in day.info %}
+                            <span class="day-info">{{ title }}:</span>
+                            {{ text }}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% if day.substitution_groups %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped substitutions-table">
+                        {% block table_head %}{% endblock %}
+                        {% for group in day.substitution_groups %}
+                            <tr class="first-of-group{% if is_first_day %} lesson{{ group.substitutions[0].lesson_num }}{% endif %}">
+                                <td rowspan="{{ group.substitutions|length }}" class="group-name">{{ group.name }}</td>
+                                {% for data in group.substitutions[0] %}
+                                    <td>{{ data }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% for substitution in group.substitutions[1:] %}
+                                <tr{% if loop.index == 1 %} class="lesson{{ substitution.lesson_num }}"{% endif %}>
+                                    {% for data in substitution %}
+                                        <td>{{ data }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </table>
+                </div>
+            {% else %}
+                Es gibt keine Vertretungen.
+            {% endif %}
+        </div>
+        {% set is_first_day = False %}
+    {% else %}
+        <div class="box">
+            Es gibt keine Vertretungen.
+        </div>
+    {% endfor %}
+{% endblock %}

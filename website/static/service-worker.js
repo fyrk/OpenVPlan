@@ -1,1 +1,3 @@
-(function(){self.addEventListener("fetch",function(){});})()
+self.addEventListener("fetch", function(event){
+
+});

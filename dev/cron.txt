@@ -1,8 +1,0 @@
-SHELL=/bin/bash
-PATH=/usr/bin
-
-# GAWVERTRETUNG
-@reboot /home/florian/gawvertretung/gawvertretung.sh > /home/florian/gawvertretung/output/gawvertretung.txt 2>&1
-* 7 * * 1,2,3,4,5 /home/florian/gawvertretung/update_substitutions.sh > /home/florian/gawvertretung/output/update_substitutions.txt 2>&1
-0,15,30,45 * * * * /home/florian/gawvertretung/update_substitutions.sh > /home/florian/gawvertretung/output/update_substitutions.txt 2>&1
-0 0 * * *  /home/florian/gawvertretung/delete_old_messages.sh

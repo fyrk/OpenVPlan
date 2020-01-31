@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title>{% block title %}{% endblock %} | Vertretungsplan GaW Verden</title>
+    {% block breadcrumb_list %}{% endblock %}
+    <link href="/favicon.svg" rel="icon" sizes="any" type="image/svg+xml">
+    <link href="/favicon-16.png" rel="icon" sizes="16x16" type="image/png">
+    <link href="/favicon-32.png" rel="icon" sizes="32x32" type="image/png">
+    <link href="/favicon-64.png" rel="icon" sizes="64x64" type="image/png">
+    <link href="/favicon-192.png" rel="icon" sizes="192x192" type="image/png">
+    <link href="/favicon.ico" rel="icon" sizes="16x16 32x32 48x48" type="image/x-icon">
+    <link href="/manifest.json" rel="manifest">
+    <link href="/favicon.svg" rel="apple-touch-icon">
+    <meta name="apple-mobile-web-app-title" content="GaW VPlan">
+    <meta name="application-name" content="GaW VPlan">
+    <meta name="msapplication-TileColor" content="#00a300">
+    <meta name="theme-color" content="#e67b10">
+    <meta name="keywords"
+          content="Gymnasium am Wall, Vertretung, Vertretungsplan, GaW Verden, Schule{% block keywords %}{% endblock %}">
+    <meta name="robots" content="noarchive, notranslate">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://gawvertretung.florian-raediker.de">
+    <meta property="og:title" content="${og_title}">
+    <meta property="og:image" content="/favicon-192.png">
+    <meta property="og:image" content="/favicon.svg">
+    <link href="/style/main.css" rel="stylesheet">
+</head>
+<body>
+<a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
+<header class="container main-container">
+    <div class="box title-box">
+        {% block title_bar %}
+            <span class="title d-none d-md-block">Vertretungsplan Gymnasium am Wall Verden</span>
+            <span class="title d-md-none">GaW Vertretungsplan</span>
+        {% endblock %}
+        {% block title_end %}{% endblock %}
+    </div>
+</header>
+<main role="main" id="main" class="container main-container">
+    {% block content %}{% endblock %}
+</main>
+<footer class="text-center bg-dark text-white p-3 mt-5">
+    <p>
+        Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
+        <a href="{% block gaw_verden_link %}{% endblock %}" rel="noopener" target="_blank">gaw-verden.de</a>.<br>
+        Alle Angaben ohne Gewähr.
+    </p>
+    <p>
+        Programmiert von Florian Rädiker.
+    </p>
+    <p>
+        <a href="/about">Impressum</a> | <a href="/privacy">Datenschutzerklärung</a>
+    </p>
+    <object data="/img/python-powered.svg">python powered</object>
+</footer>
+</body>
+</html>

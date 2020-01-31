@@ -1,0 +1,29 @@
+{% extends "substitution-plan.html" %}
+{% block title %}Lehrer*innen{% endblock %}
+{% block keywords %}, Lehrer, Lehrer*innen{% endblock %}
+{% block breadcrumb_list %}
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"gawvertretung.florian-raediker.de","item":"https://gawvertretung.florian-raediker.de"},{"@type":"ListItem","position":2,"name":"Lehrer*innen","item": "https://florian-raediker.de/teachers"}]}</script>
+{% endblock %}
+
+{% block title_end %}
+    <nav class="nav nav-pills flex-column flex-sm-row justify-content-around">
+        <a class="nav-item nav-link" href="/">Schüler*innen</a>
+        <a class="nav-item nav-link active" href="/teachers">Lehrer*innen</a>
+    </nav>
+{% endblock %}
+
+{% block table_head %}
+    <thead>
+        <tr>
+            <th>Vertr.</th>
+            <th>Stunde</th>
+            <th>Klasse(n)</th>
+            <th>Lehrer*in</th>
+            <th>Fach</th>
+            <th>Raum</th>
+            <th>Vertr. von</th>
+            <th>Hinweistext</th>
+        </tr>
+    </thead>
+{% endblock %}
+{% block gaw_verden_link %}https://gaw-verden.de/images/vertretung/klassen/subst_001.htm{% endblock %}

@@ -1,9 +1,14 @@
+import asyncio
 import datetime
 import json
+import logging
 import urllib.parse
 
-from common.students import parse_selection, split_class_name_lower
-from common.utils import create_date_timestamp
+from substitution_plan.storage import split_class_name_lower, parse_selection
+from substitution_plan.utils import create_date_timestamp
+
+
+logger = logging.getLogger()
 
 
 class SubstitutionAPI:
@@ -42,7 +47,7 @@ class SubstitutionAPI:
             else:
                 return handle_error("405 Method Not Allowed")
 
-            self.substitution_plan.update_data()
+            asyncio.run(self.substitution_plan.update_data())
             current_timestamp = create_date_timestamp(datetime.datetime.now())
             if path == "/status":
                 data = {"ok": True, "status": self.substitution_plan.current_status_string}
@@ -51,6 +56,7 @@ class SubstitutionAPI:
                     selection = [split_class_name_lower(c) for c in parse_selection(request_data["selection"])]
                 else:
                     selection = None
+                print("data", self.substitution_plan.data_students)
                 data = {"ok": True, "status": self.substitution_plan.current_status_string,
                         "days": [d.to_dict(selection) for d in self.substitution_plan.data_students
                                  if d.timestamp >= current_timestamp]}
@@ -69,5 +75,5 @@ class SubstitutionAPI:
                                       ("Content-Length", str(len(content)))])
             return [content]
         except Exception:
-            self.substitution_plan.logger.exception("API: Exception occurred")
+            logger.exception("API: Exception occurred")
             return handle_error("500 Internal Server Error")

@@ -59,25 +59,26 @@ def on_bot_error(environ, start_response, data: dict):
 
 
 def application(environ, start_response):
-    try:
-        connection = get_connection(secret)
-        if environ["PATH_INFO"] == "/students":
-            logger.info("Update for STUDENTS")
-            db_bot_students.chats.connection = connection
-            bot_listener_students.admin_handler.connection = connection
-            result = bot_listener_students.handler.wsgi_application(environ, start_response, on_error=on_bot_error)
-            connection.close()
-            return result
-        elif environ["PATH_INFO"] == "/teachers":
-            logger.info("Update for TEACHERS")
-            db_bot_teachers.chats.connection = connection
-            result = bot_listener_teachers.handler.wsgi_application(environ, start_response, on_error=on_bot_error)
-            connection.close()
-            return result
-    except Exception:
-        logger.exception("Exception while processing bot update")
-        start_response("500 Internal Server Error", [("Content-Type", "text/text")])
-        return ["Error while processing bot update".encode("utf-8")]
+    if environ["METHOD"] == "POST":
+        try:
+            connection = get_connection(secret)
+            if environ["PATH_INFO"] == "/students":
+                logger.info("Update for STUDENTS")
+                db_bot_students.chats.connection = connection
+                bot_listener_students.admin_handler.connection = connection
+                result = bot_listener_students.handler.wsgi_application(environ, start_response, on_error=on_bot_error)
+                connection.close()
+                return result
+            elif environ["PATH_INFO"] == "/teachers":
+                logger.info("Update for TEACHERS")
+                db_bot_teachers.chats.connection = connection
+                result = bot_listener_teachers.handler.wsgi_application(environ, start_response, on_error=on_bot_error)
+                connection.close()
+                return result
+        except Exception:
+            logger.exception("Exception while processing bot update")
+            start_response("500 Internal Server Error", [("Content-Type", "text/text")])
+            return ["Error while processing bot update".encode("utf-8")]
 
     start_response("303 See Other", [("Location", "https://gawvertretung.florian-raediker.de")])
     return []
