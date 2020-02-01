@@ -8,13 +8,15 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from typing import List
 
 import aiohttp
 
 from logging_tool import create_logger
 from substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
 from substitution_plan.parser import get_status_string
-from substitution_plan.utils import parse_class_selection
+from substitution_plan.storage import SubstitutionDay
+from substitution_plan.utils import parse_class_selection, create_date_timestamp
 from website.api import SubstitutionAPI
 from website.stats import Stats
 from website.templates import Templates
@@ -25,6 +27,9 @@ os.chdir(os.path.abspath(os.path.dirname(__file__)))
 class SubstitutionPlan:
     URL_STUDENTS = "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm"
     URL_TEACHERS = "https://gaw-verden.de/images/vertretung/lehrer/subst_{:03}.htm"
+
+    data_students: List[SubstitutionDay]
+    data_teachers: List[SubstitutionDay]
 
     URL_FIRST_SITE = URL_STUDENTS.format(1)
 
@@ -106,12 +111,19 @@ class SubstitutionPlan:
             await self._load_data(text)
             await self._create_sites()
             self._save_substitutions()
-        today = datetime.datetime.now().date()
-        if today > self.current_status_date:
-            self.current_status_date = today
+        today = datetime.datetime.now()
+        today_date = today.date()
+        if today_date > self.current_status_date:
+            self.current_status_date = today_date
             if not status_changed:
                 logger.debug("Date changed, recreating sites")
+                self._remove_old_days(create_date_timestamp(today))
                 await self._create_sites()
+
+    def _remove_old_days(self, current_timestamp):
+        while self.data_students[0].timestamp < current_timestamp:
+            del self.data_students[0]
+            del self.data_teachers[0]
 
     async def _create_sites(self):
         t1 = time.perf_counter_ns()
