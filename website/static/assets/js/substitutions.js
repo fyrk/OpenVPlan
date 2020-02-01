@@ -20,7 +20,7 @@ function greySubstitutions() {
         ]) {
             if (i[1] < b2 || (i[1] === b2 && i[2] <= c2)) {
                 for (let x of document.getElementsByClassName("lesson" + i[0])) {
-                    x.classList.add("text-muted");
+                    x.classList.add("grey");
                 }
             } else {
                 setTimeout(greySubstitutions, new Date(now.getFullYear(), now.getMonth(), now.getDate(), i[1], i[2]).getTime() - now.getTime());
