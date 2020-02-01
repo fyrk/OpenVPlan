@@ -5,14 +5,14 @@
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>{% block title %}{% endblock %} | Vertretungsplan GaW Verden</title>
     {% block breadcrumb_list %}{% endblock %}
-    <link href="/favicon.svg" rel="icon" sizes="any" type="image/svg+xml">
-    <link href="/favicon-16.png" rel="icon" sizes="16x16" type="image/png">
-    <link href="/favicon-32.png" rel="icon" sizes="32x32" type="image/png">
-    <link href="/favicon-64.png" rel="icon" sizes="64x64" type="image/png">
-    <link href="/favicon-192.png" rel="icon" sizes="192x192" type="image/png">
-    <link href="/favicon.ico" rel="icon" sizes="16x16 32x32 48x48" type="image/x-icon">
-    <link href="/manifest.json" rel="manifest">
-    <link href="/favicon.svg" rel="apple-touch-icon">
+    <link href="{{ base_path }}/favicon.svg" rel="icon" sizes="any" type="image/svg+xml">
+    <link href="{{ base_path }}/favicon-16.png" rel="icon" sizes="16x16" type="image/png">
+    <link href="{{ base_path }}/favicon-32.png" rel="icon" sizes="32x32" type="image/png">
+    <link href="{{ base_path }}/favicon-64.png" rel="icon" sizes="64x64" type="image/png">
+    <link href="{{ base_path }}/favicon-192.png" rel="icon" sizes="192x192" type="image/png">
+    <link href="{{ base_path }}/favicon.ico" rel="icon" sizes="16x16 32x32 48x48" type="image/x-icon">
+    <link href="{{ base_path }}/manifest.json" rel="manifest">
+    <link href="{{ base_path }}/favicon.svg" rel="apple-touch-icon">
     <meta name="apple-mobile-web-app-title" content="GaW VPlan">
     <meta name="application-name" content="GaW VPlan">
     <meta name="msapplication-TileColor" content="#00a300">
@@ -23,9 +23,9 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://gawvertretung.florian-raediker.de">
     <meta property="og:title" content="${og_title}">
-    <meta property="og:image" content="/favicon-192.png">
-    <meta property="og:image" content="/favicon.svg">
-    <link href="/assets/style/main.css" rel="stylesheet">
+    <meta property="og:image" content="{{ base_path }}/favicon-192.png">
+    <meta property="og:image" content="{{ base_path }}/favicon.svg">
+    <link href="{{ base_path }}/assets/style/main.css" rel="stylesheet">
 </head>
 <body>
 <a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
@@ -51,9 +51,9 @@
         Programmiert von Florian Rädiker.
     </p>
     <p>
-        <a href="/about">Impressum</a> | <a href="/privacy">Datenschutzerklärung</a>
+        <a href="{{ base_path }}/about">Impressum</a> | <a href="{{ base_path }}/privacy">Datenschutzerklärung</a>
     </p>
-    <object data="/assets/img/python-powered.svg">python powered</object>
+    <object data="{{ base_path }}/assets/img/python-powered.svg">python powered</object>
 </footer>
 </body>
 </html>

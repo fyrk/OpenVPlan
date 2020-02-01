@@ -24,6 +24,9 @@ from website.templates import Templates
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
 
+BASE_PATH = "/dev"  # leave empty for production
+
+
 class SubstitutionPlan:
     URL_STUDENTS = "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm"
     URL_TEACHERS = "https://gaw-verden.de/images/vertretung/lehrer/subst_{:03}.htm"
@@ -42,7 +45,7 @@ class SubstitutionPlan:
         self.substitution_loader_students = StudentSubstitutionLoader("klassen", self.URL_STUDENTS, self.stats)
         self.substitution_loader_teachers = TeacherSubstitutionLoader("lehrer", self.URL_TEACHERS)
         self.api = SubstitutionAPI(self)
-        self.templates = Templates()
+        self.templates = Templates(BASE_PATH)
 
         self.current_status_date = datetime.datetime.now().date()
 

@@ -7,7 +7,7 @@ from substitution_plan.storage import SubstitutionDay
 
 
 class Templates:
-    def __init__(self):
+    def __init__(self, base_path=""):
         self._jinja_env = Environment(
             loader=FileSystemLoader("website/templates/"),
             autoescape=select_autoescape(["html"]),
@@ -15,6 +15,7 @@ class Templates:
             trim_blocks=True,
             lstrip_blocks=True
         )
+        self.base_path = base_path
         # static
         self._template_about = self._jinja_env.get_template("about.html")
         self._template_error_404 = self._jinja_env.get_template("error-404.html")
@@ -34,21 +35,23 @@ class Templates:
     async def load_static(self):
         self.about, self.error_404, self.error_500_students, self.error_500_teachers, self.privacy = \
             await asyncio.gather(
-                self._template_about.render_async(),
-                self._template_error_404.render_async(),
-                self._template_error_500_students.render_async(),
-                self._template_error_500_teachers.render_async(),
-                self._template_privacy.render_async()
+                self._template_about.render_async(base_path=self.base_path),
+                self._template_error_404.render_async(base_path=self.base_path),
+                self._template_error_500_students.render_async(base_path=self.base_path),
+                self._template_error_500_teachers.render_async(base_path=self.base_path),
+                self._template_privacy.render_async(base_path=self.base_path)
             )
 
     async def render_substitution_plan_students(self, status: str, days: List[SubstitutionDay], selection=None,
                                                 selection_str: str = None):
-        return await self._template_substitution_plan_students.render_async(status=status, days=days,
+        return await self._template_substitution_plan_students.render_async(base_path=self.base_path,
+                                                                            status=status, days=days,
                                                                             selection=selection,
                                                                             selection_str=selection_str)
 
     async def render_substitution_plan_teachers(self, status: str, days: List[SubstitutionDay], selection=None,
                                                 selection_str: str = None):
-        return await self._template_substitution_plan_teachers.render_async(status=status, days=days,
+        return await self._template_substitution_plan_teachers.render_async(base_path=self.base_path,
+                                                                            status=status, days=days,
                                                                             selection=selection,
                                                                             selection_str=selection_str)

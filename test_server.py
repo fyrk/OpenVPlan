@@ -8,6 +8,8 @@ import gawvertretung
 
 
 def application_wrapper(environ, respond):
+    if environ["PATH_INFO"].startswith(gawvertretung.BASE_PATH):
+        environ["PATH_INFO"] = environ["PATH_INFO"][len(gawvertretung.BASE_PATH):]
     fn = os.path.join(path, environ['PATH_INFO'][1:])
     if '.' not in fn.split(os.path.sep)[-1]:
         fn = os.path.join(fn, 'index.html')
