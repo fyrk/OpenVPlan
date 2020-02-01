@@ -27,21 +27,23 @@
     <meta property="og:image" content="{{ base_path }}/favicon.svg">
     <link href="{{ base_path }}/assets/style/main.css" rel="stylesheet">
 </head>
-<body>
+<body class="d-flex flex-column">
 <a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
-<header class="container main-container">
-    <div class="box title-box">
-        {% block title_bar %}
-            <span class="title d-none d-md-block">Vertretungsplan Gymnasium am Wall Verden</span>
-            <span class="title d-md-none">GaW Vertretungsplan</span>
-        {% endblock %}
-        {% block title_end %}{% endblock %}
-    </div>
-</header>
-<main role="main" id="main" class="container main-container">
-    {% block content %}{% endblock %}
-</main>
-<footer class="text-center bg-dark text-white p-3 mt-5">
+<div id="content">
+    <header class="container main-container">
+        <div class="box title-box">
+            {% block title_bar %}
+                <span class="title d-none d-md-block">Vertretungsplan Gymnasium am Wall Verden</span>
+                <span class="title d-md-none">GaW Vertretungsplan</span>
+            {% endblock %}
+            {% block title_end %}{% endblock %}
+        </div>
+    </header>
+    <main role="main" id="main" class="container main-container">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+<footer class="text-center bg-dark text-white p-3 mt-4">
     <p>
         Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
         <a href="{% block gaw_verden_link %}{% endblock %}" rel="noopener" target="_blank">gaw-verden.de</a>.<br>
