@@ -20,6 +20,8 @@
 
 @import "bootstrap/scss/functions";
 
+$base_path: "/dev";  // change to "" for production
+
 $theme-colors: (
         "primary": #fc8600,
         "secondary": #f7d45e
@@ -172,10 +174,10 @@ a {
 }
 
 .i-bookmark::before {
-    @include icon("/assets/img/bootstrap/bookmark.svg");
+    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg");
 }
 
 .external::after {
-    @include icon("/assets/img/bootstrap/box-arrow-up-right.svg");
+    @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg");
     transform: translateY(0.155rem);
 }
