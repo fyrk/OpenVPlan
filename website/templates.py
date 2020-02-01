@@ -22,25 +22,25 @@ class Templates:
         self._template_error_500_students = self._jinja_env.get_template("error-500-students.html")
         self._template_error_500_teachers = self._jinja_env.get_template("error-500-teachers.html")
         self._template_privacy = self._jinja_env.get_template("privacy.html")
-        self.about = None
-        self.error_404 = None
-        self.error_500_students = None
-        self.error_500_teachers = None
-        self.privacy = None
 
         # non-static
         self._template_substitution_plan_students = self._jinja_env.get_template("substitution-plan-students.html")
         self._template_substitution_plan_teachers = self._jinja_env.get_template("substitution-plan-teachers.html")
 
-    async def load_static(self):
-        self.about, self.error_404, self.error_500_students, self.error_500_teachers, self.privacy = \
-            await asyncio.gather(
-                self._template_about.render_async(base_path=self.base_path),
-                self._template_error_404.render_async(base_path=self.base_path),
-                self._template_error_500_students.render_async(base_path=self.base_path),
-                self._template_error_500_teachers.render_async(base_path=self.base_path),
-                self._template_privacy.render_async(base_path=self.base_path)
-            )
+    async def render_about(self):
+        return await self._template_about.render_async(base_path=self.base_path)
+
+    async def render_error_404(self):
+        return await self._template_about.render_async(base_path=self.base_path)
+
+    async def render_error_500_students(self):
+        return await self._template_error_500_students.render_async(base_path=self.base_path)
+
+    async def render_error_500_teachers(self):
+        return await self._template_error_500_teachers.render_async(base_path=self.base_path)
+
+    async def render_privacy(self):
+        return await self._template_privacy.render_async(base_path=self.base_path)
 
     async def render_substitution_plan_students(self, status: str, days: List[SubstitutionDay], selection=None,
                                                 selection_str: str = None):
