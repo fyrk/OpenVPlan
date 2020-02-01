@@ -1,3 +1,8 @@
+/*!
+ * Parts of this file use Bootstrap, see the following comment.
+ * Bootstrap Icons (located at /assets/img/bootstrap/...) License: /assets/third-party-licenses/BOOTSTRAP-ICONS-LICENSE.md
+ */
+
 /*// Custom.scss
 // Option B: Include parts of Bootstrap
 
@@ -13,7 +18,7 @@
 @import "../node_modules/bootstrap/scss/code";
 @import "../node_modules/bootstrap/scss/grid";*/
 
-@import "../../../../node_modules/bootstrap/scss/functions";
+@import "bootstrap/scss/functions";
 
 $theme-colors: (
         "primary": #fc8600,
@@ -22,7 +27,7 @@ $theme-colors: (
 $body-bg: #fc8600;
 $table-accent-bg: rgba(map_get($theme-colors, "primary"), 0.034);
 
-@import "../../../../node_modules/bootstrap/scss/bootstrap";
+@import "bootstrap/scss/bootstrap";
 
 body {
     overflow-wrap: break-word;
@@ -148,7 +153,7 @@ a {
 }
 
 // ICONS
-.i-bookmark::before {
+%icon {
     display: inline-block;
     content: "";
     mask-repeat: no-repeat;
@@ -158,6 +163,19 @@ a {
     width: 1.2rem;
     height: 1.2rem;
     background-color: theme-color("primary");
-    mask-image: url("/assets/img/bootstrap/bookmark.svg");
-    -webkit-mask-image: url("/assets/img/bootstrap/bookmark.svg");
+}
+
+@mixin icon($path) {
+    @extend %icon;
+    mask-image: url($path);
+    -webkit-mask-image: url($path);
+}
+
+.i-bookmark::before {
+    @include icon("/assets/img/bootstrap/bookmark.svg");
+}
+
+.external::after {
+    @include icon("/assets/img/bootstrap/box-arrow-up-right.svg");
+    transform: translateY(0.155rem);
 }

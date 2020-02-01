@@ -34,7 +34,7 @@
         <div class="box title-box">
             {% block title_bar %}
                 {% if selection %}<span class="selection">{{ selection_str }}</span> - {% endif %}
-                <span class="title d-none d-md-block">Vertretungsplan Gymnasium am Wall Verden</span>
+                <span class="title d-none d-md-inline">Vertretungsplan Gymnasium am Wall Verden</span>
                 <span class="title d-md-none">GaW Vertretungsplan</span>
             {% endblock %}
             {% block title_end %}{% endblock %}
@@ -47,7 +47,7 @@
 <footer class="text-center bg-dark text-white p-3 mt-4">
     <p>
         Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
-        <a href="{% block gaw_verden_link %}{% endblock %}" rel="noopener" target="_blank">gaw-verden.de</a>.<br>
+        <a href="{% block gaw_verden_link %}{% endblock %}" rel="noopener" target="_blank" class="external">gaw-verden.de</a>.<br>
         Alle Angaben ohne Gewähr.
     </p>
     <p>
@@ -58,6 +58,6 @@
     </p>
     <object data="{{ base_path }}/assets/img/python-powered.svg">python powered</object>
 </footer>
-{% block scripts_end %}{% endblock %}
+{% block body_end %}{% endblock %}
 </body>
 </html>
