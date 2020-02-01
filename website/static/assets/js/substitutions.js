@@ -1,6 +1,33 @@
-(function(){function d(a){var b=0;return function(){return b<a.length?{done:!1,value:a[b++]}:{done:!0}}}function e(a){var b="undefined"!=typeof Symbol&&Symbol.iterator&&a[Symbol.iterator];return b?b.call(a):{next:d(a)}}var f=document.getElementsByClassName("date"),g=document.getElementById("status-container"),h=null,l=new Date;
-function m(){null==h&&(h=document.createElement("span"),g.appendChild(h));var a=(new Date).getTime()-l.getTime(),b=Math.floor(a/6E4);0===b?h.textContent="Zuletzt aktualisiert: gerade eben":(1===b?h.textContent="Zuletzt aktualisiert vor 1 Minute ":60>b?h.textContent="Zuletzt aktualisiert vor "+b+" Minuten ":(a=Math.floor(a/36E5),h.textContent=1===a?"Zuletzt aktualisiert vor 1 Stunde ":24>a?"Zuletzt aktualisiert vor "+a+" Stunden ":"Zuletzt aktualisiert: "+l.getDate()+"."+(l.getMonth()+1)+"."+l.getFullYear()+
-" "+l.getHours()+":"+l.getMinutes()+" "),a=document.createElement("a"),a.textContent="Jetzt aktualisieren",a.onclick=n,h.appendChild(a))}var p=setInterval(m,6E4);m();
-function r(){var a=new Date;if(0<f.length&&f[0].innerHTML===", "+a.getDate()+"."+(a.getMonth()+1)+"."+a.getFullYear())for(var b=a.getHours(),t=a.getMinutes(),q=e([["1",8,35],["2",9,25],["3",10,30],["4",11,15],["5",12,20],["6",13,10],["7",14,35],["8",15,25],["9",16,20],["10",17,5]]),c=q.next();!c.done;c=q.next())if(c=c.value,c[1]<b||c[1]===b&&c[2]<=t){c=e(document.getElementsByClassName("lesson"+c[0]));for(var k=c.next();!k.done;k=c.next())k.value.classList.add("grey")}else{setTimeout(r,(new Date(a.getFullYear(),
-a.getMonth(),a.getDate(),c[1],c[2])).getTime()-a.getTime());break}}r();
-function n(){clearInterval(p);h.textContent="Aktualisiere...";(new Date).getDate()!==l.getDate()?window.location.reload():fetch("/",{method:"POST"}).then(function(a){return a.text()}).then(function(a){g.innerHTML.includes(a)?(l=new Date,p=setInterval(m,6E4),m(),r()):window.location.reload()})["catch"](function(){h.textContent="Aktualisierung fehlgeschlagen ";var a=document.createElement("a");a.textContent="Nochmal versuchen";a.onclick=n;h.appendChild(a)})}window.onfocus=n;})()
+const dates = document.getElementsByClassName("date");
+
+
+function greySubstitutions() {
+    const now = new Date();
+    if (dates.length > 0 && dates[0].innerHTML === now.getDate() + "." + (now.getMonth() + 1) + "." + now.getFullYear()) {
+        const b2 = now.getHours();
+        const c2 = now.getMinutes();
+        for (let i of [
+            ["1", 8, 35],
+            ["2", 9, 25],
+            ["3", 10, 30],
+            ["4", 11, 15],
+            ["5", 12, 20],
+            ["6", 13, 10],
+            ["7", 14, 35],
+            ["8", 15, 25],
+            ["9", 16, 20],
+            ["10", 17, 5]
+        ]) {
+            if (i[1] < b2 || (i[1] === b2 && i[2] <= c2)) {
+                for (let x of document.getElementsByClassName("lesson" + i[0])) {
+                    x.classList.add("text-muted");
+                }
+            } else {
+                setTimeout(greySubstitutions, new Date(now.getFullYear(), now.getMonth(), now.getDate(), i[1], i[2]).getTime() - now.getTime());
+                break
+            }
+        }
+    }
+}
+
+greySubstitutions();
