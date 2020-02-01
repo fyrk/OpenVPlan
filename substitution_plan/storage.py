@@ -77,7 +77,8 @@ class StudentSubstitutionGroup(BaseSubstitutionGroup):
     def __post_init__(self):
         self.split_group_name = parse_class_name(self.name)
         self.group_name_can_be_selected = self.name and \
-                                          (self.split_group_name[0] == 0 or len(self.split_group_name[1]) == 1)
+                                          (self.split_group_name[0] == 0 or len(self.split_group_name[1]) == 1 or
+                                           not self.split_group_name[1])
 
     def __lt__(self, other: "StudentSubstitutionGroup"):
         return self.split_group_name < other.split_group_name

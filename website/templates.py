@@ -1,8 +1,6 @@
 import asyncio
-import traceback
 from typing import List
 
-import sys
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from substitution_plan.storage import SubstitutionDay
@@ -13,7 +11,9 @@ class Templates:
         self._jinja_env = Environment(
             loader=FileSystemLoader("website/templates/"),
             autoescape=select_autoescape(["html"]),
-            enable_async=True
+            enable_async=True,
+            trim_blocks=True,
+            lstrip_blocks=True
         )
         # static
         self._template_about = self._jinja_env.get_template("about.html")
