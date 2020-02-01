@@ -1,0 +1,23 @@
+{
+  "name": "gawvertretung",
+  "version": "1.0.0",
+  "description": "Vertretungsplan für das Gymnasium am Wall Verden",
+  "__main": "index.js",
+  "scripts": {
+    "__test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": ".git"
+  },
+  "keywords": [
+    "substitution-plan",
+    "vertretungsplan",
+    "gymnasium-am-wall-verden"
+  ],
+  "author": "Florian Rädiker",
+  "dependencies": {
+    "bootstrap": "^4.4.1",
+    "bootstrap-icons": "^1.0.0-alpha2"
+  }
+}
