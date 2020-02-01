@@ -57,9 +57,10 @@ body, html {
     text-align: center;
     background-color: theme-color("secondary");
     padding: $spacer * .8;
+    font-size: $font-size-base * 1.65;
 
-    .title {
-        font-size: $font-size-base * 1.65;
+    .selection {
+        color: theme-color("primary");
     }
 }
 
@@ -87,9 +88,6 @@ body, html {
     .box:first-child {
         border-top-left-radius: $border-radius !important;
         border-top-right-radius: $border-radius !important;
-    }
-    .d-xs-block {
-        display: block !important;
     }
 }
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <title>{% block title %}{% endblock %} | Vertretungsplan GaW Verden</title>
+    <title>{% block title %}{% endblock %} - Vertretungsplan GaW Verden</title>
     {% block breadcrumb_list %}{% endblock %}
     <link href="{{ base_path }}/favicon.svg" rel="icon" sizes="any" type="image/svg+xml">
     <link href="{{ base_path }}/favicon-16.png" rel="icon" sizes="16x16" type="image/png">
@@ -33,6 +33,7 @@
     <header class="container main-container">
         <div class="box title-box">
             {% block title_bar %}
+                {% if selection %}<span class="selection">{{ selection_str }}</span> - {% endif %}
                 <span class="title d-none d-md-block">Vertretungsplan Gymnasium am Wall Verden</span>
                 <span class="title d-md-none">GaW Vertretungsplan</span>
             {% endblock %}
