@@ -31,7 +31,7 @@ class Templates:
         return await self._template_about.render_async(base_path=self.base_path)
 
     async def render_error_404(self):
-        return await self._template_about.render_async(base_path=self.base_path)
+        return await self._template_error_404.render_async(base_path=self.base_path)
 
     async def render_error_500_students(self):
         return await self._template_error_500_students.render_async(base_path=self.base_path)
