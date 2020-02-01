@@ -15,7 +15,7 @@ def application_wrapper(environ, respond):
         fn = os.path.join(fn, 'index.html')
     type = mimetypes.guess_type(fn)[0]
     if os.path.exists(fn):
-        respond('200 OK', [('Content-Type', type)])
+        respond('200 OK', [('Content-Type', type)] if type is not None else [])
         return util.FileWrapper(open(fn, "rb"))
     else:
         return gawvertretung.application(environ, respond)
