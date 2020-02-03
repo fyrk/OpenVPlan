@@ -1,5 +1,5 @@
 /*!
- * Parts of this file use Bootstrap, see the following comment.
+ * This file is based on Bootstrap, see the following comment.
  * Bootstrap Icons (located at /assets/img/bootstrap/...) License: /assets/third-party-licenses/BOOTSTRAP-ICONS-LICENSE.md
  */
 
@@ -68,6 +68,27 @@ body, html {
 
     .selection {
         color: theme-color("primary");
+    }
+}
+
+.title-middle, .title-big {
+    display: none;
+}
+
+@media (min-width: 380px) {
+    .title-small {
+        display: none;
+    }
+    @media (max-width: 768px) {
+        .title-middle {
+            display: inline;
+        }
+    }
+}
+
+@media (min-width: 768px) {
+    .title-big {
+        display: inline;
     }
 }
 

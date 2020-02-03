@@ -33,9 +33,10 @@
     <header class="container main-container">
         <div class="box title-box">
             {% block title_bar %}
-                {% if selection %}<span class="selection">{{ selection_str }}</span> - {% endif %}
-                <span class="title d-none d-md-inline">Vertretungsplan Gymnasium am Wall Verden</span>
-                <span class="title d-md-none">GaW Vertretungsplan</span>
+                {% if selection %}<span class="selection">{{ selection_str }}</span><!-- htmlmin:ignore --> <!-- htmlmin:ignore -->- {% endif %}
+                <span class="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
+                <span class="title-middle">GaW Vertretungsplan</span>
+                <span class="title-small">GaW VPlan</span>
             {% endblock %}
             {% block title_end %}{% endblock %}
         </div>
