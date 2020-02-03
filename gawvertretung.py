@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import datetime
+import logging
 import os
 import pickle
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -12,7 +14,6 @@ from typing import List
 
 import aiohttp
 
-from logging_tool import create_logger
 from substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
 from substitution_plan.parser import get_status_string
 from substitution_plan.storage import SubstitutionDay
@@ -22,12 +23,24 @@ from website.stats import Stats
 from website.templates import Templates
 
 
-logger = create_logger("website")
-
-
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
 
-logger.info("Working directory: " + WORKING_DIR)
+LOG_FILE = os.path.join(WORKING_DIR, datetime.datetime.now().strftime("logs/website-%Y-%m-%e-%H:%M:%S.log"))
+
+logger = logging.getLogger()
+logger.handlers.clear()
+logger.setLevel(logging.DEBUG)
+log_formatter = logging.Formatter("{threadName}:{thread} {asctime} [{levelname:^8}]: {message}", style="{")
+file_logger = logging.FileHandler(LOG_FILE, encoding="utf-8")
+file_logger.setFormatter(log_formatter)
+logger.addHandler(file_logger)
+stdout_logger = logging.StreamHandler(sys.stdout)
+stdout_logger.setLevel(logging.ERROR)
+stdout_logger.setFormatter(log_formatter)
+logger.addHandler(stdout_logger)
+
+
+logger.info("Started gawvertretung.py with working directory '" + WORKING_DIR + "'")
 
 BASE_PATH = "/dev"  # leave empty for production
 
