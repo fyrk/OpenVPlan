@@ -2,21 +2,12 @@
  * This file is based on Bootstrap, see the following comment.
  * Bootstrap Icons (located at /assets/img/bootstrap/...) License: /assets/third-party-licenses/BOOTSTRAP-ICONS-LICENSE.md
  */
-
-/*// Custom.scss
-// Option B: Include parts of Bootstrap
-
-// Required
-@import "../node_modules/bootstrap/scss/functions";
-@import "../node_modules/bootstrap/scss/variables";
-@import "../node_modules/bootstrap/scss/mixins";
-
-// Optional
-@import "../node_modules/bootstrap/scss/reboot";
-@import "../node_modules/bootstrap/scss/type";
-@import "../node_modules/bootstrap/scss/images";
-@import "../node_modules/bootstrap/scss/code";
-@import "../node_modules/bootstrap/scss/grid";*/
+/*!
+ * Bootstrap v4.4.1 (https://getbootstrap.com/)
+ * Copyright 2011-2019 The Bootstrap Authors
+ * Copyright 2011-2019 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ */
 
 @import "bootstrap/scss/functions";
 
@@ -29,7 +20,33 @@ $theme-colors: (
 $body-bg: #fc8600;
 $table-accent-bg: rgba(map_get($theme-colors, "primary"), 0.034);
 
-@import "bootstrap/scss/bootstrap";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/mixins/text-truncate";
+@import "bootstrap/scss/mixins/breakpoints";
+@import "bootstrap/scss/mixins/hover";
+@import "bootstrap/scss/mixins/deprecate";
+@import "bootstrap/scss/mixins/text-emphasis";
+@import "bootstrap/scss/mixins/text-hide";
+@import "bootstrap/scss/mixins/border-radius";
+@import "bootstrap/scss/mixins/grid";
+@import "bootstrap/scss/mixins/grid-framework";
+@import "bootstrap/scss/mixins/background-variant";
+@import "bootstrap/scss/mixins/table-row";
+
+@import "bootstrap/scss/utilities/text";
+@import "bootstrap/scss/utilities/flex";
+@import "bootstrap/scss/utilities/background";
+@import "bootstrap/scss/utilities/spacing";
+
+@import "bootstrap/scss/vendor/rfs";
+
+@import "bootstrap/scss/reboot";
+//@import "bootstrap/scss/type";
+//@import "bootstrap/scss/images";
+//@import "bootstrap/scss/code";
+@import "bootstrap/scss/grid";
+@import "bootstrap/scss/tables";
+@import "bootstrap/scss/nav";
 
 body {
     overflow-wrap: break-word;

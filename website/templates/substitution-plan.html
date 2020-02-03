@@ -73,7 +73,7 @@
     {%- endfor -%}
     {%- if selection -%}
         <div class="box">
-            Es werden Vertretungen für <i>{{ selection_str }}</i><!-- htmlmin:ignore --> angezeigt. <!-- htmlmin:ignore -->{%- block show_all_substitutions -%}{%- endblock -%}
+            Es werden Vertretungen für <i>{{ selection_str }}</i><!-- htmlmin:ignore --> angezeigt. <!-- htmlmin:ignore -->{% block show_all_substitutions -%}{%- endblock -%}
         </div>
     {%- endif -%}
 {%- endblock -%}
