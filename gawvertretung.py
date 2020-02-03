@@ -21,8 +21,13 @@ from website.api import SubstitutionAPI
 from website.stats import Stats
 from website.templates import Templates
 
-os.chdir(os.path.abspath(os.path.dirname(__file__)))
 
+logger = create_logger("website")
+
+
+WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
+
+logger.info("Working directory: " + WORKING_DIR)
 
 BASE_PATH = "/dev"  # leave empty for production
 
@@ -36,16 +41,17 @@ class SubstitutionPlan:
 
     URL_FIRST_SITE = URL_STUDENTS.format(1)
 
-    FILENAME_SUBSTITUTIONS = "data/substitutions/substitutions.pickle"
+    FILENAME_SUBSTITUTIONS = os.path.join(WORKING_DIR, "data/substitutions/substitutions.pickle")
     SUBSTITUTIONS_VERSION = 2
-    PATH_STATS = "data/stats/"
+    PATH_STATS = os.path.join(WORKING_DIR, "data/stats/")
+    TEMPLATE_DIR = os.path.join(WORKING_DIR, "website/templates/")
 
     def __init__(self):
         self.stats = Stats(self.PATH_STATS)
         self.substitution_loader_students = StudentSubstitutionLoader("klassen", self.URL_STUDENTS, self.stats)
         self.substitution_loader_teachers = TeacherSubstitutionLoader("lehrer", self.URL_TEACHERS)
         self.api = SubstitutionAPI(self)
-        self.templates = Templates(BASE_PATH)
+        self.templates = Templates(self.TEMPLATE_DIR, BASE_PATH)
 
         self.current_status_date = datetime.datetime.now().date()
 
@@ -177,8 +183,6 @@ class SubstitutionPlan:
             logger.exception("Exception occurred")
             return "500 Internal Server Error", ""
 
-
-logger = create_logger("website")
 
 substitution_plan = SubstitutionPlan()
 asyncio.run(substitution_plan.async_init())

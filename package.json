@@ -18,6 +18,7 @@
   "author": "Florian Rädiker",
   "dependencies": {
     "bootstrap": "^4.4.1",
-    "bootstrap-icons": "^1.0.0-alpha2"
+    "bootstrap-icons": "^1.0.0-alpha2",
+    "html-minifier": "^4.0.0"
   }
 }

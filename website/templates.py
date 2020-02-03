@@ -1,15 +1,26 @@
-import asyncio
+import os
 from typing import List
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemLoader, select_autoescape, FileSystemBytecodeCache
+import logging
 
 from substitution_plan.storage import SubstitutionDay
 
 
+logger = logging.getLogger()
+
+
+class LoggingLoader(FileSystemLoader):
+    def get_source(self, environment, template):
+        logger.info(f"Loading template '{template}' from file")
+        return super().get_source(environment, template)
+
+
 class Templates:
-    def __init__(self, base_path=""):
+    def __init__(self, template_path, base_path=""):
         self._jinja_env = Environment(
-            loader=FileSystemLoader("website/templates/"),
+            loader=LoggingLoader(template_path),
+            bytecode_cache=FileSystemBytecodeCache(os.path.join(template_path, "cache")),
             autoescape=select_autoescape(["html"]),
             enable_async=True,
             trim_blocks=True,
@@ -17,15 +28,15 @@ class Templates:
         )
         self.base_path = base_path
         # static
-        self._template_about = self._jinja_env.get_template("about.html")
-        self._template_error_404 = self._jinja_env.get_template("error-404.html")
-        self._template_error_500_students = self._jinja_env.get_template("error-500-students.html")
-        self._template_error_500_teachers = self._jinja_env.get_template("error-500-teachers.html")
-        self._template_privacy = self._jinja_env.get_template("privacy.html")
+        self._template_about = self._jinja_env.get_template("about.min.html")
+        self._template_error_404 = self._jinja_env.get_template("error-404.min.html")
+        self._template_error_500_students = self._jinja_env.get_template("error-500-students.min.html")
+        self._template_error_500_teachers = self._jinja_env.get_template("error-500-teachers.min.html")
+        self._template_privacy = self._jinja_env.get_template("privacy.min.html")
 
         # non-static
-        self._template_substitution_plan_students = self._jinja_env.get_template("substitution-plan-students.html")
-        self._template_substitution_plan_teachers = self._jinja_env.get_template("substitution-plan-teachers.html")
+        self._template_substitution_plan_students = self._jinja_env.get_template("substitution-plan-students.min.html")
+        self._template_substitution_plan_teachers = self._jinja_env.get_template("substitution-plan-teachers.min.html")
 
     async def render_about(self):
         return await self._template_about.render_async(base_path=self.base_path)
