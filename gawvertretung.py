@@ -58,13 +58,14 @@ class SubstitutionPlan:
     SUBSTITUTIONS_VERSION = 2
     PATH_STATS = os.path.join(WORKING_DIR, "data/stats/")
     TEMPLATE_DIR = os.path.join(WORKING_DIR, "website/templates/")
+    TEMPLATE_CACHE_DIR = os.path.join(WORKING_DIR, "data/template_cache/")
 
     def __init__(self):
         self.stats = Stats(self.PATH_STATS)
         self.substitution_loader_students = StudentSubstitutionLoader("klassen", self.URL_STUDENTS, self.stats)
         self.substitution_loader_teachers = TeacherSubstitutionLoader("lehrer", self.URL_TEACHERS)
         self.api = SubstitutionAPI(self)
-        self.templates = Templates(self.TEMPLATE_DIR, BASE_PATH)
+        self.templates = Templates(self.TEMPLATE_DIR, self.TEMPLATE_CACHE_DIR, BASE_PATH)
 
         self.current_status_date = datetime.datetime.now().date()
 

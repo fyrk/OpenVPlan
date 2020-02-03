@@ -1,4 +1,3 @@
-import os
 from typing import List
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape, FileSystemBytecodeCache
@@ -17,10 +16,10 @@ class LoggingLoader(FileSystemLoader):
 
 
 class Templates:
-    def __init__(self, template_path, base_path=""):
+    def __init__(self, template_path, template_cache_path, base_path=""):
         self._jinja_env = Environment(
             loader=LoggingLoader(template_path),
-            bytecode_cache=FileSystemBytecodeCache(os.path.join(template_path, "cache")),
+            bytecode_cache=FileSystemBytecodeCache(template_cache_path),
             autoescape=select_autoescape(["html"]),
             enable_async=True,
             trim_blocks=True,
