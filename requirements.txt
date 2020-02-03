@@ -1,4 +1,2 @@
 aiohttp
-htmlmin
-watchdog
 jinja2
