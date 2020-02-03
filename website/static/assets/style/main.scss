@@ -32,11 +32,13 @@ $table-accent-bg: rgba(map_get($theme-colors, "primary"), 0.034);
 @import "bootstrap/scss/mixins/grid-framework";
 @import "bootstrap/scss/mixins/background-variant";
 @import "bootstrap/scss/mixins/table-row";
+@import "bootstrap/scss/mixins/screen-reader";
 
 @import "bootstrap/scss/utilities/text";
 @import "bootstrap/scss/utilities/flex";
 @import "bootstrap/scss/utilities/background";
 @import "bootstrap/scss/utilities/spacing";
+@import "bootstrap/scss/utilities/screenreaders";
 
 @import "bootstrap/scss/vendor/rfs";
 
