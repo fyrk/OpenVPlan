@@ -69,6 +69,7 @@ class StudentSubstitutionGroup(BaseSubstitutionGroup):
     def __post_init__(self):
         number, letters = split_class_name(self.name)
         self.split_group_name = (int(number) if number else 0, letters)
+        letters = letters.upper()
         if number:
             if letters:
                 self.affected_groups = [number + letter for letter in letters]
@@ -91,7 +92,7 @@ class TeacherSubstitutionGroup(BaseSubstitutionGroup):
 
     def __post_init__(self):
         if self.name[0] != "???":
-            self.affected_groups = [self.name[0]]
+            self.affected_groups = [self.name[0].upper()]
         else:
             self.affected_groups = None
 

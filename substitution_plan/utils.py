@@ -1,7 +1,7 @@
 import datetime
 import re
 import time
-from typing import Set, Tuple, Optional
+from typing import List, Tuple, Optional
 
 
 def create_date_timestamp(date: datetime.datetime):
@@ -18,11 +18,12 @@ def split_class_name(class_name: str) -> Tuple[str, str]:
     return "", class_name
 
 
-def split_selection(selection: str) -> Optional[Set[str]]:
+def split_selection(selection: str) -> Optional[List[str]]:
     selection = selection.strip()
-    selected_groups = set()
+    selected_groups = []
     for selected_group in "".join(selection.split()).split(","):
-        selected_groups.add(selected_group)
+        if selected_group not in selected_groups:
+            selected_groups.append(selected_group)
     if not selected_groups:
         return None
     return selected_groups

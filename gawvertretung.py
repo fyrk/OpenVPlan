@@ -162,10 +162,9 @@ class SubstitutionPlan:
             if "s" in storage:
                 selection = split_selection(",".join(storage["s"]))
                 if selection:
-                    return "200 OK", await self.templates.render_substitution_plan_students(self.current_status_string,
-                                                                                            self.data_students,
-                                                                                            selection,
-                                                                                            ", ".join(selection))
+                    return "200 OK", await self.templates.render_substitution_plan_students(
+                        self.current_status_string, self.data_students,
+                        [s.upper() for s in selection], ", ".join(selection))
             return "200 OK", self.index_site_students
         except Exception:
             logger.exception("Exception occurred")
@@ -176,13 +175,11 @@ class SubstitutionPlan:
         try:
             await self.update_data()
             if "s" in storage:
-                selection = split_selection(",".join(storage["s"]))
+                selection = sorted(split_selection(",".join(storage["s"])))
                 if selection:
-                    return "200 OK", await self.templates.render_substitution_plan_teachers(self.current_status_string,
-                                                                                            self.data_teachers,
-                                                                                            selection,
-                                                                                            ", ".join(selection).upper()
-                                                                                            )
+                    return "200 OK", await self.templates.render_substitution_plan_teachers(
+                        self.current_status_string, self.data_teachers, [
+                            s.upper() for s in selection], ", ".join(selection).upper())
             return "200 OK", self.index_site_teachers
         except Exception:
             logger.exception("Exception occurred")
