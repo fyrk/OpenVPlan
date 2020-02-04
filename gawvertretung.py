@@ -42,7 +42,7 @@ logger.addHandler(stdout_logger)
 
 logger.info("Started gawvertretung.py with working directory '" + WORKING_DIR + "'")
 
-BASE_PATH = "/dev"  # leave empty for production
+BASE_PATH = ""  # leave empty for production
 
 
 class SubstitutionPlan:
