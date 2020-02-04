@@ -24,7 +24,7 @@ from website.templates import Templates
 
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
 
-LOG_FILE = os.path.join(WORKING_DIR, datetime.datetime.now().strftime("logs/website-%Y-%m-%d-%H:%M:%S.log"))
+LOG_FILE = os.path.join(WORKING_DIR, datetime.datetime.now().strftime("logs/website-%Y-%m-%d-%H-%M-%S.log"))
 
 logger = logging.getLogger()
 logger.handlers.clear()
@@ -108,8 +108,11 @@ class SubstitutionPlan:
             logger.info("Loading new data...")
             t1 = time.perf_counter_ns()
             self.data_students, self.data_teachers = await asyncio.gather(
-                self.substitution_loader_students.load_data(session, first_site),
-                self.substitution_loader_teachers.load_data(session)
+                self.substitution_loader_students.load_data(session,
+                                                            {d.timestamp: d.get_hashes() for d in self.data_students},
+                                                            first_site),
+                self.substitution_loader_teachers.load_data(session,
+                                                            {d.timestamp: d.get_hashes() for d in self.data_teachers})
             )
             t2 = time.perf_counter_ns()
             logger.debug(f"New data created in {t2 - t1}ns")

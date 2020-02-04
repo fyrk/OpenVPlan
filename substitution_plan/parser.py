@@ -5,16 +5,6 @@ from html.parser import HTMLParser
 from substitution_plan.storage import StudentSubstitution, TeacherSubstitution
 from substitution_plan.utils import create_date_timestamp, split_class_name
 
-
-async def parse_next_site(stream):
-    while True:
-        line = await stream.readline()
-        if not line:
-            raise ValueError("Did not find next site")
-        if line.startswith(b'<meta http-equiv="refresh" content="8; URL=subst_'):
-            return line[49:52]
-
-
 REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
 
 
@@ -27,6 +17,15 @@ def get_status_string(text):
 
 class SubstitutionsTooOldException(Exception):
     pass
+
+
+async def parse_next_site(stream):
+    while True:
+        line = await stream.readline()
+        if not line:
+            raise ValueError("Did not find next site")
+        if line.startswith(b'<meta http-equiv="refresh" content="8; URL=subst_'):
+            return line[49:52]
 
 
 class BaseSubstitutionParser(HTMLParser):

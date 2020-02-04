@@ -3,14 +3,15 @@ import hashlib
 import logging
 import re
 from functools import lru_cache
-from typing import NamedTuple, List, Any, Tuple, Optional, Iterable
+from typing import List, Any, Tuple, Optional, Iterable, Dict, Set
 
 from substitution_plan.utils import split_class_name
 
 logger = logging.getLogger()
 
 
-class SubstitutionDay(NamedTuple):
+@dataclasses.dataclass()
+class SubstitutionDay:
     timestamp: int
     day_name: str
     date: str
@@ -38,11 +39,22 @@ class SubstitutionDay(NamedTuple):
                                               ("groups", [g.to_dict() for g in self.iter_groups(selection)])
                                               ) if value is not None}
 
+    def get_hashes(self) -> Dict[bytes, List[bytes]]:
+        return {group.hash: {s.hash for s in group.substitutions} for group in self.substitution_groups}
+
+    def mark_new_substitutions(self, old_group_hashes: Dict[bytes, Set[bytes]]):
+        for group in self.substitution_groups:
+            try:
+                group.mark_new_substitutions(old_group_hashes[group.hash])
+            except KeyError:
+                pass
+
 
 class BaseSubstitutionGroup:
     name: Any
     substitutions: List["BaseSubstitution"]
     affected_groups: Optional[List[str]]
+    hash: bytes
 
     def __lt__(self, other):
         raise NotImplementedError
@@ -58,6 +70,11 @@ class BaseSubstitutionGroup:
             return False
         return any(g in selection for g in self.affected_groups)
 
+    def mark_new_substitutions(self, substitution_hashes: Set[bytes]):
+        for s in self.substitutions:
+            if s.hash not in substitution_hashes:
+                s.is_new = True
+
 
 @dataclasses.dataclass
 class StudentSubstitutionGroup(BaseSubstitutionGroup):
@@ -65,6 +82,7 @@ class StudentSubstitutionGroup(BaseSubstitutionGroup):
     substitutions: List["BaseSubstitution"]
     split_group_name: Tuple = dataclasses.field(init=False)
     affected_groups: Optional[List[str]] = dataclasses.field(init=False)
+    hash: bytes = dataclasses.field(init=False)
 
     def __post_init__(self):
         number, letters = split_class_name(self.name)
@@ -80,6 +98,8 @@ class StudentSubstitutionGroup(BaseSubstitutionGroup):
         else:
             self.affected_groups = None
 
+        self.hash = hashlib.sha1(self.name.encode()).digest()
+
     def __lt__(self, other: "StudentSubstitutionGroup"):
         return self.split_group_name < other.split_group_name
 
@@ -89,12 +109,17 @@ class TeacherSubstitutionGroup(BaseSubstitutionGroup):
     name: Tuple[str, bool]  # teacher abbr, is_striked
     substitutions: List["BaseSubstitution"]
     affected_groups: Optional[List[str]] = dataclasses.field(init=False)
+    hash: bytes = dataclasses.field(init=False)
 
     def __post_init__(self):
         if self.name[0] != "???":
             self.affected_groups = [self.name[0].upper()]
         else:
             self.affected_groups = None
+
+        h = hashlib.sha1(self.name[0].encode())
+        h.update(self.name[1].to_bytes(1, "big"))
+        self.hash = h.digest()
 
     def __lt__(self, other):
         return self.name < other.name
@@ -106,16 +131,18 @@ class TeacherSubstitutionGroup(BaseSubstitutionGroup):
 
 
 class BaseSubstitution:
+    lesson: str
+    hash: bytes
+    is_new: bool
+
     def __post_init__(self):
-        self.__setattr__("lesson_num", get_lesson_num(self.lesson))
+        self.lesson_num = get_lesson_num(self.lesson)
+        self.hash = hashlib.sha1(".".join(self).encode()).digest()
 
     def __iter__(self):
         raise NotImplementedError
 
     def to_dict(self):
-        raise NotImplementedError
-
-    def get_hash(self, date, group_name):
         raise NotImplementedError
 
 
@@ -142,6 +169,8 @@ class StudentSubstitution(BaseSubstitution):
     subs_from: str
     hint: str
     lesson_num: int = dataclasses.field(init=False)
+    hash: bytes = dataclasses.field(init=False)
+    is_new: bool = dataclasses.field(default=False, init=False)
 
     def to_dict(self):
         return dataclasses.asdict(self, dict_factory=lambda x: {k: v for k, v in x if v is not None})
@@ -155,12 +184,6 @@ class StudentSubstitution(BaseSubstitution):
         yield self.subs_from
         yield self.hint
 
-    @lru_cache()
-    def get_hash(self, date, class_name):
-        return hashlib.sha1((date + "-" + class_name + "-" + self.teacher + "." + self.substitute + "." + self.lesson +
-                             "." + self.subject + "." + self.room + "." + self.subs_from + "." + self.hint)
-                            .encode()).hexdigest()
-
 
 @dataclasses.dataclass(unsafe_hash=True)
 class TeacherSubstitution(BaseSubstitution):
@@ -173,10 +196,8 @@ class TeacherSubstitution(BaseSubstitution):
     hint: str
     is_substitute_striked: bool
     lesson_num: int = dataclasses.field(init=False)
-
-    # def __repr__(self):
-    #    return f"TeacherSubstitution({self.lesson}, {self.class_name}, {self.teacher}, {self.subject}, {self.room}, " \
-    #           f"{self.subs_from}, {self.hint}, {self.is_substitute_striked})"
+    hash: bytes = dataclasses.field(init=False)
+    is_new: bool = dataclasses.field(default=False, init=False)
 
     def to_dict(self):
         return dataclasses.asdict(self, dict_factory=lambda x: {k: v for k, v in x if v is not None})
@@ -189,8 +210,3 @@ class TeacherSubstitution(BaseSubstitution):
         yield self.room
         yield self.subs_from
         yield self.hint
-
-    def get_hash(self, date, group_name):
-        return hashlib.sha1((date + "-" + group_name[0] + "-" + self.lesson + "." + self.class_name + "." +
-                             self.teacher + "." + self.subject + "." + self.room + "." + self.subs_from + "." +
-                             self.hint + "." + str(self.is_substitute_striked)).encode()).hexdigest()

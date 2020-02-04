@@ -1,10 +1,8 @@
 import asyncio
 import datetime
 import io
-import json
 import logging
-import time
-from typing import Type, Union
+from typing import Type, Union, Dict, Set
 
 import aiohttp
 
@@ -28,16 +26,16 @@ class AsyncBytesIOWrapper(io.BytesIO):
 class BaseSubstitutionLoader:
     SITE_LOAD_COUNT = 5
 
-    def __init__(self, plan_type: str, substitutions_parser_class: Type[BaseSubstitutionParser], url: str, stats: Stats = None):
+    def __init__(self, plan_type: str, substitutions_parser_class: Type[BaseSubstitutionParser], url: str,
+                 stats: Stats = None):
         self.plan_type = plan_type
         self.substitutions_parser = substitutions_parser_class
         self.url = url
         self.stats = stats
         self._last_site_num = None
 
-    async def load_data(self, session: aiohttp.ClientSession, first_site=None):
-        start_time = time.perf_counter_ns()
-
+    async def load_data(self, session: aiohttp.ClientSession, old_hashes: Dict[int, Dict[bytes, Set[bytes]]],
+                        first_site=None):
         async def parse_site(num, request, stream, data, current_timestamp):
             logger.debug(f"{self.plan_type}: Parsing {num}")
             parser = self.substitutions_parser(data, current_timestamp)
@@ -108,7 +106,7 @@ class BaseSubstitutionLoader:
             if self._last_site_num is not None:
                 if self.stats is not None:
                     self.stats.add_last_site(self._last_site_num)
-                return self._data_postprocessing(data)
+                return self._data_postprocessing(old_hashes, data)
             current_site = next_site
         else:
             current_site = 1
@@ -127,11 +125,11 @@ class BaseSubstitutionLoader:
             if self._last_site_num is not None:
                 if self.stats is not None:
                     self.stats.add_last_site(self._last_site_num)
-                return self._data_postprocessing(data)
+                return self._data_postprocessing(old_hashes, data)
             current_site = next_site
 
-    def _data_postprocessing(self, data: dict):
-        res = sorted(
+    def _data_postprocessing(self, old_hashes: Dict[int, Dict[bytes, Set[bytes]]], data: dict):
+        days = sorted(
             SubstitutionDay(
                 timestamp,
                 day["day_name"],
@@ -143,7 +141,12 @@ class BaseSubstitutionLoader:
             )
             for timestamp, day in data.items()
         )
-        return res
+        for day in days:
+            try:
+                day.mark_new_substitutions(old_hashes[day.timestamp])
+            except KeyError:
+                pass
+        return days
 
     def _sort_substitutions(self, substitutions: dict):
         raise NotImplementedError
@@ -165,18 +168,3 @@ class TeacherSubstitutionLoader(BaseSubstitutionLoader):
     def _sort_substitutions(self, substitutions: dict):
         return sorted(TeacherSubstitutionGroup(group_name, substitutions)
                       for group_name, substitutions in substitutions.items())
-
-
-if __name__ == "__main__":
-    async def main():
-        loader = StudentSubstitutionLoader("https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm")
-        async with aiohttp.ClientSession() as session:
-            t1 = time.perf_counter_ns()
-            result = await loader.load_data(session)
-            t2 = time.perf_counter_ns()
-            print((t2-t1)/1e+9)
-            print("result")
-            print(len(result))
-            print(json.dumps([d.to_dict() for d in result], indent=4))
-
-    asyncio.run(main())
