@@ -164,6 +164,9 @@ body, html {
 
 .substitutions-table.table {
     white-space: nowrap;
+    td {
+        vertical-align: middle;
+    }
 
     thead {
         th {
@@ -174,10 +177,6 @@ body, html {
     tbody {
         tr.first-of-group td {
             border-top: $table-border-width solid $gray-500;
-        }
-
-        td {
-            vertical-align: middle;
         }
 
         tr.grey td:not(.group-name) {
@@ -215,9 +214,12 @@ a {
 
 .i-bookmark::before {
     @include icon($base_path + "/assets/img/bootstrap/bookmark.svg");
+    position: relative;
+    top: 0.2rem;
 }
 
 .external::after {
     @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg");
-    transform: translateY(0.155rem);
+    position: relative;
+    top: 0.155rem;
 }

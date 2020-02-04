@@ -35,7 +35,7 @@
             {%- set found_substitutions = true -%}
             {%- set subs_table -%}
                 {%- for group in day.iter_groups(selection) -%}
-                    <tr class="first-of-group{%- if day_loop.index == 1 and group.substitutions[0].lesson_num is not none -%} lesson{{ group.substitutions[0].lesson_num }}{%- endif -%}">
+                    <tr class="first-of-group{%- if day_loop.index == 1 and group.substitutions[0].lesson_num is not none %} lesson{{ group.substitutions[0].lesson_num }}{%- endif -%}">
                         <td rowspan="{{ group.substitutions|length }}" class="group-name">
                             {%- if not selection and group.group_name_can_be_selected -%}
                                 <a class="icon i-bookmark" href="?s={{ group.get_raw_name() }}"></a>
