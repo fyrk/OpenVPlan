@@ -2,10 +2,9 @@ import asyncio
 import datetime
 import io
 import json
+import logging
 import time
 from typing import Type, Union
-
-import logging
 
 import aiohttp
 
@@ -14,7 +13,6 @@ from substitution_plan.parser import BaseSubstitutionParser, StudentSubstitution
 from substitution_plan.storage import SubstitutionDay, StudentSubstitutionGroup, TeacherSubstitutionGroup
 from substitution_plan.utils import create_date_timestamp
 from website.stats import Stats
-
 
 logger = logging.getLogger()
 
@@ -41,7 +39,7 @@ class BaseSubstitutionLoader:
         start_time = time.perf_counter_ns()
 
         async def parse_site(num, request, stream, data, current_timestamp):
-            logger.debug(f"{time.perf_counter_ns()-start_time}ns {self.plan_type}: Parsing {num}")
+            logger.debug(f"{self.plan_type}: Parsing {num}")
             parser = self.substitutions_parser(data, current_timestamp)
             while True:
                 r = (await stream.readany()).decode("iso-8859-1")
@@ -55,22 +53,21 @@ class BaseSubstitutionLoader:
                 except SubstitutionsTooOldException:
                     return
                 except Exception:
-                    logger.exception(f"{time.perf_counter_ns()-start_time}ns {self.plan_type}: "
-                                     f"Exception while parsing {num}")
+                    logger.exception(f"{self.plan_type}: Exception while parsing {num}")
 
         async def load_from_website(num):
-            logger.debug(f"{time.perf_counter_ns()-start_time}ns {self.plan_type}: Requesting {num}")
+            logger.debug(f"{self.plan_type}: Requesting {num}")
             r = await session.get(self.url.format(num))
-            logger.debug(f"{time.perf_counter_ns()-start_time}ns {self.plan_type}: Got {r.status} for {num}")
+            logger.debug(f"{self.plan_type}: Got {r.status} for {num}")
             if r.status == 200:
                 await load_from_stream(num, r.content, r)
 
         async def load_from_stream(num, stream: Union[aiohttp.StreamReader, AsyncBytesIOWrapper], request=None):
-            logger.debug(f"{time.perf_counter_ns()-start_time}ns {self.plan_type}: Loading {num}")
+            logger.debug(f"{self.plan_type}: Loading {num}")
             nonlocal next_waiting_result
             next_site = await parse_next_site(stream)
             if b"001" == next_site:
-                logger.debug(f"{time.perf_counter_ns()-start_time}ns {self.plan_type}: {num} is last site")
+                logger.debug(f"{self.plan_type}: {num} is last site")
                 self._last_site_num = num
                 for l in loads[num-current_site+1:]:
                     l.cancel()
@@ -134,8 +131,6 @@ class BaseSubstitutionLoader:
             current_site = next_site
 
     def _data_postprocessing(self, data: dict):
-        print(data)
-        t1 = time.perf_counter_ns()
         res = sorted(
             SubstitutionDay(
                 timestamp,
@@ -148,10 +143,6 @@ class BaseSubstitutionLoader:
             )
             for timestamp, day in data.items()
         )
-        t2 = time.perf_counter_ns()
-        if self.substitutions_parser == StudentSubstitutionParser:
-            print("data postprocessing time:", (t2-t1)/1e+9)
-            print("data", res)
         return res
 
     def _sort_substitutions(self, substitutions: dict):
@@ -172,7 +163,6 @@ class TeacherSubstitutionLoader(BaseSubstitutionLoader):
         super().__init__(plan_type, TeacherSubstitutionParser, url, stats)
 
     def _sort_substitutions(self, substitutions: dict):
-        print(substitutions)
         return sorted(TeacherSubstitutionGroup(group_name, substitutions)
                       for group_name, substitutions in substitutions.items())
 

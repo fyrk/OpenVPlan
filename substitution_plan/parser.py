@@ -10,9 +10,7 @@ async def parse_next_site(stream):
     while True:
         line = await stream.readline()
         if not line:
-            print("did not find next site")
             raise ValueError("Did not find next site")
-        #print("line", line)
         if line.startswith(b'<meta http-equiv="refresh" content="8; URL=subst_'):
             return line[49:52]
 
@@ -103,7 +101,6 @@ class BaseSubstitutionParser(HTMLParser):
         if self.current_section == "substitution-table":
             if tag == "tr" and self.current_substitution:
                 group = self.get_current_group()
-                print("current group", group)
                 substitution = self.get_current_substitution()
                 try:
                     if substitution not in self.day_data["substitutions"][group]:
@@ -192,7 +189,6 @@ class TeacherSubstitutionParser(BaseSubstitutionParser):
         self.current_strikes = []
 
     def get_current_group(self):
-        print("get group teachers")
         return (self.current_substitution[0].strip(), self.current_strikes[0])
 
     def get_current_substitution(self):
