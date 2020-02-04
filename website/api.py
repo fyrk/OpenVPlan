@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import json
 import logging
@@ -13,7 +12,7 @@ class SubstitutionAPI:
     def __init__(self, substitution_plan):
         self.substitution_plan = substitution_plan
 
-    def application(self, path, environ, start_response):
+    async def application(self, path, environ, start_response):
         def handle_error(response, description=None):
             data = {"ok": False, "error": response}
             if description:
@@ -45,7 +44,7 @@ class SubstitutionAPI:
             else:
                 return handle_error("405 Method Not Allowed")
 
-            asyncio.run(self.substitution_plan.update_data())
+            await self.substitution_plan.update_data()
             current_timestamp = create_date_timestamp(datetime.datetime.now())
             if path == "/status":
                 data = {"ok": True, "status": self.substitution_plan.current_status_string}
@@ -54,7 +53,6 @@ class SubstitutionAPI:
                     selection = [split_class_name_lower(c) for c in parse_class_selection(request_data["selection"])]
                 else:
                     selection = None
-                print("data", self.substitution_plan.data_students)
                 data = {"ok": True, "status": self.substitution_plan.current_status_string,
                         "days": [d.to_dict(selection) for d in self.substitution_plan.data_students
                                  if d.timestamp >= current_timestamp]}
@@ -68,7 +66,8 @@ class SubstitutionAPI:
                         "days": [d.to_dict(selection) for d in self.substitution_plan.data_teachers
                                  if d.timestamp >= current_timestamp]}
             pretty = "pretty" in request_data and (request_data["pretty"] == "True" or request_data["pretty"] == "true")
-            content = json.dumps(data, indent=4 if pretty else None).encode("utf-8")
+            content = json.dumps(data, indent=4 if pretty else None,
+                                 separators=None if pretty else (",", ":")).encode("utf-8")
             start_response("200 OK", [("Content-Type", "application/json;charset=utf-8"),
                                       ("Content-Length", str(len(content)))])
             return [content]

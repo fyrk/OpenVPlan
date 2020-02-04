@@ -22,7 +22,6 @@ from website.api import SubstitutionAPI
 from website.stats import Stats
 from website.templates import Templates
 
-
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
 
 LOG_FILE = os.path.join(WORKING_DIR, datetime.datetime.now().strftime("logs/website-%Y-%m-%d-%H:%M:%S.log"))
@@ -202,34 +201,34 @@ substitution_plan = SubstitutionPlan()
 asyncio.run(substitution_plan.async_init())
 
 
-def application(environ, start_response):
+async def async_application(environ, start_response):
     try:
         substitution_plan.stats.new_request(environ)
         if environ["PATH_INFO"].startswith("/api"):
-            return substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
+            return await substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
 
         t1 = time.perf_counter_ns()
         if environ["REQUEST_METHOD"] == "GET":
             if environ["PATH_INFO"] == "/":
                 logger.info("GET /")
                 storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
-                response, content = asyncio.run(substitution_plan.get_site_students(storage))
+                response, content = await substitution_plan.get_site_students(storage)
             elif environ["PATH_INFO"] == "/teachers":
                 logger.info("GET /teachers")
                 storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
-                response, content = asyncio.run(substitution_plan.get_site_teachers(storage))
+                response, content = await substitution_plan.get_site_teachers(storage)
             elif environ["PATH_INFO"] == "/privacy":
                 logger.info("GET /privacy")
                 response = "200 OK"
-                content = asyncio.run(substitution_plan.templates.render_privacy())
+                content = await substitution_plan.templates.render_privacy()
             elif environ["PATH_INFO"] == "/about":
                 logger.info("GET /about")
                 response = "200 OK"
-                content = asyncio.run(substitution_plan.templates.render_about())
+                content = await substitution_plan.templates.render_about()
             else:
                 substitution_plan.stats.new_not_found(environ)
                 response = "404 Not Found"
-                content = asyncio.run(substitution_plan.templates.render_error_404())
+                content = await substitution_plan.templates.render_error_404()
             content = content.encode("utf-8")
             t2 = time.perf_counter_ns()
             logger.debug(f"Time for handling request: {t2 - t1}ns")
@@ -251,23 +250,23 @@ def application(environ, start_response):
             if environ["PATH_INFO"] == "/":
                 logger.info("HEAD /")
                 storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
-                response, content = asyncio.run(substitution_plan.get_site_students(storage))
+                response, content = await substitution_plan.get_site_students(storage)
             elif environ["PATH_INFO"] == "/teachers":
                 logger.info("HEAD /teachers")
                 storage = urllib.parse.parse_qs(environ["QUERY_STRING"])
-                response, content = asyncio.run(substitution_plan.get_site_teachers(storage))
+                response, content = await substitution_plan.get_site_teachers(storage)
             elif environ["PATH_INFO"] == "/privacy":
                 logger.info("HEAD /privacy")
                 response = "200 OK"
-                content = asyncio.run(substitution_plan.templates.render_privacy())
+                content = await substitution_plan.templates.render_privacy()
             elif environ["PATH_INFO"] == "/about":
                 logger.info("HEAD /about")
                 response = "200 OK"
-                content = asyncio.run(substitution_plan.templates.render_about())
+                content = await substitution_plan.templates.render_about()
             else:
                 substitution_plan.stats.new_not_found(environ)
                 response = "404 Not Found"
-                content = asyncio.run(substitution_plan.templates.render_error_404())
+                content = await substitution_plan.templates.render_error_404()
 
             content = content.encode("utf-8")
             t2 = time.perf_counter_ns()
@@ -283,3 +282,7 @@ def application(environ, start_response):
         return [content]
     finally:
         substitution_plan.stats.save()
+
+
+def application(environ, start_response):
+    return asyncio.run(async_application(environ, start_response))
