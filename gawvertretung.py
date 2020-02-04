@@ -17,7 +17,7 @@ import aiohttp
 from substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
 from substitution_plan.parser import get_status_string
 from substitution_plan.storage import SubstitutionDay
-from substitution_plan.utils import parse_class_selection, create_date_timestamp
+from substitution_plan.utils import split_selection, create_date_timestamp
 from website.api import SubstitutionAPI
 from website.stats import Stats
 from website.templates import Templates
@@ -160,12 +160,12 @@ class SubstitutionPlan:
         try:
             await self.update_data()
             if "s" in storage:
-                classes, selection = parse_class_selection(storage["s"][0].strip())
+                selection = split_selection(",".join(storage["s"]))
                 if selection:
                     return "200 OK", await self.templates.render_substitution_plan_students(self.current_status_string,
                                                                                             self.data_students,
                                                                                             selection,
-                                                                                            ", ".join(classes))
+                                                                                            ", ".join(selection))
             return "200 OK", self.index_site_students
         except Exception:
             logger.exception("Exception occurred")
@@ -176,12 +176,13 @@ class SubstitutionPlan:
         try:
             await self.update_data()
             if "s" in storage:
-                selection = storage["s"][0]
+                selection = split_selection(",".join(storage["s"]))
                 if selection:
                     return "200 OK", await self.templates.render_substitution_plan_teachers(self.current_status_string,
                                                                                             self.data_teachers,
-                                                                                            selection.lower(),
-                                                                                            selection.upper())
+                                                                                            selection,
+                                                                                            ", ".join(selection).upper()
+                                                                                            )
             return "200 OK", self.index_site_teachers
         except Exception:
             logger.exception("Exception occurred")

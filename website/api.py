@@ -3,7 +3,7 @@ import json
 import logging
 import urllib.parse
 
-from substitution_plan.utils import create_date_timestamp, split_class_name_lower, parse_class_selection
+from substitution_plan.utils import create_date_timestamp, split_selection
 
 logger = logging.getLogger()
 
@@ -50,7 +50,7 @@ class SubstitutionAPI:
                 data = {"ok": True, "status": self.substitution_plan.current_status_string}
             elif path == "/classes":
                 if "selection" in request_data:
-                    selection = [split_class_name_lower(c) for c in parse_class_selection(request_data["selection"])]
+                    selection = split_selection(request_data["selection"])
                 else:
                     selection = None
                 data = {"ok": True, "status": self.substitution_plan.current_status_string,
@@ -59,7 +59,7 @@ class SubstitutionAPI:
             else:
                 assert path == "/teachers"
                 if "selection" in request_data:
-                    selection = request_data["selection"].strip().upper()
+                    selection = split_selection(request_data["selection"])
                 else:
                     selection = None
                 data = {"ok": True, "status": self.substitution_plan.current_status_string,

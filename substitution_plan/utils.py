@@ -1,6 +1,7 @@
 import datetime
 import re
 import time
+from typing import Set, Tuple, Optional
 
 
 def create_date_timestamp(date: datetime.datetime):
@@ -10,29 +11,21 @@ def create_date_timestamp(date: datetime.datetime):
 REGEX_CLASS = re.compile(r"(?:\D|\A)(\d{1,3})([A-Za-z]*)(?:\D|\Z)")
 
 
-def parse_class_name(class_name):
-    matches = REGEX_CLASS.search(class_name)
-    if matches:
-        return int(matches.group(1)), matches.group(2)
-    return 0, class_name
-
-
-def split_class_name(class_name):
+def split_class_name(class_name: str) -> Tuple[str, str]:
     matches = REGEX_CLASS.search(class_name)
     if matches:
         return matches.group(1), matches.group(2)
     return "", class_name
 
 
-def parse_class_selection(selection: str):
+def split_selection(selection: str) -> Optional[Set[str]]:
     selection = selection.strip()
-    if not selection:
+    selected_groups = set()
+    for selected_group in "".join(selection.split()).split(","):
+        selected_groups.add(selected_group)
+    if not selected_groups:
         return None
-    selected_classes = []
-    for selected_class in "".join(selection.split()).split(","):
-        if selected_class not in selected_classes:
-            selected_classes.append(selected_class)
-    return selected_classes, [split_class_name_lower(class_name) for class_name in selected_classes]
+    return selected_groups
 
 
 def split_class_name_lower(class_name):

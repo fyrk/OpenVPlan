@@ -3,10 +3,9 @@ import hashlib
 import logging
 import re
 from functools import lru_cache
-from typing import NamedTuple, List, Any, Tuple, Union
+from typing import NamedTuple, List, Any, Tuple, Optional, Iterable
 
-from substitution_plan.utils import parse_class_name
-
+from substitution_plan.utils import split_class_name
 
 logger = logging.getLogger()
 
@@ -23,7 +22,7 @@ class SubstitutionDay(NamedTuple):
     def __lt__(self, other):
         return self.timestamp < other.timestamp
 
-    def iter_groups(self, selection: Union[List[Tuple[str, str]], str]):
+    def iter_groups(self, selection: Optional[Iterable[str]]):
         if selection is None:
             for group in self.substitution_groups:
                 yield group
@@ -33,23 +32,17 @@ class SubstitutionDay(NamedTuple):
                     yield group
 
     def to_dict(self, selection=None):
-        groups = self.filter_groups(selection) if selection else self.substitution_groups
         return {key: value for key, value in (("timestamp", self.timestamp), ("name", self.day_name),
                                               ("date", self.date), ("week", self.week), ("news", self.news),
                                               ("info", self.info),
-                                              ("groups", [g.to_dict() for g in groups])
+                                              ("groups", [g.to_dict() for g in self.iter_groups(selection)])
                                               ) if value is not None}
-
-    def filter_groups(self, selection):
-        for group in self.substitution_groups:
-            if group.is_selected(selection):
-                yield group
 
 
 class BaseSubstitutionGroup:
     name: Any
     substitutions: List["BaseSubstitution"]
-    group_name_can_be_selected: bool
+    affected_groups: Optional[List[str]]
 
     def __lt__(self, other):
         raise NotImplementedError
@@ -57,14 +50,13 @@ class BaseSubstitutionGroup:
     def to_dict(self):
         return {"name": self.name, "substitutions": [s.to_dict() for s in self.substitutions]}
 
-    def get_raw_name(self):
-        return self.name
-
     def get_html_name(self):
         return self.name
 
-    def is_selected(self, selection):
-        raise NotImplementedError
+    def is_selected(self, selection: Iterable[str]):
+        if not self.affected_groups:
+            return False
+        return any(g in selection for g in self.affected_groups)
 
 
 @dataclasses.dataclass
@@ -72,46 +64,44 @@ class StudentSubstitutionGroup(BaseSubstitutionGroup):
     name: str
     substitutions: List["BaseSubstitution"]
     split_group_name: Tuple = dataclasses.field(init=False)
-    group_name_can_be_selected: bool = dataclasses.field(init=False)
+    affected_groups: Optional[List[str]] = dataclasses.field(init=False)
 
     def __post_init__(self):
-        self.split_group_name = parse_class_name(self.name)
-        self.group_name_can_be_selected = self.name and \
-                                          (self.split_group_name[0] == 0 or len(self.split_group_name[1]) == 1 or
-                                           not self.split_group_name[1])
+        number, letters = split_class_name(self.name)
+        self.split_group_name = (int(number) if number else 0, letters)
+        if number:
+            if letters:
+                self.affected_groups = [number + letter for letter in letters]
+            else:
+                self.affected_groups = [number]
+        elif self.name:
+            self.affected_groups = [letters]
+        else:
+            self.affected_groups = None
 
     def __lt__(self, other: "StudentSubstitutionGroup"):
         return self.split_group_name < other.split_group_name
-
-    def is_selected(self, selection: List[Tuple[str, str]]):
-        name = self.name.lower()
-        return any((selected_class[0] in name and selected_class[1] in name)
-                   for selected_class in selection if selected_class[0] or selected_class[1])
 
 
 @dataclasses.dataclass
 class TeacherSubstitutionGroup(BaseSubstitutionGroup):
     name: Tuple[str, bool]  # teacher abbr, is_striked
     substitutions: List["BaseSubstitution"]
-    group_name_can_be_selected: bool = dataclasses.field(default=True, init=False)
+    affected_groups: Optional[List[str]] = dataclasses.field(init=False)
 
     def __post_init__(self):
-        self.group_name_can_be_selected = self.name[0] != "???"
+        if self.name[0] != "???":
+            self.affected_groups = [self.name[0]]
+        else:
+            self.affected_groups = None
 
     def __lt__(self, other):
         return self.name < other.name
-
-    def get_raw_name(self):
-        return self.name[0]
 
     def get_html_name(self):
         if self.name[1]:
             return "<strike>" + self.name[0] + "</strike>"
         return self.name[0]
-
-    def is_selected(self, selection: str):
-        print(self.name[0].lower(), "==", selection)
-        return self.name[0].lower() == selection
 
 
 class BaseSubstitution:
