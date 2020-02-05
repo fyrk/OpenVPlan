@@ -54,6 +54,7 @@ class BaseSubstitutionGroup:
     name: Any
     substitutions: List["BaseSubstitution"]
     affected_groups: Optional[List[str]]
+    affected_groups_pretty: Optional[List[str]]
     hash: bytes
 
     def __lt__(self, other):
@@ -82,21 +83,24 @@ class StudentSubstitutionGroup(BaseSubstitutionGroup):
     substitutions: List["BaseSubstitution"]
     split_group_name: Tuple = dataclasses.field(init=False)
     affected_groups: Optional[List[str]] = dataclasses.field(init=False)
+    affected_groups_pretty: Optional[List[str]] = dataclasses.field(init=False)
     hash: bytes = dataclasses.field(init=False)
 
     def __post_init__(self):
         number, letters = split_class_name(self.name)
         self.split_group_name = (int(number) if number else 0, letters)
-        letters = letters.upper()
+        letters_upper = letters.upper()
         if number:
             if letters:
-                self.affected_groups = [number + letter for letter in letters]
+                self.affected_groups = [number + letter for letter in letters_upper]
+                self.affected_groups_pretty = [number + letter for letter in letters]
             else:
-                self.affected_groups = [number]
+                self.affected_groups = self.affected_groups_pretty = [number]
         elif self.name:
-            self.affected_groups = [letters]
+            self.affected_groups = [letters_upper]
+            self.affected_groups_pretty = [letters]
         else:
-            self.affected_groups = None
+            self.affected_groups = self.affected_groups_pretty = None
 
         self.hash = hashlib.sha1(self.name.encode()).digest()
 
@@ -109,13 +113,15 @@ class TeacherSubstitutionGroup(BaseSubstitutionGroup):
     name: Tuple[str, bool]  # teacher abbr, is_striked
     substitutions: List["BaseSubstitution"]
     affected_groups: Optional[List[str]] = dataclasses.field(init=False)
+    affected_groups_pretty: Optional[List[str]] = dataclasses.field(init=False)
     hash: bytes = dataclasses.field(init=False)
 
     def __post_init__(self):
         if self.name[0] != "???":
             self.affected_groups = [self.name[0].upper()]
+            self.affected_groups_pretty = [self.name[0]]
         else:
-            self.affected_groups = None
+            self.affected_groups = self.affected_groups_pretty = None
 
         h = hashlib.sha1(self.name[0].encode())
         h.update(self.name[1].to_bytes(1, "big"))

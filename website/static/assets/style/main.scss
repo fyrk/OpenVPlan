@@ -18,7 +18,6 @@ $theme-colors: (
         "secondary": #f7d45e
 );
 $body-bg: #fc8600;
-$table-accent-bg: rgba(map_get($theme-colors, "primary"), 0.034);
 
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/mixins/text-truncate";
@@ -164,6 +163,7 @@ body, html {
 
 .substitutions-table.table {
     white-space: nowrap;
+
     td {
         vertical-align: middle;
     }
@@ -184,8 +184,8 @@ body, html {
         }
     }
 
-    &.table-striped tbody tr:nth-of-type(odd) td.group-name {
-        background-color: white;
+    tr.new-subs td:not(.group-name) {
+        background-color: rgba(map_get($theme-colors, "primary"), 0.1);
     }
 }
 

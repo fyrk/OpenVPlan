@@ -19,7 +19,6 @@ def split_class_name(class_name: str) -> Tuple[str, str]:
 
 
 def split_selection(selection: str) -> Optional[List[str]]:
-    selection = selection.strip()
     selected_groups = []
     for selected_group in "".join(selection.split()).split(","):
         if selected_group not in selected_groups:
