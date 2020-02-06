@@ -149,7 +149,8 @@ class BaseSubstitution:
         raise NotImplementedError
 
     def to_dict(self):
-        raise NotImplementedError
+        return dataclasses.asdict(self, dict_factory=lambda x: {k: v for k, v in x if v is not None
+                                                                and k != "hash"})
 
 
 REGEX_NUMBERS = re.compile(r"\d*")
@@ -178,9 +179,6 @@ class StudentSubstitution(BaseSubstitution):
     hash: bytes = dataclasses.field(init=False)
     is_new: bool = dataclasses.field(default=False, init=False)
 
-    def to_dict(self):
-        return dataclasses.asdict(self, dict_factory=lambda x: {k: v for k, v in x if v is not None})
-
     def __iter__(self):
         yield self.teacher
         yield self.substitute
@@ -204,9 +202,6 @@ class TeacherSubstitution(BaseSubstitution):
     lesson_num: int = dataclasses.field(init=False)
     hash: bytes = dataclasses.field(init=False)
     is_new: bool = dataclasses.field(default=False, init=False)
-
-    def to_dict(self):
-        return dataclasses.asdict(self, dict_factory=lambda x: {k: v for k, v in x if v is not None})
 
     def __iter__(self):
         yield self.lesson

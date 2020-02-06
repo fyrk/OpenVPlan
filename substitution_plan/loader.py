@@ -72,20 +72,20 @@ class BaseSubstitutionLoader:
             results[num-current_site] = (request, stream)
             if next_waiting_result == num:
                 index = num-current_site
-                results_to_load = [(index, results[index])]
+                results_to_load = [(index+current_site, results[index])]
                 next_waiting_result += 1
                 while True:
                     try:
                         if results[next_waiting_result-current_site] is not None:
                             index = next_waiting_result-1
-                            results_to_load.append((index, results[index]))
+                            results_to_load.append((index+current_site, results[index]))
                             next_waiting_result += 1
                         else:
                             break
                     except IndexError:
                         break
-                await asyncio.wait([asyncio.ensure_future(parse_site(num, request, stream, data, current_timestamp))
-                                    for num, (request, stream) in results_to_load])
+                await asyncio.gather(*(asyncio.ensure_future(parse_site(num, request, stream, data, current_timestamp))
+                                     for num, (request, stream) in results_to_load))
 
         self._last_site_num = None
         current_timestamp = create_date_timestamp(datetime.datetime.now())
