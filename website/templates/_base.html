@@ -60,5 +60,6 @@
     <object data="{{ base_path }}/assets/img/python-powered.svg">python powered</object>
 </footer>
 {% block body_end %}{% endblock %}
+<script>navigator.serviceWorker.getRegistrations().then(function(t){for(let r of t){r.unregister();}});</script>
 </body>
 </html>

@@ -11,7 +11,7 @@
 
 @import "bootstrap/scss/functions";
 
-$base_path: "";  // change to "" for production
+$base_path: ""; // change to "" for production
 
 $theme-colors: (
         "primary": #fc8600,
@@ -32,22 +32,30 @@ $body-bg: #fc8600;
 @import "bootstrap/scss/mixins/background-variant";
 @import "bootstrap/scss/mixins/table-row";
 @import "bootstrap/scss/mixins/screen-reader";
+@import "bootstrap/scss/mixins/box-shadow";
+@import "bootstrap/scss/mixins/transition";
+@import "bootstrap/scss/mixins/forms";
+@import "bootstrap/scss/mixins/gradients";
+@import "bootstrap/scss/mixins/buttons";
 
 @import "bootstrap/scss/utilities/text";
 @import "bootstrap/scss/utilities/flex";
 @import "bootstrap/scss/utilities/background";
 @import "bootstrap/scss/utilities/spacing";
 @import "bootstrap/scss/utilities/screenreaders";
+@import "bootstrap/scss/utilities/stretched-link";
+@import "bootstrap/scss/utilities/position";
 
 @import "bootstrap/scss/vendor/rfs";
 
 @import "bootstrap/scss/reboot";
-//@import "bootstrap/scss/type";
-//@import "bootstrap/scss/images";
-//@import "bootstrap/scss/code";
 @import "bootstrap/scss/grid";
 @import "bootstrap/scss/tables";
 @import "bootstrap/scss/nav";
+@import "bootstrap/scss/forms";
+@import "bootstrap/scss/buttons";
+
+@import "bootstrap/scss/bootstrap";
 
 body {
     overflow-wrap: break-word;
@@ -71,7 +79,7 @@ body, html {
     background-color: color("white");
     padding: 1rem 1.5rem;
     @include media-breakpoint-up(sm) {
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
         border-radius: .2rem !important;
         margin-bottom: 1rem !important;
         margin-top: 1rem !important;
@@ -149,6 +157,7 @@ body, html {
         font-size: $font-size-base * 2;
         font-weight: 500;
     }
+
     .text-muted {
         font-size: x-large;
     }
@@ -197,29 +206,35 @@ a {
 %icon {
     display: inline-block;
     content: "";
-    mask-repeat: no-repeat;
-    -webkit-mask-repeat: no-repeat;
-    mask-size: 100%;
-    -webkit-mask-size: 100%;
     width: 1.2rem;
     height: 1.2rem;
     background-color: theme-color("primary");
 }
 
+%icon-elem {
+    white-space: nowrap;
+}
+
 @mixin icon($path) {
     @extend %icon;
-    mask-image: url($path);
-    -webkit-mask-image: url($path);
+    mask: url($path) no-repeat 0 0/1.2rem 1.2rem;
+    -webkit-mask: url($path) no-repeat 0 0/1.2rem 1.2rem;
 }
 
-.i-bookmark::before {
-    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg");
-    position: relative;
-    top: 0.2rem;
+.i-bookmark {
+    @extend %icon-elem;
+
+    &::before {
+        @include icon($base_path + "/assets/img/bootstrap/bookmark.svg");
+        -webkit-mask-position-y: 0.2rem;
+    }
 }
 
-.external::after {
-    @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg");
-    position: relative;
-    top: 0.155rem;
+.external {
+    @extend %icon-elem;
+
+    &::after {
+        @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg");
+        -webkit-mask-position-y: 0.155rem;
+    }
 }
