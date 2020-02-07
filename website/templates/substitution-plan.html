@@ -20,11 +20,11 @@
                         {%- for news_line in day.news[:-1] -%}
                             {{ news_line|safe }}<br>
                         {%- endfor -%}
-                        {{ day.news[-1] }}
+                        {{ day.news[-1]|safe }}
                     </div>
                 {%- endif -%}
             </div>
-            <div class="col-auto">
+            <div class="col-md">
                 {%- for title, text in day.info -%}
                     <span class="day-info">{{ title }}:</span>
                     {{ text }}

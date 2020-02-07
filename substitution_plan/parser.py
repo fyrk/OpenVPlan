@@ -127,9 +127,9 @@ class BaseSubstitutionParser(HTMLParser):
                             self.current_day_info = None
                 else:
                     if self.news_tag_br:
-                        self.day_data["news"].append(data.strip())
+                        self.day_data["news"].append(data)
                     else:
-                        self.day_data["news"][-1] += data.strip()
+                        self.day_data["news"][-1] += data
         elif self.current_section == "title":
             match = self.REGEX_TITLE.search(data)
             if match:
