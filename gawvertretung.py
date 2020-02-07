@@ -76,6 +76,7 @@ class SubstitutionPlan:
 
     async def async_init(self):
         await self._try_load_substitutions_from_file()
+        self._remove_old_days(create_date_timestamp(datetime.datetime.now()))
 
     async def _try_load_substitutions_from_file(self):
         # noinspection PyBroadException
