@@ -146,7 +146,7 @@ class SubstitutionPlan:
                 await self._create_sites()
 
     def _remove_old_days(self, current_timestamp):
-        while self.data_students[0].timestamp < current_timestamp:
+        while len(self.data_students) and self.data_students[0].timestamp < current_timestamp:
             del self.data_students[0]
             del self.data_teachers[0]
 
