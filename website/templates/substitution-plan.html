@@ -88,12 +88,12 @@
         <form class="form" type="get" action="?s=">
             <label for="selectionInput" class="form-row">{% block select_text %}{% endblock %}</label>
             <div class="form-row">
-                <div class="col-sm-6 col-md-3">
+                <div class="col-7 col-sm-6 col-md-4 col-xl-3">
                     <input type="text" class="form-control" id="selectionInput" name="s" required aria-describedby="selectionHelp">
                     <small id="selectionHelp" class="form-text text-muted">
                         {% block selection_help_text %}{% endblock %}</small>
                 </div>
-                <div class="col-sm-1 col-md-1">
+                <div class="col-2 col-sm-1 col-md-1">
                     <button type="submit" class="btn btn-primary mb-2">OK</button>
                 </div>
             </div>
