@@ -76,7 +76,6 @@ class SubstitutionPlan:
 
     async def async_init(self):
         await self._try_load_substitutions_from_file()
-        self._remove_old_days(create_date_timestamp(datetime.datetime.now()))
 
     async def _try_load_substitutions_from_file(self):
         # noinspection PyBroadException
@@ -92,6 +91,7 @@ class SubstitutionPlan:
             logger.exception("Could not load substitutions from file")
         else:
             logger.info(f"Loaded substitutions from file, status is {repr(self.current_status_string)}")
+            self._remove_old_days(create_date_timestamp(datetime.datetime.now()))
             await self._create_sites()
 
     def _save_substitutions(self):
