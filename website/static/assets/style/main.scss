@@ -205,8 +205,6 @@ a {
     display: inline;
     padding-right: 1.2rem;
     content: "";
-    width: 1.2rem;
-    height: 1.2rem;
     background-color: theme-color("primary");
 }
 
@@ -218,10 +216,11 @@ a {
 
 .i-bookmark::before {
     @include icon($base_path + "/assets/img/bootstrap/bookmark.svg");
-    -webkit-mask-position-y: 0.1rem;
+        -webkit-mask-position-y: -0.05rem;
+
 }
 
 .external::after {
     @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg");
-    -webkit-mask-position-y: 0.0775rem;
+    -webkit-mask-position-y: -0.1rem;
 }
