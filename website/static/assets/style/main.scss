@@ -202,15 +202,12 @@ a {
 
 // ICONS
 %icon {
-    display: inline-block;
+    display: inline;
+    padding-right: 1.2rem;
     content: "";
     width: 1.2rem;
     height: 1.2rem;
     background-color: theme-color("primary");
-}
-
-%icon-elem {
-    white-space: nowrap;
 }
 
 @mixin icon($path) {
@@ -219,20 +216,12 @@ a {
     -webkit-mask: url($path) no-repeat 0 0/1.2rem 1.2rem;
 }
 
-.i-bookmark {
-    @extend %icon-elem;
-
-    &::before {
-        @include icon($base_path + "/assets/img/bootstrap/bookmark.svg");
-        -webkit-mask-position-y: 0.2rem;
-    }
+.i-bookmark::before {
+    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg");
+    -webkit-mask-position-y: 0.1rem;
 }
 
-.external {
-    @extend %icon-elem;
-
-    &::after {
-        @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg");
-        -webkit-mask-position-y: 0.155rem;
-    }
+.external::after {
+    @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg");
+    -webkit-mask-position-y: 0.0775rem;
 }
