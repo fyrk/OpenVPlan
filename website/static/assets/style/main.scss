@@ -210,18 +210,16 @@ a {
     background-color: theme-color("primary");
 }
 
-@mixin icon($path) {
+@mixin icon($path, $position-x: 0, $position-y: 0, $width: 1.2rem, $height: 1.2rem) {
     @extend %icon;
-    mask: url($path) no-repeat 0 0/1.2rem 1.2rem;
-    -webkit-mask: url($path) no-repeat 0 0/1.2rem 1.2rem;
+    mask: url($path) no-repeat $position-x #{$position-y}/#{$width} $height;
+    -webkit-mask: url($path) no-repeat $position-x #{$position-y}/#{$width} $height;
 }
 
 .i-bookmark::before {
-    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg");
-    -webkit-mask-position-y: -0.05rem;
+    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg", $position-y: -0.05rem);
 }
 
 .external::after {
-    @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg");
-    -webkit-mask-position-y: -0.1rem;
+    @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg", $position-y: -0.1rem);
 }
