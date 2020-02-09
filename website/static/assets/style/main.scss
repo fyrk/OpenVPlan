@@ -218,9 +218,10 @@ a {
 
 .i-bookmark::before {
     @include icon($base_path + "/assets/img/bootstrap/bookmark.svg");
-    -webkit-mask-position-y: 0.09rem;
+    -webkit-mask-position-y: -0.05rem;
 }
 
 .external::after {
     @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg");
+    -webkit-mask-position-y: -0.1rem;
 }
