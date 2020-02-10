@@ -198,7 +198,7 @@ body, html {
         }
     }
 
-    .group-name:not(.selectable) {
+    &:not(.has-selection) .group-name:not(.selectable) {
         padding-left: $table-cell-padding-sm + $bookmark-icon-width;
     }
     .group-name.selectable {

@@ -64,7 +64,7 @@
     {%- endset -%}
     {%- if subs_table -%}
         <div class="table-responsive">
-            <table class="table table-sm substitutions-table">
+            <table class="table table-sm substitutions-table{% if selection %} has-selection{% endif %}">
                 {%- block table_head -%}{%- endblock -%}
                 {{ subs_table|safe }}
             </table>
