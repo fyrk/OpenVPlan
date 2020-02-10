@@ -39,11 +39,11 @@
     <tr class="first-of-group{% if day_loop.index == 1 and s.lesson_num is not none %} lesson{{ s.lesson_num }}{% endif %}{% if s.is_new %} new-subs{% endif %}">
         {%- set has_affected_groups = not selection and group.affected_groups_pretty is not none and group.affected_groups_pretty|length == 1 -%}
         <td rowspan="{{ group.substitutions|length }}"
-            class="group-name{% if has_affected_groups %} position-relative{% endif %}">
+            class="group-name{% if has_affected_groups %} selectable{% endif %}">
             {%- if has_affected_groups -%}
                 <a class="i-bookmark stretched-link" href="?s={{ group.affected_groups_pretty[0] }}"></a>
             {%- endif -%}
-            {{ group.get_html_name()|safe }}
+            {{- group.get_html_name()|safe -}}
         </td>
         {%- for data in group.substitutions[0] -%}
             <td>{{ data }}</td>

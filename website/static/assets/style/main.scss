@@ -17,6 +17,7 @@ $secondary: #f7d45e;
 $body-bg: #fc8600;
 
 $box-bg: white;
+$bookmark-icon-width: 1.2rem;
 
 
 @import "bootstrap/scss/functions";
@@ -196,6 +197,13 @@ body, html {
             background-color: rgba(map_get($theme-colors, "primary"), 0.1);
         }
     }
+
+    .group-name:not(.selectable) {
+        padding-left: $table-cell-padding-sm + $bookmark-icon-width;
+    }
+    .group-name.selectable {
+        @extend .position-relative;
+    }
 }
 
 a {
@@ -217,7 +225,7 @@ a {
 }
 
 .i-bookmark::before {
-    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg", $position-y: -0.05rem);
+    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg", $width: $bookmark-icon-width, $position-y: -0.05rem);
 }
 
 .external::after {
