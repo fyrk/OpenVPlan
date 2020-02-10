@@ -2,13 +2,14 @@ import asyncio
 import datetime
 import io
 import logging
-from typing import Type, Union, Dict, Set
+from typing import Type, Union, Dict, Set, Any
 
 import aiohttp
 
 from substitution_plan.parser import BaseSubstitutionParser, StudentSubstitutionParser, TeacherSubstitutionParser, \
     parse_next_site, SubstitutionsTooOldException
-from substitution_plan.storage import SubstitutionDay, StudentSubstitutionGroup, TeacherSubstitutionGroup
+from substitution_plan.storage import SubstitutionDay, StudentSubstitutionGroup, TeacherSubstitutionGroup, \
+    BaseSubstitution
 from substitution_plan.utils import create_date_timestamp
 from website.stats import Stats
 
@@ -34,8 +35,8 @@ class BaseSubstitutionLoader:
         self.stats = stats
         self._last_site_num = None
 
-    async def load_data(self, session: aiohttp.ClientSession, old_hashes: Dict[int, Dict[bytes, Set[bytes]]],
-                        first_site=None):
+    async def load_data(self, session: aiohttp.ClientSession,
+                        old_days: Dict[int, Dict[Any, Set[BaseSubstitution]]], first_site=None):
         async def parse_site(num, request, stream, data, current_timestamp):
             logger.debug(f"{self.plan_type}: Parsing {num}")
             parser = self.substitutions_parser(data, current_timestamp)
@@ -106,7 +107,7 @@ class BaseSubstitutionLoader:
             if self._last_site_num is not None:
                 if self.stats is not None:
                     self.stats.add_last_site(self._last_site_num)
-                return self._data_postprocessing(old_hashes, data)
+                return self._data_postprocessing(old_days, data)
             current_site = next_site
         else:
             current_site = 1
@@ -125,10 +126,10 @@ class BaseSubstitutionLoader:
             if self._last_site_num is not None:
                 if self.stats is not None:
                     self.stats.add_last_site(self._last_site_num)
-                return self._data_postprocessing(old_hashes, data)
+                return self._data_postprocessing(old_days, data)
             current_site = next_site
 
-    def _data_postprocessing(self, old_hashes: Dict[int, Dict[bytes, Set[bytes]]], data: dict):
+    def _data_postprocessing(self, old_days: Dict[int, Dict[Any, Set[BaseSubstitution]]], data: dict):
         days = sorted(
             SubstitutionDay(
                 timestamp,
@@ -143,7 +144,7 @@ class BaseSubstitutionLoader:
         )
         for day in days:
             try:
-                day.mark_new_substitutions(old_hashes[day.timestamp])
+                day.mark_new_substitutions(old_days[day.timestamp])
             except KeyError:
                 pass
         return days

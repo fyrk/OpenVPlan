@@ -109,11 +109,10 @@ class SubstitutionPlan:
             logger.info("Loading new data...")
             t1 = time.perf_counter_ns()
             self.data_students, self.data_teachers = await asyncio.gather(
-                self.substitution_loader_students.load_data(session,
-                                                            {d.timestamp: d.get_hashes() for d in self.data_students},
-                                                            first_site),
-                self.substitution_loader_teachers.load_data(session,
-                                                            {d.timestamp: d.get_hashes() for d in self.data_teachers})
+                self.substitution_loader_students.load_data(
+                    session, {d.timestamp: d.get_substitution_sets() for d in self.data_students}, first_site),
+                self.substitution_loader_teachers.load_data(
+                    session, {d.timestamp: d.get_substitution_sets() for d in self.data_teachers})
             )
             t2 = time.perf_counter_ns()
             logger.debug(f"New data created in {t2 - t1}ns")

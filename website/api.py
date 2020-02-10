@@ -49,21 +49,21 @@ class SubstitutionAPI:
             if path == "/status":
                 data = {"ok": True, "status": self.substitution_plan.current_status_string}
             elif path == "/classes":
-                if "selection" in request_data:
-                    selection = split_selection(request_data["selection"])
+                if "s" in request_data:
+                    selection = split_selection(request_data["s"])
                 else:
                     selection = None
                 data = {"ok": True, "status": self.substitution_plan.current_status_string,
-                        "days": [d.to_dict(selection) for d in self.substitution_plan.data_students
+                        "days": [d.to_data(selection) for d in self.substitution_plan.data_students
                                  if d.timestamp >= current_timestamp]}
             else:
                 assert path == "/teachers"
-                if "selection" in request_data:
-                    selection = split_selection(request_data["selection"])
+                if "s" in request_data:
+                    selection = split_selection(request_data["s"])
                 else:
                     selection = None
                 data = {"ok": True, "status": self.substitution_plan.current_status_string,
-                        "days": [d.to_dict(selection) for d in self.substitution_plan.data_teachers
+                        "days": [d.to_data(selection) for d in self.substitution_plan.data_teachers
                                  if d.timestamp >= current_timestamp]}
             pretty = "pretty" in request_data and (request_data["pretty"] == "True" or request_data["pretty"] == "true")
             content = json.dumps(data, indent=4 if pretty else None,
