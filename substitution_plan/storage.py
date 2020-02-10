@@ -166,8 +166,8 @@ class StudentSubstitution(BaseSubstitution):
     room: str
     subs_from: str
     hint: str
-    lesson_num: int = dataclasses.field(init=False, hash=False)
-    is_new: bool = dataclasses.field(default=False, init=False, hash=False)
+    lesson_num: int = dataclasses.field(init=False, compare=False)
+    is_new: bool = dataclasses.field(default=False, init=False, compare=False)
 
     def __iter__(self):
         yield self.teacher
@@ -189,8 +189,8 @@ class TeacherSubstitution(BaseSubstitution):
     subs_from: str
     hint: str
     is_substitute_striked: bool
-    lesson_num: int = dataclasses.field(init=False, hash=False)
-    is_new: bool = dataclasses.field(default=False, init=False, hash=False)
+    lesson_num: int = dataclasses.field(init=False, compare=False)
+    is_new: bool = dataclasses.field(default=False, init=False, compare=False)
 
     def __iter__(self):
         yield self.lesson
