@@ -1,5 +1,5 @@
 {% extends "substitution-plan.min.html" %}
-{% block title %}{% if selection %}{{ selection_str }}{% else %}Lehrer*innen{% endif %}{% endblock %}
+{% block title %}{% block og_title %}{% if selection %}{{ selection_str }}{% else %}Lehrer*innen{% endif %}{% endblock %}{% endblock %}
 
 {% block keywords %}, Lehrer, Lehrer*innen{% endblock %}
 {% block breadcrumb_list %}

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" prefix="og: https://ogp.me/ns#">
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -18,13 +18,17 @@
     <meta name="msapplication-TileColor" content="#00a300">
     <meta name="theme-color" content="#e67b10">
     <meta name="keywords"
-          content="Gymnasium am Wall, Vertretung, Vertretungsplan, GaW Verden, Schule{% block keywords %}{% endblock %}">
+          content="Gymnasium am Wall, GaW Verden, Vertretung, Vertretungsplan, Schule{% block keywords %}{% endblock %}">
     <meta name="robots" content="noarchive, notranslate">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://gawvertretung.florian-raediker.de">
-    <meta property="og:title" content="${og_title}">
-    <meta property="og:image" content="{{ base_path }}/favicon-192.png">
+    <meta property="og:title" content="{% block og_title %}{% endblock %} - Vertretungsplan GaW Verden">
+    <meta property="og:locale" content="de_DE">
     <meta property="og:image" content="{{ base_path }}/favicon.svg">
+    <meta property="og:image:type" content="image/svg+xml">
+    <meta property="og:image" content="{{ base_path }}/favicon-192.png">
+    <meta property="og:image:type" content="image/png">
+
     <link href="{{ base_path }}/assets/style/main.css" rel="stylesheet">
 </head>
 <body class="d-flex flex-column">
