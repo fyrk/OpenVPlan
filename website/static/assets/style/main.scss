@@ -95,6 +95,10 @@ body, html {
     background-color: theme-color("secondary");
     padding: $spacer * .8;
     font-size: $font-size-base * 1.65;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 
     .selection {
         color: theme-color("primary");
