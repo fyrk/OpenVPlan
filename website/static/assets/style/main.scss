@@ -59,9 +59,12 @@ $bookmark-icon-width: 1.2rem;
 
 
 body {
-    overflow-wrap: break-word;
     display: flex;
     flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
 }
 
 body, html {
@@ -152,7 +155,8 @@ body, html {
 }
 
 .day-heading {
-    margin-bottom: -0.5rem;
+    overflow-wrap: break-word;
+    line-height: 1;
 
     .day-name {
         font-size: $font-size-base * 2;
@@ -160,6 +164,7 @@ body, html {
     }
 
     .text-muted {
+        overflow-wrap: initial;
         font-size: x-large;
     }
 }
@@ -201,6 +206,7 @@ body, html {
     &:not(.has-selection) .group-name:not(.selectable) {
         padding-left: $table-cell-padding-sm + $bookmark-icon-width;
     }
+
     .group-name.selectable {
         @extend .position-relative;
     }
