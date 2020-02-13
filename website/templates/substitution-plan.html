@@ -41,7 +41,7 @@
         <td rowspan="{{ group.substitutions|length }}"
             class="group-name{% if has_affected_groups %} selectable{% endif %}">
             {%- if has_affected_groups -%}
-                <a class="i-bookmark stretched-link" href="?s={{ group.affected_groups_pretty[0] }}"></a>
+                <a class="i-bookmark stretched-link" rel="nofollow" href="?s={{ group.affected_groups_pretty[0] }}"></a>
             {%- endif -%}
             {{- group.get_html_name()|safe -}}
         </td>
