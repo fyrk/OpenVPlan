@@ -177,14 +177,14 @@ class SubstitutionPlan:
                     return [content]
             start_response("200 OK", [("Content-Type", "text/html;charset=utf-8"),
                                       ("Content-Length", str(len(self.index_site_students))),
-                                      ("X-Robots-Tag", "nocache, notranslate")])
+                                      ("X-Robots-Tag", "noarchive, notranslate")])
             return [self.index_site_students]
         except Exception:
             logger.exception("Exception occurred")
             content = (await self.templates.render_error_500_students()).encode("utf-8")
             start_response("500 Internal Server Error", [("Content-Type", "text/html;charset=utf-8"),
                                                          ("Content-Length", str(len(content))),
-                                                         ("X-Robots-Tag", "nocache, notranslate")])
+                                                         ("X-Robots-Tag", "noarchive, notranslate")])
             return [content]
 
     async def application_teachers(self, environ, start_response):
@@ -204,14 +204,14 @@ class SubstitutionPlan:
                     return [content]
             start_response("200 OK", [("Content-Type", "text/html;charset=utf-8"),
                                       ("Content-Length", str(len(self.index_site_teachers))),
-                                      ("X-Robots-Tag", "nocache, notranslate")])
+                                      ("X-Robots-Tag", "noarchive, notranslate")])
             return [self.index_site_teachers]
         except Exception:
             logger.exception("Exception occurred")
             content = (await self.templates.render_error_500_teachers()).encode("utf-8")
             start_response("500 Internal Server Error", [("Content-Type", "text/html;charset=utf-8"),
                                                          ("Content-Length", str(len(content))),
-                                                         ("X-Robots-Tag", "nocache, notranslate")])
+                                                         ("X-Robots-Tag", "noarchive, notranslate")])
             return [content]
 
     async def application_post(self, environ, start_response):
