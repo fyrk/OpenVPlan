@@ -239,21 +239,29 @@ async def async_application(environ, start_response):
     t1 = time.perf_counter_ns()
     try:
         substitution_plan.stats.new_request(environ)
-        if environ["PATH_INFO"].startswith("/api"):
-            return await substitution_plan.api.application(environ["PATH_INFO"][4:], environ, start_response)
+        METHOD = environ["REQUEST_METHOD"]
+        PATH = environ["PATH_INFO"]
+        logger.info(METHOD + " " + PATH)
+        if PATH.startswith("/api"):
+            return await substitution_plan.api.application(PATH[4:], environ, start_response)
 
-        if environ["REQUEST_METHOD"] == "GET":
-            if environ["PATH_INFO"] == "/":
-                logger.info("GET /")
-                return await substitution_plan.application_students(environ, start_response)
-            elif environ["PATH_INFO"] == "/teachers":
-                logger.info("GET /teachers")
-                return await substitution_plan.application_teachers(environ, start_response)
-            elif environ["PATH_INFO"] == "/privacy":
-                logger.info("GET /privacy")
+        IS_GET = METHOD == "GET"
+        IS_HEAD = METHOD == "HEAD"
+        if IS_GET or IS_HEAD:
+            if PATH == "/":
+                content = await substitution_plan.application_students(environ, start_response)
+                if IS_GET:
+                    return content
+                return []
+            elif PATH == "/teachers":
+                content = await substitution_plan.application_teachers(environ, start_response)
+                if IS_GET:
+                    return content
+                return []
+            elif PATH == "/privacy":
                 response = "200 OK"
                 content = await substitution_plan.templates.render_privacy()
-            elif environ["PATH_INFO"] == "/about":
+            elif PATH == "/about":
                 logger.info("GET /about")
                 response = "200 OK"
                 content = await substitution_plan.templates.render_about()
@@ -261,46 +269,18 @@ async def async_application(environ, start_response):
                 substitution_plan.stats.new_not_found(environ)
                 response = "404 Not Found"
                 content = await substitution_plan.templates.render_error_404()
-            content = content.encode("utf-8")
-            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
-                                      ("Content-Length", str(len(content)))])
-            return [content]
+                if IS_HEAD:
+                    content = content.encode("utf-8")
+                    start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                              ("Content-Length", str(len(content)))])
+                    return []
+        else:
+            response = "405 Method Not Allowed"
+            content = await substitution_plan.templates.render_error_405(method=METHOD, path=PATH)
 
-        if environ["REQUEST_METHOD"] == "POST" and environ["PATH_INFO"] == "/":
-            logger.info("POST /")
-            return await substitution_plan.application_post(environ, start_response)
-
-        if environ["REQUEST_METHOD"] == "HEAD":
-            if environ["PATH_INFO"] == "/":
-                logger.info("HEAD /")
-                await substitution_plan.application_students(environ, start_response)
-                return []
-            elif environ["PATH_INFO"] == "/teachers":
-                logger.info("HEAD /teachers")
-                await substitution_plan.application_teachers(environ, start_response)
-                return []
-            elif environ["PATH_INFO"] == "/privacy":
-                logger.info("HEAD /privacy")
-                response = "200 OK"
-                content = await substitution_plan.templates.render_privacy()
-            elif environ["PATH_INFO"] == "/about":
-                logger.info("HEAD /about")
-                response = "200 OK"
-                content = await substitution_plan.templates.render_about()
-            else:
-                substitution_plan.stats.new_not_found(environ)
-                response = "404 Not Found"
-                content = await substitution_plan.templates.render_error_404()
-
-            content = content.encode("utf-8")
-            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
-                                      ("Content-Length", str(len(content)))])
-            return []
-
-        content = "Error: 405 Method Not Allowed".encode("utf-8")
-        substitution_plan.stats.new_method_not_allowed(environ)
-        start_response("405 Method Not Allowed", [("Content-Type", "text/text;charset=utf-8"),
-                                                  ("Content-Length", str(len(content)))])
+        content = content.encode("utf-8")
+        start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                  ("Content-Length", str(len(content)))])
         return [content]
     finally:
         t2 = time.perf_counter_ns()
