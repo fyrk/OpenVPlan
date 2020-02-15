@@ -24,7 +24,7 @@ from website.templates import Templates
 
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
 
-LOG_FILE = os.path.join(WORKING_DIR, datetime.datetime.now().strftime("logs/website-%Y-%m-%d-%H-%M-%S.log"))
+LOG_FILE = os.path.join(WORKING_DIR, datetime.datetime.now().strftime("logs/website-%Y-%m-%d.log"))
 
 logger = logging.getLogger()
 logger.handlers.clear()
