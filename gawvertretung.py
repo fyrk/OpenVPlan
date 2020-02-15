@@ -275,6 +275,7 @@ async def async_application(environ, start_response):
                                               ("Content-Length", str(len(content)))])
                     return []
         else:
+            substitution_plan.stats.new_method_not_allowed(environ)
             response = "405 Method Not Allowed"
             content = await substitution_plan.templates.render_error_405(method=METHOD, path=PATH)
 
