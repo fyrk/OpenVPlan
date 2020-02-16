@@ -26,21 +26,22 @@ class AsyncBytesIOWrapper(io.BytesIO):
 
 class BaseSubstitutionLoader:
     SITE_LOAD_COUNT = 5
+    ENCODING = "iso-8859-1"
 
-    def __init__(self, plan_type: str, substitutions_parser_class: Type[BaseSubstitutionParser], url: str,
-                 stats: Stats = None):
+    def __init__(self, substitutions_parser_class: Type[BaseSubstitutionParser], session: aiohttp.ClientSession,
+                 plan_type: str, url: str, stats: Stats = None):
+        self.substitutions_parser_factory = substitutions_parser_class
+        self.session = session
         self.plan_type = plan_type
-        self.substitutions_parser = substitutions_parser_class
         self.url = url
         self.stats = stats
 
-    async def load_data(self, session: aiohttp.ClientSession,
-                        old_days: Dict[int, Dict[Any, Set[BaseSubstitution]]], first_site=None):
+    async def load_data(self, old_days: Dict[int, Dict[Any, Set[BaseSubstitution]]], first_site=None):
         async def parse_site(num, request, stream, data, current_timestamp):
             logger.debug(f"{self.plan_type}: Parsing {num}")
-            parser = self.substitutions_parser(data, current_timestamp)
+            parser = self.substitutions_parser_factory(data, current_timestamp)
             while True:
-                r = (await stream.readany()).decode("iso-8859-1")
+                r = (await stream.readany()).decode(BaseSubstitutionLoader.ENCODING)
                 if not r:
                     if request is not None:
                         request.close()
@@ -55,7 +56,7 @@ class BaseSubstitutionLoader:
 
         async def load_from_website(num):
             logger.debug(f"{self.plan_type}: Requesting {num}")
-            r = await session.get(self.url.format(num))
+            r = await self.session.get(self.url.format(num))
             logger.debug(f"{self.plan_type}: Got {r.status} for {num}")
             if r.status == 200:
                 await load_from_stream(num, r.content, r)
@@ -158,8 +159,8 @@ class BaseSubstitutionLoader:
 
 
 class StudentSubstitutionLoader(BaseSubstitutionLoader):
-    def __init__(self, plan_type: str, url: str, stats: Stats = None):
-        super().__init__(plan_type, StudentSubstitutionParser, url, stats)
+    def __init__(self, session: aiohttp.ClientSession, plan_type: str, url: str, stats: Stats = None):
+        super().__init__(StudentSubstitutionParser, session, plan_type, url, stats)
 
     def _sort_substitutions(self, substitutions: dict):
         return sorted(StudentSubstitutionGroup(group_name, substitutions)
@@ -167,8 +168,8 @@ class StudentSubstitutionLoader(BaseSubstitutionLoader):
 
 
 class TeacherSubstitutionLoader(BaseSubstitutionLoader):
-    def __init__(self, plan_type: str, url: str, stats: Stats = None):
-        super().__init__(plan_type, TeacherSubstitutionParser, url, stats)
+    def __init__(self, session: aiohttp.ClientSession, plan_type: str, url: str, stats: Stats = None):
+        super().__init__(TeacherSubstitutionParser, session, plan_type, url, stats)
 
     def _sort_substitutions(self, substitutions: dict):
         return sorted(TeacherSubstitutionGroup(group_name, substitutions)

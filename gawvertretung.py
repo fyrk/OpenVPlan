@@ -4,6 +4,7 @@
 __version__ = "2.0"
 
 import asyncio
+import atexit
 import datetime
 import logging
 import os
@@ -57,17 +58,26 @@ class SubstitutionPlan:
     TEMPLATE_DIR = os.path.join(WORKING_DIR, "website/templates/")
     TEMPLATE_CACHE_DIR = os.path.join(WORKING_DIR, "data/template_cache/")
 
-    USER_AGENT = "GaWVertretungBot/" + __version__ + " (+https://gawvertretung.florian-raediker.de) " + \
-                 aiohttp.http.SERVER_SOFTWARE
-    HEADERS = ((aiohttp.hdrs.USER_AGENT, USER_AGENT),)
+    AIOHTTP_USER_AGENT = "GaWVertretungBot/" + __version__ + " (+https://gawvertretung.florian-raediker.de) " + \
+                         aiohttp.http.SERVER_SOFTWARE
+    AIOHTTP_HEADERS = {aiohttp.hdrs.USER_AGENT: AIOHTTP_USER_AGENT}
 
+    stats: Stats
+    substitution_loader_students: StudentSubstitutionLoader
+    substitution_loader_teachers: TeacherSubstitutionLoader
+    api: SubstitutionAPI
+    templates: Templates
+    current_status_date: datetime.date
+    current_status_date: str
     data_students: List[SubstitutionDay]
     data_teachers: List[SubstitutionDay]
+    index_site_students: bytes
+    index_site_teachers: bytes
+    loop: asyncio.AbstractEventLoop
+    aiohttp_session: aiohttp.ClientSession
 
     def __init__(self):
         self.stats = Stats(self.PATH_STATS)
-        self.substitution_loader_students = StudentSubstitutionLoader("klassen", self.URL_STUDENTS, self.stats)
-        self.substitution_loader_teachers = TeacherSubstitutionLoader("lehrer", self.URL_TEACHERS)
         self.api = SubstitutionAPI(self)
         self.templates = Templates(self.TEMPLATE_DIR, self.TEMPLATE_CACHE_DIR, BASE_PATH)
 
@@ -79,8 +89,25 @@ class SubstitutionPlan:
         self.index_site_students = b""
         self.index_site_teachers = b""
 
-    async def async_init(self):
-        await self._try_load_substitutions_from_file()
+        self.loop = asyncio.get_event_loop()
+
+        async def async_init():
+            await self._try_load_substitutions_from_file()
+            self.aiohttp_session = aiohttp.ClientSession(headers=self.AIOHTTP_HEADERS)
+            self.substitution_loader_students = StudentSubstitutionLoader(self.aiohttp_session, "klassen",
+                                                                          self.URL_STUDENTS, self.stats)
+            self.substitution_loader_teachers = TeacherSubstitutionLoader(self.aiohttp_session, "lehrer",
+                                                                          self.URL_TEACHERS)
+        self.loop.run_until_complete(async_init())
+
+    def close(self):
+        async def _before_exit():
+            logger.info("Shutting down")
+            logger.debug("Saving stats")
+            self.stats.save()
+            logger.debug("Closing aiohttp session")
+            await self.aiohttp_session.close()
+        self.loop.run_until_complete(_before_exit())
 
     async def _try_load_substitutions_from_file(self):
         # noinspection PyBroadException
@@ -110,23 +137,22 @@ class SubstitutionPlan:
         logger.info("Wrote substitutions to file")
 
     async def _load_data(self, first_site: bytes):
-        async with aiohttp.ClientSession(headers=self.HEADERS) as session:
-            logger.info("Loading new data...")
-            t1 = time.perf_counter_ns()
-            self.data_students, self.data_teachers = await asyncio.gather(
-                self.substitution_loader_students.load_data(
-                    session, {d.timestamp: d.get_substitution_sets() for d in self.data_students}, first_site),
-                self.substitution_loader_teachers.load_data(
-                    session, {d.timestamp: d.get_substitution_sets() for d in self.data_teachers})
-            )
-            t2 = time.perf_counter_ns()
-            logger.debug(f"New data created in {t2 - t1}ns")
+        logger.info("Loading new data...")
+        t1 = time.perf_counter_ns()
+        self.data_students, self.data_teachers = await asyncio.gather(
+            self.substitution_loader_students.load_data(
+                {d.timestamp: d.get_substitution_sets() for d in self.data_students}, first_site),
+            self.substitution_loader_teachers.load_data(
+                {d.timestamp: d.get_substitution_sets() for d in self.data_teachers})
+        )
+        t2 = time.perf_counter_ns()
+        logger.debug(f"New data created in {t2 - t1}ns")
 
     async def update_data(self):
         logger.debug("Requesting subst_001.htm ...")
         t1 = time.perf_counter_ns()
-        with urllib.request.urlopen(self.URL_FIRST_SITE) as site:
-            text = site.read()
+        async with self.aiohttp_session.get(self.URL_FIRST_SITE) as r:
+            text = await r.read()
         t2 = time.perf_counter_ns()
         new_status_string = get_status_string(text)
         logger.debug(f"Got answer in {t2 - t1}ns, status is {repr(new_status_string)}, "
@@ -235,64 +261,64 @@ class SubstitutionPlan:
             logger.exception("Exception occurred")
             return "500 Internal Server Error", ""
 
+    async def async_application(self, environ, start_response):
+        t1 = time.perf_counter_ns()
+        try:
+            self.stats.new_request(environ)
+            METHOD = environ["REQUEST_METHOD"]
+            PATH = environ["PATH_INFO"]
+            logger.info(METHOD + " " + PATH)
+            if PATH.startswith("/api"):
+                return await self.api.application(PATH[4:], environ, start_response)
+
+            IS_GET = METHOD == "GET"
+            IS_HEAD = METHOD == "HEAD"
+            if IS_GET or IS_HEAD:
+                if PATH == "/":
+                    content = await self.application_students(environ, start_response)
+                    if IS_GET:
+                        return content
+                    return []
+                elif PATH == "/teachers":
+                    content = await self.application_teachers(environ, start_response)
+                    if IS_GET:
+                        return content
+                    return []
+                elif PATH == "/privacy":
+                    response = "200 OK"
+                    content = await self.templates.render_privacy()
+                elif PATH == "/about":
+                    logger.info("GET /about")
+                    response = "200 OK"
+                    content = await self.templates.render_about()
+                else:
+                    self.stats.new_not_found(environ)
+                    response = "404 Not Found"
+                    content = await self.templates.render_error_404()
+                    if IS_HEAD:
+                        content = content.encode("utf-8")
+                        start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                                  ("Content-Length", str(len(content)))])
+                        return []
+            else:
+                self.stats.new_method_not_allowed(environ)
+                response = "405 Method Not Allowed"
+                content = await self.templates.render_error_405(method=METHOD, path=PATH)
+
+            content = content.encode("utf-8")
+            start_response(response, [("Content-Type", "text/html;charset=utf-8"),
+                                      ("Content-Length", str(len(content)))])
+            return [content]
+        finally:
+            t2 = time.perf_counter_ns()
+            logger.debug(f"Time for handling request: {t2 - t1}ns")
+
 
 substitution_plan = SubstitutionPlan()
-asyncio.run(substitution_plan.async_init())
-
-
-async def async_application(environ, start_response):
-    t1 = time.perf_counter_ns()
-    try:
-        substitution_plan.stats.new_request(environ)
-        METHOD = environ["REQUEST_METHOD"]
-        PATH = environ["PATH_INFO"]
-        logger.info(METHOD + " " + PATH)
-        if PATH.startswith("/api"):
-            return await substitution_plan.api.application(PATH[4:], environ, start_response)
-
-        IS_GET = METHOD == "GET"
-        IS_HEAD = METHOD == "HEAD"
-        if IS_GET or IS_HEAD:
-            if PATH == "/":
-                content = await substitution_plan.application_students(environ, start_response)
-                if IS_GET:
-                    return content
-                return []
-            elif PATH == "/teachers":
-                content = await substitution_plan.application_teachers(environ, start_response)
-                if IS_GET:
-                    return content
-                return []
-            elif PATH == "/privacy":
-                response = "200 OK"
-                content = await substitution_plan.templates.render_privacy()
-            elif PATH == "/about":
-                logger.info("GET /about")
-                response = "200 OK"
-                content = await substitution_plan.templates.render_about()
-            else:
-                substitution_plan.stats.new_not_found(environ)
-                response = "404 Not Found"
-                content = await substitution_plan.templates.render_error_404()
-                if IS_HEAD:
-                    content = content.encode("utf-8")
-                    start_response(response, [("Content-Type", "text/html;charset=utf-8"),
-                                              ("Content-Length", str(len(content)))])
-                    return []
-        else:
-            substitution_plan.stats.new_method_not_allowed(environ)
-            response = "405 Method Not Allowed"
-            content = await substitution_plan.templates.render_error_405(method=METHOD, path=PATH)
-
-        content = content.encode("utf-8")
-        start_response(response, [("Content-Type", "text/html;charset=utf-8"),
-                                  ("Content-Length", str(len(content)))])
-        return [content]
-    finally:
-        t2 = time.perf_counter_ns()
-        logger.debug(f"Time for handling request: {t2 - t1}ns")
-        substitution_plan.stats.save()
 
 
 def application(environ, start_response):
-    return asyncio.run(async_application(environ, start_response))
+    return substitution_plan.loop.run_until_complete(substitution_plan.async_application(environ, start_response))
+
+
+atexit.register(substitution_plan.close)
