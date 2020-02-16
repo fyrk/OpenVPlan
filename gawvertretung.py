@@ -1,5 +1,8 @@
 #!/usr/bin/env python3.8
 # -*- coding: utf-8 -*-
+
+__version__ = "2.0"
+
 import asyncio
 import datetime
 import logging
@@ -38,7 +41,6 @@ stdout_logger.setLevel(logging.ERROR)
 stdout_logger.setFormatter(log_formatter)
 logger.addHandler(stdout_logger)
 
-
 logger.info("Started gawvertretung.py with working directory '" + WORKING_DIR + "'")
 
 BASE_PATH = ""  # leave empty for production
@@ -47,10 +49,6 @@ BASE_PATH = ""  # leave empty for production
 class SubstitutionPlan:
     URL_STUDENTS = "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm"
     URL_TEACHERS = "https://gaw-verden.de/images/vertretung/lehrer/subst_{:03}.htm"
-
-    data_students: List[SubstitutionDay]
-    data_teachers: List[SubstitutionDay]
-
     URL_FIRST_SITE = URL_STUDENTS.format(1)
 
     FILENAME_SUBSTITUTIONS = os.path.join(WORKING_DIR, "data/substitutions/substitutions.pickle")
@@ -58,6 +56,13 @@ class SubstitutionPlan:
     PATH_STATS = os.path.join(WORKING_DIR, "data/stats/")
     TEMPLATE_DIR = os.path.join(WORKING_DIR, "website/templates/")
     TEMPLATE_CACHE_DIR = os.path.join(WORKING_DIR, "data/template_cache/")
+
+    USER_AGENT = "GaWVertretungBot/" + __version__ + " (+https://gawvertretung.florian-raediker.de) " + \
+                 aiohttp.http.SERVER_SOFTWARE
+    HEADERS = ((aiohttp.hdrs.USER_AGENT, USER_AGENT),)
+
+    data_students: List[SubstitutionDay]
+    data_teachers: List[SubstitutionDay]
 
     def __init__(self):
         self.stats = Stats(self.PATH_STATS)
@@ -85,8 +90,8 @@ class SubstitutionPlan:
                 if version == self.SUBSTITUTIONS_VERSION:
                     self.current_status_string, self.data_students, self.data_teachers = pickle.load(f)
                 else:
-                    logger.warn(f"substitutions file saved in wrong version: {version} "
-                                f"(required: {self.SUBSTITUTIONS_VERSION})")
+                    raise ValueError(f"substitutions file saved in wrong version: {version} "
+                                     f"(required: {self.SUBSTITUTIONS_VERSION})")
         except Exception:
             logger.exception("Could not load substitutions from file")
         else:
@@ -105,7 +110,7 @@ class SubstitutionPlan:
         logger.info("Wrote substitutions to file")
 
     async def _load_data(self, first_site: bytes):
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(headers=self.HEADERS) as session:
             logger.info("Loading new data...")
             t1 = time.perf_counter_ns()
             self.data_students, self.data_teachers = await asyncio.gather(
