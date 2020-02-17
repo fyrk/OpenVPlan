@@ -288,7 +288,6 @@ class SubstitutionPlan:
                     response = "200 OK"
                     content = await self.templates.render_privacy()
                 elif PATH == "/about":
-                    logger.info("GET /about")
                     response = "200 OK"
                     content = await self.templates.render_about()
                 else:
