@@ -130,7 +130,7 @@ class BaseSubstitutionLoader:
             if last_site_num is not None:
                 if self.stats is not None:
                     self.stats.add_last_site(last_site_num)
-                logger.debug("results: " + str(results))
+                logger.debug(self.plan_type + " results: " + str(results))
                 return self._data_postprocessing(old_days, data)
             current_site = next_site
 
