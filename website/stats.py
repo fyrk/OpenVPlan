@@ -63,7 +63,10 @@ class Stats:
     def new_request(self, environ):
         ip_address, ip_hash = self._get_ip(environ)
         if ip_hash != "edbd6af54a1c":  # hash for own web server, curl is ignored
-            path = environ["REQUEST_METHOD"][0] + environ["PATH_INFO"]
+            path = environ["REQUEST_METHOD"] + environ["PATH_INFO"]
+            query_string = environ.get("QUERY_STRING", "")
+            if query_string:
+                path += "?" + query_string
             referer = environ.get("HTTP_REFERER")
             user_agent = environ.get("HTTP_USER_AGENT", "unknown")
             user_agent_lower = user_agent.lower()
@@ -86,7 +89,10 @@ class Stats:
 
     def _new_bad_request(self, environ, type_):
         _, ip_hash = self._get_ip(environ)
-        path = environ["REQUEST_METHOD"] + " " + environ["PATH_INFO"]
+        path = environ["REQUEST_METHOD"] + environ["PATH_INFO"]
+        query_string = environ.get("QUERY_STRING", "")
+        if query_string:
+            path += "?" + query_string
         time = datetime.datetime.now().strftime("%Y-%m-%d %X")
         text = type_ + " " + time + " " + path + " " + str(environ)
         with open(self._bad_requests_file, "a", encoding="utf-8") as f:
