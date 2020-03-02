@@ -25,7 +25,7 @@ class AsyncBytesIOWrapper(io.BytesIO):
 
 
 class BaseSubstitutionLoader:
-    SITE_LOAD_COUNT = 5
+    SITE_LOAD_COUNT = 6
     ENCODING = "iso-8859-1"
 
     def __init__(self, substitutions_parser_class: Type[BaseSubstitutionParser], session: aiohttp.ClientSession,
