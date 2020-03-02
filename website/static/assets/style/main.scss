@@ -226,6 +226,7 @@ a {
     padding-right: 1.2rem;
     content: "";
     background-color: theme-color("primary");
+    text-decoration: none;
 }
 
 @mixin icon($path, $position-x: 0, $position-y: 0, $width: 1.2rem, $height: 1.2rem) {
