@@ -222,21 +222,23 @@ a {
 
 // ICONS
 %icon {
-    display: inline;
-    padding-right: 1.2rem;
+    display: inline-block;
     content: "";
     background-color: theme-color("primary");
-    text-decoration: none;
 }
 
-@mixin icon($path, $position-x: 0, $position-y: 0, $width: 1.2rem, $height: 1.2rem) {
+@mixin icon($path, $position-y: 0, $width: 1.2rem, $height: 1.2rem) {
     @extend %icon;
-    mask: url($path) no-repeat $position-x #{$position-y}/#{$width} $height;
-    -webkit-mask: url($path) no-repeat $position-x #{$position-y}/#{$width} $height;
+    mask: url($path) no-repeat 0 0/#{$width} $height;
+    -webkit-mask: url($path) no-repeat 0 0/#{$width} $height;
+    width: $width;
+    height: $height;
+    margin-top: -$height;
+    margin-bottom: $position-y;
 }
 
 .i-bookmark::before {
-    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg", $width: $bookmark-icon-width, $position-y: -0.05rem);
+    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg", $width: $bookmark-icon-width, $position-y: -0.23rem);
 }
 
 .external::after {
