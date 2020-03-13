@@ -46,7 +46,6 @@ class BaseSubstitutionParser(HTMLParser):
         self.current_news_format_tag = None
         self.next_site = None
         self.current_day_info = None
-        self.news_tag_br = False
 
     def error(self, message):
         pass
@@ -66,7 +65,6 @@ class BaseSubstitutionParser(HTMLParser):
             if self.current_section == "info-table" and \
                     (self.reached_news or attrs == [("class", "info"), ("colspan", "2")]):
                 self.reached_news = True
-                self.news_tag_br = False
                 self.day_data["news"].append("")
         elif tag == "tr":
             if self.current_section == "substitution-table":
@@ -85,7 +83,7 @@ class BaseSubstitutionParser(HTMLParser):
                 self.next_site = attrs[1][1].split("URL=")[1]
         elif self.is_in_td and self.current_section == "info-table" and self.reached_news:
             if tag == "br":
-                self.news_tag_br = True
+                self.day_data["news"].append("")
             else:
                 self.day_data["news"][-1] += "<" + tag + ">"
         self.is_in_tag = True
@@ -126,10 +124,7 @@ class BaseSubstitutionParser(HTMLParser):
                         if self.current_day_info == "Nachrichten zum Tag":
                             self.current_day_info = None
                 else:
-                    if self.news_tag_br:
-                        self.day_data["news"].append(data)
-                    else:
-                        self.day_data["news"][-1] += data
+                    self.day_data["news"][-1] += data
         elif self.current_section == "title":
             match = self.REGEX_TITLE.search(data)
             if match:
