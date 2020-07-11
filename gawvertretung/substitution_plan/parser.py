@@ -4,13 +4,14 @@ from abc import ABCMeta, abstractmethod
 from html.parser import HTMLParser
 from typing import Optional, Callable, Any
 
-from substitution_plan.storage import (StudentSubstitution, TeacherSubstitution, SubstitutionDay,
+from .. import config
+from .storage import (StudentSubstitution, TeacherSubstitution, SubstitutionDay,
                                        SubstitutionStorage, BaseSubstitutionGroup, StudentSubstitutionGroup,
                                        BaseSubstitution, TeacherSubstitutionGroup)
-from substitution_plan.utils import create_date_timestamp, split_class_name
+from .utils import create_date_timestamp, split_class_name
 
 
-INCLUDE_OUTDATED_SUBSTITUTIONS = False
+INCLUDE_OUTDATED_SUBSTITUTIONS = config.get_bool("dev")
 
 
 _REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")

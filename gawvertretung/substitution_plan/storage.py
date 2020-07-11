@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional, Iterable, Union, Dict, Set
 
 from sortedcontainers import SortedDict, SortedList
 
-from substitution_plan.utils import split_class_name
+from ..substitution_plan.utils import split_class_name
 
 
 class SubstitutionStorage(SortedDict):

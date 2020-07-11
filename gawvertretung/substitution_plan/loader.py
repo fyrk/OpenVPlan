@@ -8,11 +8,11 @@ from typing import Type, Union, Any, Optional, Callable
 import aiohttp
 from aiohttp import client
 
-from substitution_plan.parser import BaseSubstitutionParser, StudentSubstitutionParser, TeacherSubstitutionParser, \
+from ..substitution_plan.parser import BaseSubstitutionParser, StudentSubstitutionParser, TeacherSubstitutionParser, \
     parse_next_site, SubstitutionsTooOldException, get_status_string, INCLUDE_OUTDATED_SUBSTITUTIONS
-from substitution_plan.storage import StudentSubstitutionGroup, TeacherSubstitutionGroup, BaseSubstitutionGroup, \
+from ..substitution_plan.storage import StudentSubstitutionGroup, TeacherSubstitutionGroup, BaseSubstitutionGroup, \
     SubstitutionStorage
-from substitution_plan.utils import create_date_timestamp
+from ..substitution_plan.utils import create_date_timestamp
 
 
 logger = logging.getLogger("gawvertretung")
@@ -97,6 +97,7 @@ class BaseSubstitutionLoader:
                 try:
                     parser.feed(r)
                 except SubstitutionsTooOldException:
+                    logger.debug(f"[{self._plan_name}] Skipping {num}")
                     return
                 except Exception:
                     logger.exception(f"[{self._plan_name}] Exception while parsing {num}")

@@ -1,0 +1,9 @@
+{
+  "host": "localhost",
+  "port": 8080,
+  "logfile": "logs/website.log",
+
+  "url_students": "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm",
+  "url_teachers": "https://gaw-verden.de/images/vertretung/lehrer/subst_{:03}.htm",
+  "user_agent": "GaWVertretungBot/{version} (+https://gawvertretung.florian-raediker.de) {server_software}"
+}

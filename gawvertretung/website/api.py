@@ -2,8 +2,8 @@ import logging
 
 from aiohttp import web
 
-from substitution_plan.loader import BaseSubstitutionLoader
-from substitution_plan.utils import split_selection
+from ..substitution_plan.loader import BaseSubstitutionLoader
+from ..substitution_plan.utils import split_selection
 
 logger = logging.getLogger()
 

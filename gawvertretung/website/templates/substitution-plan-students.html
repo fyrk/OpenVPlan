@@ -28,11 +28,13 @@
     </thead>
 {% endblock %}
 {% block show_all_substitutions %}<a href="{{ base_path }}/">Alle Klassen</a>{% endblock %}
+{% block select_heading %}Klassen auswählen{% endblock %}
 {% block select_text -%}
-    Klassen können mit dem Lesezeichen-Symbol ausgewählt werden.
-    Klassen, die nicht angezeigt werden, hier auswählen:
+    Einzelne Klassen können mit dem Lesezeichen-Symbol ausgewählt werden.<br>
+    Mehrere Klassen oder Klassen, für die es gerade keine Vertretungen gibt, können hier ausgewählt werden:
 {%- endblock %}
 {%- block selection_help_text %}
     Mehrere Klassen durch Kommata trennen
 {% endblock -%}
+{% block push_notifications_heading %}Benachrichtigungen{% endblock %}
 {% block gaw_verden_link %}https://gaw-verden.de/images/vertretung/klassen/subst_001.htm{% endblock %}

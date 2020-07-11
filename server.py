@@ -1,54 +1,52 @@
 import contextvars
-import datetime
 import logging
 import os
 import secrets
 import sys
 
-from argparse import ArgumentParser
 import time
 
 import jinja2
 from aiohttp import client, http, hdrs, web
+from aiohttp.web_fileresponse import FileResponse
 
-from substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
-from website.stats import Stats
-from website.substitution_plan import SubstitutionPlan
+from gawvertretung import config
+from gawvertretung.substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
+from gawvertretung.website.stats import Stats
+from gawvertretung.website.substitution_plan import SubstitutionPlan
 
 
 __version__ = "3.0"
 
-URL_STUDENTS = "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm"
-URL_TEACHERS = "https://gaw-verden.de/images/vertretung/lehrer/subst_{:03}.htm"
-REQUEST_USER_AGENT = "GaWVertretungBot/" + __version__ + " (+https://gawvertretung.florian-raediker.de) " + \
-                     http.SERVER_SOFTWARE
+URL_STUDENTS = config.get_str("url_students")
+URL_TEACHERS = config.get_str("url_teachers")
+REQUEST_USER_AGENT = config.get_str("user_agent", "GaWVertretungBot").format(version=__version__,
+                                                                             server_software=http.SERVER_SOFTWARE)
 REQUEST_HEADERS = {hdrs.USER_AGENT: REQUEST_USER_AGENT}
 
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
 
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.DEBUG)
-
-logger = logging.getLogger("gawvertretung")
-logger.setLevel(logging.DEBUG)
+_LOGGER = logging.getLogger("gawvertretung")
+_LOGGER.setLevel(logging.DEBUG)
 
 
-def init_logger(filename):
+def init_logger(filepath):
     log_formatter = logging.Formatter("{asctime} [{levelname:^8}]: {message}", style="{")
-    file_logger = logging.FileHandler(filename, encoding="utf-8")
+
+    file_logger = logging.FileHandler(filepath, encoding="utf-8")
     file_logger.setFormatter(log_formatter)
-    root_logger.addHandler(file_logger)
+    _LOGGER.addHandler(file_logger)
+
     stdout_logger = logging.StreamHandler(sys.stdout)
     stdout_logger.setLevel(logging.ERROR)
     stdout_logger.setFormatter(log_formatter)
-    root_logger.addHandler(stdout_logger)
+    _LOGGER.addHandler(stdout_logger)
 
 
-TEMPLATES_PATH = os.path.join(WORKING_DIR, "website/templates")
+TEMPLATES_PATH = os.path.join(WORKING_DIR, "gawvertretung/website/templates")
 TEMPLATES_CACHE_PATH = os.path.join(WORKING_DIR, "data/template_cache/")
-STATIC_PATH = os.path.join(WORKING_DIR, "website/static/")
+STATIC_PATH = os.path.join(WORKING_DIR, "gawvertretung/website/static/")
 STATS_PATH = os.path.join(WORKING_DIR, "data/stats/")
-LOGS_PATH = os.path.join(WORKING_DIR, "logs/")
 
 
 stats = Stats(STATS_PATH)
@@ -93,8 +91,8 @@ async def logging_middleware(request: web.Request, handler):
     token = request_id_contextvar.set(req_id)
     try:
         response: web.Response = await handler(request)
-        logger.info(f'{request.method} {request.path} {response.status} {response.body_length} '
-                    f'{time.perf_counter_ns()-t1}ns "{request.headers.get(hdrs.USER_AGENT, "-")}"')
+        _LOGGER.info(f'{request.method} {request.path} {response.status} {response.body_length} '
+                     f'{time.perf_counter_ns()-t1}ns "{request.headers.get(hdrs.USER_AGENT, "-")}"')
         return response
     finally:
         request_id_contextvar.reset(token)
@@ -103,12 +101,13 @@ async def logging_middleware(request: web.Request, handler):
 @web.middleware
 async def stats_middleware(request: web.Request, handler):
     response: web.Response = await handler(request)
-    if not response.prepared:
+    if not response.prepared and type(response) != FileResponse:
+        # noinspection PyBroadException
         try:
             await response.prepare(request)
             await response.write_eof()
-        except:
-            logger.exception("Exception for " + repr(request))
+        except Exception:
+            _LOGGER.exception("Exception occurred while preparing and writing response")
     await stats.new_request(request, response)
     return response
 
@@ -122,20 +121,19 @@ async def error_middleware(request: web.Request, handler):
         if e.status == 404:
             return web.Response(text=await TEMPLATE_ERROR404.render_async(), content_type="text/html", charset="utf-8")
     except Exception:
-        logger.exception(f"{request.method} {request.path} Exception while handling request")
+        _LOGGER.exception(f"{request.method} {request.path} Exception while handling request")
     return web.Response(text=await TEMPLATE_ERROR500_STUDENTS.render_async(), content_type="text/html", charset="utf-8")
 
 
-class TemplateHandler:
-    def __init__(self, template: jinja2.Template):
-        self._template = template
-
-    async def __call__(self, request: web.Request) -> web.Response:
-        return web.Response(text=await self._template.render_async(), content_type="text/html")
+def template_handler(template: jinja2.Template):
+    # noinspection PyUnusedLocal
+    async def handler(request: web.Request):
+        return web.Response(text=await template.render_async(), content_type="text/html")
+    return handler
 
 
 async def client_session(app: web.Application):
-    logger.debug("Create ClientSession")
+    _LOGGER.debug("Create ClientSession")
     app["client_session"] = client.ClientSession(headers=REQUEST_HEADERS)
     yield
     await app["client_session"].close()
@@ -143,7 +141,7 @@ async def client_session(app: web.Application):
 
 async def app_factory(host, port, dev_mode=False):
     app = web.Application(middlewares=[logging_middleware, stats_middleware, error_middleware])
-    logger.info(f"Starting server on {host}:{port}{' in dev mode' if dev_mode else ''}")
+    _LOGGER.info(f"Starting server on {host}:{port}{' in dev mode' if dev_mode else ''}")
     loader_students = StudentSubstitutionLoader(URL_STUDENTS, "students")
     loader_students.on_status_changed = stats.add_last_site
     plan_students = SubstitutionPlan(loader_students, TEMPLATE_STUDENTS, TEMPLATE_ERROR500_STUDENTS)
@@ -158,8 +156,8 @@ async def app_factory(host, port, dev_mode=False):
         web.get("/api/students/wait-for-update", plan_students.wait_for_update_handler),
         web.get("/api/teachers/wait-for-update", plan_teachers.wait_for_update_handler),
 
-        web.get("/privacy", TemplateHandler(TEMPLATE_PRIVACY)),
-        web.get("/about", TemplateHandler(TEMPLATE_ABOUT))
+        web.get("/privacy", template_handler(TEMPLATE_PRIVACY)),
+        web.get("/about", template_handler(TEMPLATE_ABOUT))
     ])
 
     if dev_mode:
@@ -175,39 +173,5 @@ def run(host, port, dev_mode=False):
 
 
 if __name__ == "__main__":
-    arg_parser = ArgumentParser(
-        description="gawvertretung server"
-    )
-    arg_parser.add_argument(
-        "-D", "--dev",
-        action="store_true",
-        help="Run server in dev mode (static files served, outdated substitutions included, ...)"
-    )
-    arg_parser.add_argument(
-        "-L", "--log",
-        help="Logfile name (saved in 'logs' folder), website-<current date>.log by default",
-        default=datetime.datetime.now().strftime("website-%Y-%m-%d.log")
-    )
-    arg_parser.add_argument(
-        "-W", "--working-dir",
-        help="Working directory",
-        default=WORKING_DIR
-    )
-    arg_parser.add_argument(
-        "-H", "--hostname",
-        help="TCP/IP hostname to serve on (default: %(default)r)",
-        default="localhost"
-    )
-    arg_parser.add_argument(
-        "-P", "--port",
-        help="TCP/IP port to serve on (default: %(default)r)",
-        type=int,
-        default="8080"
-    )
-    args = arg_parser.parse_args()
-    WORKING_DIR = args.working_dir
-    if args.dev:
-        from substitution_plan import parser
-        parser.INCLUDE_OUTDATED_SUBSTITUTIONS = True
-    init_logger(os.path.join(LOGS_PATH, args.log))
-    run(args.hostname, args.port, args.dev)
+    init_logger(os.path.join(WORKING_DIR, config.get_str("logfile", "logs/website.log")))
+    run(config.get_str("host", "localhost"), config.get_int("port", 8080), config.get_bool("dev"))

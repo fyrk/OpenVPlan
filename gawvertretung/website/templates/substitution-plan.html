@@ -79,38 +79,28 @@
     Es gibt keine Vertretungen.
 </div>
 {%- endfor -%}
-{%- if selection -%}
-    <div class="box">
-        Es werden Vertretungen für <i>{{ selection_str }}</i><!-- htmlmin:ignore --> angezeigt. <!-- htmlmin:ignore -->
-        {% block show_all_substitutions -%}{%- endblock -%}
-    </div>
-{% else %}
-    <div class="box">
-        <form class="form" type="get">
-            <label for="selectionInput">{% block select_text %}{% endblock %}</label>
-            <div class="form-row">
-                <div class="col-7 col-sm-6 col-md-4 col-xl-3">
-                    <input type="text" class="form-control" id="selectionInput" name="s" required aria-describedby="selectionHelp">
-                    <small id="selectionHelp" class="form-text text-muted">
-                        {% block selection_help_text %}{% endblock %}</small>
-                </div>
-                <div class="col-2 col-sm-1 col-md-1">
-                    <button type="submit" class="btn btn-primary mb-2">OK</button>
-                </div>
+<div class="box">
+    <h2>{% block select_heading %}{% endblock %}</h2>
+    <form class="form" type="get">
+        <label for="selectionInput">{% block select_text %}{% endblock %}</label>
+        <div class="form-row">
+            <div class="col-9 col-sm-6 col-md-4 col-xl-3">
+                <input type="text" class="form-control" id="selectionInput" name="s" required
+                       value="{%- if selection -%}{{ selection_str }}{%- endif -%}" aria-describedby="selectionHelp" >
+                <small id="selectionHelp" class="form-text text-muted">
+                    {% block selection_help_text %}{% endblock %}</small>
             </div>
-        </form>
-    </div>
-{%- endif -%}
+            <div class="col-3 col-sm-1 col-md-1">
+                <button type="submit" class="btn btn-primary mb-2">OK</button>
+            </div>
+        </div>
+    </form>
+
+    <h2 class="mt-4">{% block push_notifications_heading %}Benachrichtigungen{% endblock %}</h2>
+
+</div>
 {%- endblock -%}
 
 {%- block body_end -%}
-    <div class="fixed-bottom mb-2 mr-2">
-        <div class="float-right">
-            <button class="btn btn-primary">
-                <img src="{{ base_path }}/assets/img/bootstrap/bell-fill.svg" alt="Get Notifications">
-            </button>
-        </div>
-    </div>
-
     <script src="{{ base_path }}/assets/js/substitutions.min.js"></script>
 {%- endblock -%}
