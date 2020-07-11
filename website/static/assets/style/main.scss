@@ -47,6 +47,8 @@ $bookmark-icon-width: 1.2rem;
 @import "bootstrap/scss/utilities/screenreaders";
 @import "bootstrap/scss/utilities/stretched-link";
 @import "bootstrap/scss/utilities/position";
+@import "bootstrap/scss/utilities/float";
+@import "bootstrap/scss/utilities/text";
 
 @import "bootstrap/scss/vendor/rfs";
 
@@ -72,6 +74,7 @@ body, html {
 }
 
 #content {
+    @extend .p-0, .px-sm-3;
     flex: 1 0 auto;
 }
 
@@ -80,13 +83,32 @@ body, html {
 }
 
 .box {
+    @extend .my-sm-3;
     background-color: $box-bg;
     padding: 1rem 1.5rem;
-    @include media-breakpoint-up(sm) {
-        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
-        border-radius: .2rem !important;
-        margin-bottom: 1rem !important;
-        margin-top: 1rem !important;
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    border-radius: .2rem;
+}
+
+@include media-breakpoint-down(xs) {
+    .box {
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    .box:not(:last-child) {
+        border-bottom: 1px solid grey;
+    }
+
+    .box:last-child {
+        border-bottom-right-radius: $border-radius !important;
+        border-bottom-left-radius: $border-radius !important;
+        box-shadow: 0 5px 5px 0 #7575754f;
+    }
+
+    .box:first-child {
+        border-top-left-radius: $border-radius !important;
+        border-top-right-radius: $border-radius !important;
     }
 }
 
@@ -131,27 +153,6 @@ body, html {
     padding-bottom: 0.8rem;
 }
 
-@include media-breakpoint-down(xs) {
-    .main-container {
-        padding: 0;
-    }
-    .box {
-        box-shadow: none;
-        border-radius: 0;
-    }
-    .box:not(:last-child) {
-        border-bottom: 1px solid grey;
-    }
-    .box:last-child {
-        border-bottom-right-radius: $border-radius !important;
-        border-bottom-left-radius: $border-radius !important;
-        box-shadow: 0 5px 5px 0 #7575754f;
-    }
-    .box:first-child {
-        border-top-left-radius: $border-radius !important;
-        border-top-right-radius: $border-radius !important;
-    }
-}
 
 .nav {
     font-size: $font-size-base * 1.15;
@@ -214,6 +215,38 @@ body, html {
     .group-name.selectable {
         @extend .position-relative;
     }
+}
+
+#online-status {
+    @extend .font-weight-bold;
+}
+#online-status.online::before {
+    background-color: #34ce57;
+    width: 0.8em;
+    height: 0.8em;
+    border-radius: 0.4em;
+    margin-right: 0.2em;
+    content: "";
+    display: inline-block;
+    animation: blink 2.5s infinite;
+}
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    35% {
+        opacity: 0;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+#online-status.offline {
+    color: red;
 }
 
 a {

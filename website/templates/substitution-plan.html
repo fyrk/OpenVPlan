@@ -1,12 +1,13 @@
 {% extends "_base.min.html" %}
 {%- block content -%}
 <div class="box status-box">
-    Stand: {{ status }}
+    <span>Stand: {{ storage.status }}</span>
+    <span class="float-right" id="online-status"></span>
 </div>
-{%- for day in days -%}
+{%- for day in storage.values() -%}
 {%- set day_loop = loop -%}
 <div class="box">
-    <div class="container p-0 mb-3">
+    <div class="p-0 mb-3">
         <div class="row">
             <div class="col-auto">
                 <div class="day-heading">
@@ -41,9 +42,9 @@
         <td rowspan="{{ group.substitutions|length }}"
             class="group-name{% if has_affected_groups %} selectable{% endif %}">
             {%- if has_affected_groups -%}
-                <a class="i-bookmark stretched-link" href="?s={{ group.affected_groups_pretty[0] }}"></a>
+                <a class="i-bookmark stretched-link" href="?s={{ group.affected_groups_pretty.__iter__().__next__() }}"></a>
             {%- endif -%}
-            {{- group.get_html_name()|safe -}}
+            {{- group.name.to_html()|safe -}}
         </td>
         {%- for data in group.substitutions[0] -%}
             <td>{{ data }}</td>
@@ -103,5 +104,13 @@
 {%- endblock -%}
 
 {%- block body_end -%}
+    <div class="fixed-bottom mb-2 mr-2">
+        <div class="float-right">
+            <button class="btn btn-primary">
+                <img src="{{ base_path }}/assets/img/bootstrap/bell-fill.svg" alt="Get Notifications">
+            </button>
+        </div>
+    </div>
+
     <script src="{{ base_path }}/assets/js/substitutions.min.js"></script>
 {%- endblock -%}

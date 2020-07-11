@@ -1,17 +1,25 @@
 import datetime
 import re
+from abc import ABCMeta, abstractmethod
 from html.parser import HTMLParser
+from typing import Optional, Callable, Any
 
-from substitution_plan.storage import StudentSubstitution, TeacherSubstitution
+from substitution_plan.storage import (StudentSubstitution, TeacherSubstitution, SubstitutionDay,
+                                       SubstitutionStorage, BaseSubstitutionGroup, StudentSubstitutionGroup,
+                                       BaseSubstitution, TeacherSubstitutionGroup)
 from substitution_plan.utils import create_date_timestamp, split_class_name
 
-REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
+
+INCLUDE_OUTDATED_SUBSTITUTIONS = False
 
 
-def get_status_string(text):
-    status = REGEX_STATUS.search(text)
+_REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
+
+
+def get_status_string(text, encoding="utf-8", errors="strict"):
+    status = _REGEX_STATUS.search(text)
     if status:
-        return status.group(1).decode("iso-8859-1")
+        return status.group(1).decode(encoding=encoding, errors=errors)
     raise ValueError(f"Did not find status in {repr(text)}")
 
 
@@ -28,128 +36,125 @@ async def parse_next_site(stream):
             return line[49:52]
 
 
-class BaseSubstitutionParser(HTMLParser):
+class BaseSubstitutionParser(HTMLParser, metaclass=ABCMeta):
     REGEX_TITLE = re.compile(r"(\d+.\d+.\d\d\d\d) (\w+), Woche (\w+)")
 
-    def __init__(self, data: dict, current_timestamp: int):
+    def __init__(self, substitution_days_storage: SubstitutionStorage, current_timestamp: int,
+                 on_parsed_next_site: Callable[[str], Any] = None):
+        # on_parsed_next_site is currently not used. It is an alternative to parse_next_site function.
         super().__init__()
-        self.data = data
-        self.current_timestamp = current_timestamp
-        self.day_timestamp = None
-        self.day_data = None
-        self.has_read_news_heading = False
-        self.current_section = ""
+        self._substitution_days_storage = substitution_days_storage
+        self._current_timestamp = current_timestamp
+        self._on_parsed_next_site = on_parsed_next_site
+        self._current_substitution_day: Optional[SubstitutionDay] = None
+
+        self._has_read_news_heading = False
+        self._current_section = ""
         self.current_substitution = []
-        self.reached_news = False
-        self.is_in_tag = False
-        self.is_in_td = False
-        self.current_news_format_tag = None
-        self.next_site = None
-        self.current_day_info = None
+        self._reached_news = False
+        self._is_in_tag = False
+        self._is_in_td = False
+        self._current_news_format_tag = None
+        self._current_day_info = None
 
     def error(self, message):
         pass
-
-    def _get_attr(self, attrs, name):
-        for attr in attrs:
-            if attr[0] == name:
-                return attr[1]
-        return None
 
     def on_new_substitution_start(self):
         self.current_substitution = []
 
     def handle_starttag(self, tag, attrs):
         if tag == "td":
-            self.is_in_td = True
-            if self.current_section == "info-table" and \
-                    (self.reached_news or attrs == [("class", "info"), ("colspan", "2")]):
-                self.reached_news = True
-                self.day_data["news"].append("")
+            self._is_in_td = True
+            if self._current_section == "info-table" and \
+                    (self._reached_news or attrs == [("class", "info"), ("colspan", "2")]):
+                self._reached_news = True
+                self._current_substitution_day.news.append("")
         elif tag == "tr":
-            if self.current_section == "substitution-table":
+            if self._current_section == "substitution-table":
                 self.on_new_substitution_start()
         elif tag == "table":
             if len(attrs) == 1 and attrs[0][0] == "class":
                 if attrs[0][1] == "info":
-                    self.current_section = "info-table"
+                    self._current_section = "info-table"
                 elif attrs[0][1] == "mon_list":
-                    self.current_section = "substitution-table"
+                    self._current_section = "substitution-table"
         elif tag == "div":
             if len(attrs) == 1 and attrs[0] == ("class", "mon_title"):
-                self.current_section = "title"
+                self._current_section = "title"
         elif tag == "meta":
             if len(attrs) == 2 and attrs[0] == ("http-equiv", "refresh") and attrs[1][0] == "content":
-                self.next_site = attrs[1][1].split("URL=")[1]
-        elif self.is_in_td and self.current_section == "info-table" and self.reached_news:
+                if self._on_parsed_next_site:
+                    self._on_parsed_next_site(attrs[1][1].split("URL=")[1])
+        elif self._current_section == "info-table" and self._is_in_td and self._reached_news:
             if tag == "br":
-                self.day_data["news"].append("")
+                self._current_substitution_day.news.append("")
             else:
-                self.day_data["news"][-1] += "<" + tag + ">"
-        self.is_in_tag = True
+                self._current_substitution_day.news[-1] += "<" + tag + ">"
+        self._is_in_tag = True
 
-    def get_current_group(self):
-        raise NotImplementedError
+    @abstractmethod
+    def get_current_group_name(self):
+        ...
 
-    def get_current_substitution(self):
-        raise NotImplementedError
+    @abstractmethod
+    def create_current_group(self, group_name, substitution: BaseSubstitution) -> BaseSubstitutionGroup:
+        ...
+
+    @abstractmethod
+    def create_current_substitution(self) -> BaseSubstitution:
+        ...
 
     def handle_endtag(self, tag):
-        if self.current_section == "substitution-table":
+        if self._current_section == "substitution-table":
             if tag == "tr" and self.current_substitution:
-                group = self.get_current_group()
-                substitution = self.get_current_substitution()
+                group_name = self.get_current_group_name()
+                substitution = self.create_current_substitution()
                 try:
-                    if substitution not in self.day_data["substitutions"][group]:
-                        self.day_data["substitutions"][group].append(substitution)
+                    self._current_substitution_day.get_group(group_name).substitutions.append(substitution)
                 except KeyError:
-                    self.day_data["substitutions"][group] = [substitution]
+                    self._current_substitution_day.add_group(group_name,
+                                                             self.create_current_group(group_name, substitution))
         if tag == "td":
-            self.is_in_td = False
-        if self.is_in_td and self.current_section == "info-table" and self.reached_news:
-            self.day_data["news"][-1] += "</" + tag + ">"
-        self.is_in_tag = False
+            self._is_in_td = False
+        if self._is_in_td and self._current_section == "info-table" and self._reached_news:
+            self._current_substitution_day.news[-1] += "</" + tag + ">"
+        self._is_in_tag = False
 
     def handle_data(self, data):
-        if self.is_in_tag and self.current_section == "substitution-table":
+        if self._is_in_tag and self._current_section == "substitution-table":
             self.handle_substitution_data(data)
-        elif self.current_section == "info-table":
-            if self.is_in_td:
-                if not self.reached_news:
-                    if self.current_day_info:
-                        self.day_data["info"].append((self.current_day_info, data))
-                        self.current_day_info = None
+        elif self._current_section == "info-table":
+            if self._is_in_td:
+                if not self._reached_news:
+                    if self._current_day_info:
+                        self._current_substitution_day.info.append((self._current_day_info, data))
+                        self._current_day_info = None
                     else:
-                        self.current_day_info = data.strip()
-                        if self.current_day_info == "Nachrichten zum Tag":
-                            self.current_day_info = None
+                        self._current_day_info = data.strip()
+                        if self._current_day_info == "Nachrichten zum Tag":
+                            self._current_day_info = None
                 else:
-                    self.day_data["news"][-1] += data
-        elif self.current_section == "title":
+                    self._current_substitution_day.news[-1] += data
+        elif self._current_section == "title":
             match = self.REGEX_TITLE.search(data)
             if match:
                 date = match.group(1)
-                self.day_timestamp = create_date_timestamp(datetime.datetime.strptime(date, "%d.%m.%Y"))
-                if self.day_timestamp < self.current_timestamp:
+                day_timestamp = create_date_timestamp(datetime.datetime.strptime(date, "%d.%m.%Y"))
+                if day_timestamp < self._current_timestamp and not INCLUDE_OUTDATED_SUBSTITUTIONS:
                     raise SubstitutionsTooOldException
-                if self.day_timestamp not in self.data:
-                    self.day_data = {
-                        "date": date,
-                        "day_name": match.group(2),
-                        "week": match.group(3),
-                        "news": [],
-                        "info": [],
-                        "substitutions": {}
-                    }
-                    self.data[self.day_timestamp] = self.day_data
+                if day_timestamp not in self._substitution_days_storage:
+                    self._current_substitution_day = SubstitutionDay(day_timestamp, match.group(2), date,
+                                                                     match.group(3))
+                    self._substitution_days_storage[day_timestamp] = self._current_substitution_day
                 else:
-                    self.day_data = self.data[self.day_timestamp]
-                self.current_section = None
+                    self._current_substitution_day = self._substitution_days_storage[day_timestamp]
+                self._current_section = None
             else:
                 raise ValueError("no date detected in title")
 
     def handle_substitution_data(self, data):
-        if self.is_in_td:
+        if self._is_in_td:
             self.current_substitution.append(data)
 
     def handle_comment(self, data):
@@ -161,31 +166,35 @@ class BaseSubstitutionParser(HTMLParser):
     def close(self):
         super().close()
 
-    def is_last_site(self) -> bool:
-        return self.next_site == "subst_001.htm"
-
 
 class StudentSubstitutionParser(BaseSubstitutionParser):
-    def __init__(self, data: dict, current_timestamp: int):
-        super().__init__(data, current_timestamp)
+    def __init__(self, substitution_days_storage: SubstitutionStorage, current_timestamp: int):
+        super().__init__(substitution_days_storage, current_timestamp)
 
-    def get_current_group(self):
+    def get_current_group_name(self):
         return self.current_substitution[0].strip()
 
-    def get_current_substitution(self):
+    def create_current_group(self, group_name, substitution: StudentSubstitution) -> BaseSubstitutionGroup:
+        return StudentSubstitutionGroup(group_name, [substitution])
+
+    def create_current_substitution(self):
         return StudentSubstitution(*self.current_substitution[1:])
 
 
 class TeacherSubstitutionParser(BaseSubstitutionParser):
-    def __init__(self, data: dict, current_timestamp: int):
-        super().__init__(data, current_timestamp)
+    def __init__(self, substitution_days_storage: SubstitutionStorage, current_timestamp: int):
+        super().__init__(substitution_days_storage, current_timestamp)
         self.is_in_strike = False
         self.current_strikes = []
 
-    def get_current_group(self):
+    def get_current_group_name(self):
+        # noinspection PyRedundantParentheses
         return (self.current_substitution[0].strip(), self.current_strikes[0])
 
-    def get_current_substitution(self):
+    def create_current_group(self, group_name, substitution: TeacherSubstitution) -> BaseSubstitutionGroup:
+        return TeacherSubstitutionGroup(group_name, [substitution])
+
+    def create_current_substitution(self):
         class_name = self.current_substitution[2]
         if "," in class_name:
             if class_name.startswith("(") and class_name.endswith(")"):
@@ -223,6 +232,6 @@ class TeacherSubstitutionParser(BaseSubstitutionParser):
             self.is_in_strike = False
 
     def handle_substitution_data(self, data):
-        if self.is_in_td:
+        if self._is_in_td:
             self.current_strikes.append(self.is_in_strike)
             self.current_substitution.append(data)

@@ -32,8 +32,8 @@
 </head>
 <body class="d-flex flex-column">
 <a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
-<div id="content">
-    <header class="container main-container">
+<div id="content" class="container-xl">
+    <header class="main-container">
         <div class="box title-box">
             {% block title_bar %}
                 {% if selection %}<span class="selection">{{ selection_str }}</span><!-- htmlmin:ignore --> <!-- htmlmin:ignore -->- {% endif %}
@@ -44,7 +44,7 @@
             {% block title_end %}{% endblock %}
         </div>
     </header>
-    <main role="main" id="main" class="container main-container">
+    <main role="main" id="main">
         {% block content %}{% endblock %}
     </main>
 </div>
@@ -63,6 +63,5 @@
     <object data="{{ base_path }}/assets/img/python-powered.svg">python powered</object>
 </footer>
 {% block body_end %}{% endblock %}
-<script>navigator.serviceWorker.getRegistrations().then(function(t){for(let r of t){r.unregister();}});</script>
 </body>
 </html>

@@ -2,10 +2,7 @@
   "name": "gawvertretung",
   "version": "1.0.0",
   "description": "Vertretungsplan für das Gymnasium am Wall Verden",
-  "__main": "index.js",
-  "scripts": {
-    "__test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "private": true,
   "repository": {
     "type": "git",
     "url": ".git"

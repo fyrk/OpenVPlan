@@ -1,5 +1,22 @@
-const dates = document.getElementsByClassName("date");
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.min.js")
+        .then((registration) => {
+            console.log("Service worker registration succeeded:", registration);
+                if ("PushManager" in window) {
+                    window.Notification.requestPermission()
+                        .then(permission => {
+                                // value of permission can be 'granted', 'default', 'denied'
 
+                            if(permission !== 'granted'){
+                                throw new Error("Permission not granted for Notification:", permission);
+                            }
+                        });
+                }
+        })
+        .catch(reason => console.log("Service worker registration failed:", reason));
+}
+
+const dates = document.getElementsByClassName("date");
 
 function greySubstitutions() {
     const now = new Date();
@@ -31,3 +48,37 @@ function greySubstitutions() {
 }
 
 greySubstitutions();
+
+let type = window.location.pathname.split(1)[1];
+if (!type)
+    type = "students"
+const socket = new WebSocket("ws://localhost:8080/api/" + type + "/wait-for-update");
+
+socket.onopen = event => {
+    console.log("WebSocket open", event);
+}
+socket.onclose = event => {
+    console.log("WebSocket close", event);
+}
+socket.onmessage = event => {
+    const msg = JSON.parse(event.data);
+    console.log("onmessage", msg);
+    console.log("hello");
+    window.location.reload();
+}
+
+const onlineStatus = document.getElementById("online-status");
+function onOnline(event) {
+    onlineStatus.textContent = "Aktuell";
+    onlineStatus.classList.add("online");
+    onlineStatus.classList.remove("offline");
+}
+onOnline(null);
+
+window.onoffline = event => {
+    onlineStatus.textContent = "Keine Verbindung zum Server";
+    onlineStatus.classList.add("offline");
+    onlineStatus.classList.remove("online");
+}
+
+window.ononline = onOnline;
