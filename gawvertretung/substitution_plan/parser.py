@@ -11,7 +11,7 @@ from .storage import (StudentSubstitution, TeacherSubstitution, SubstitutionDay,
 from .utils import create_date_timestamp, split_class_name
 
 
-INCLUDE_OUTDATED_SUBSTITUTIONS = config.get_bool("dev")
+INCLUDE_OUTDATED_SUBSTITUTIONS = config.get_bool("include_outdated_substitutions")
 
 
 _REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")

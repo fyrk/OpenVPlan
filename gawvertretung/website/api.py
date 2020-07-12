@@ -5,7 +5,7 @@ from aiohttp import web
 from ..substitution_plan.loader import BaseSubstitutionLoader
 from ..substitution_plan.utils import split_selection
 
-logger = logging.getLogger()
+_LOGGER = logging.getLogger()
 
 
 class SubstitutionAPI:
@@ -23,4 +23,4 @@ class SubstitutionAPI:
             selection = split_selection(",".join(request.query.getall("s")))
         else:
             selection = None
-        return web.json_response(self.substitution_loader.storage.to_data(selection))
+        return web.json_response(self.substitution_loader._storage.to_data(selection))

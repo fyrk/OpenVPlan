@@ -14,6 +14,19 @@ class SubstitutionStorage(SortedDict):
         super().__init__()
         self._status = status
 
+    @classmethod
+    def _unpickle(cls, key, items, status):
+        s = cls.__new__(cls)
+        SortedDict.__init__(s, key, items)
+        s._status = status
+        return s
+
+    def __reduce__(self):
+        # this method is overridden so that unpickling works
+        # it doesn't work with SortedDict's __reduce__ because it calls __init__ - but __init__ has been overridden
+        items = dict.copy(self)
+        return self._unpickle, (self._key, items, self._status)
+
     @property
     def status(self):
         return self._status

@@ -22,8 +22,8 @@ $bookmark-icon-width: 1.2rem;
 
 @import "bootstrap/scss/functions";
 @import "bootstrap/scss/variables";
-@import "bootstrap/scss/mixins/text-truncate";
 @import "bootstrap/scss/mixins/breakpoints";
+@import "bootstrap/scss/mixins/text-truncate";
 @import "bootstrap/scss/mixins/hover";
 @import "bootstrap/scss/mixins/deprecate";
 @import "bootstrap/scss/mixins/text-emphasis";
@@ -39,6 +39,7 @@ $bookmark-icon-width: 1.2rem;
 @import "bootstrap/scss/mixins/forms";
 @import "bootstrap/scss/mixins/gradients";
 @import "bootstrap/scss/mixins/buttons";
+@import "bootstrap/scss/mixins/clearfix";
 
 @import "bootstrap/scss/utilities/text";
 @import "bootstrap/scss/utilities/flex";
@@ -149,6 +150,7 @@ body, html {
 }
 
 .status-box {
+    @include clearfix;
     padding-top: 0.8rem;
     padding-bottom: 0.8rem;
 }
@@ -230,6 +232,7 @@ body, html {
     display: inline-block;
     animation: blink 2.5s infinite;
 }
+
 @keyframes blink {
     0% {
         opacity: 1;

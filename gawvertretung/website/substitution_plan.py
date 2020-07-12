@@ -11,7 +11,7 @@ from ..substitution_plan.loader import BaseSubstitutionLoader
 from ..substitution_plan.utils import split_selection
 
 
-logger = logging.getLogger("gawvertretung")
+_LOGGER = logging.getLogger("gawvertretung")
 
 
 class SubstitutionPlan:
@@ -23,14 +23,20 @@ class SubstitutionPlan:
         self._index_site = None
         self._event_new_substitutions = asyncio.Event()
 
+    def serialize(self, filepath: str):
+        self._substitution_loader.serialize(filepath)
+
+    def deserialize(self, filepath: str):
+        self._substitution_loader.deserialize(filepath)
+
     def _prettify_selection(self, selection: List[str]) -> str:
         return ", ".join(selection)
 
     async def _recreate_index_site(self):
-        self._index_site = await self._template.render_async(storage=self._substitution_loader.storage)
+        self._index_site = await self._template.render_async(storage=self._substitution_loader._storage)
 
     async def handler(self, request: web.Request) -> web.Response:
-        logger.info("Request", request)
+        _LOGGER.info(f"{request.method} {request.path}")
         substitutions_have_changed = False
         # noinspection PyBroadException
         try:
@@ -46,7 +52,14 @@ class SubstitutionPlan:
                 selection = [s.upper() for s in selection]
                 response = web.Response(text=await self._template.render_async(
                     storage=self._substitution_loader.storage, selection=selection, selection_str=selection_str),
-                                    content_type="text/html", charset="utf-8")
+                                        content_type="text/html", charset="utf-8")
+                if substitutions_have_changed:
+                    await response.prepare(request)
+                    await response.write_eof()
+                    if not config.get_bool("dev"):
+                        self._event_new_substitutions.set()
+                        self._event_new_substitutions.clear()
+                    await self._recreate_index_site()
             else:
                 if substitutions_have_changed:
                     await self._recreate_index_site()
@@ -58,33 +71,29 @@ class SubstitutionPlan:
                     self._event_new_substitutions.clear()
                 return response
         except Exception:
-            logger.exception("Exception occurred while handling request")
-            response = web.Response(text=await self._error500_template.render_async(), content_type="text/html",
-                                    charset="utf-8")
-        if substitutions_have_changed:
-            await response.prepare(request)
-            await response.write_eof()
-            self._event_new_substitutions.set()
-            self._event_new_substitutions.clear()
-            await self._recreate_index_site()
+            _LOGGER.exception("Exception occurred while handling request")
+            response = web.Response(text=await self._error500_template.render_async(), status=500,
+                                    content_type="text/html", charset="utf-8")
         return response
 
     async def wait_for_update_handler(self, request: web.Request):
-        logger.info("wait-for-update " + str(request.url))
         ws = web.WebSocketResponse()
+        if not ws.can_prepare(request):
+            raise web.HTTPNotFound()
+        _LOGGER.info(f"WEBSOCKET {request.path}")
         await ws.prepare(request)
 
         async def listen():
             msg: WSMessage
             async for msg in ws:
-                logger.debug("Got message " + str(msg))
+                _LOGGER.debug("Got message " + str(msg))
                 if msg.type in (aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.ERROR):
                     return
 
         async def send():
             while True:
                 await self._event_new_substitutions.wait()
-                logger.debug("Send substitutions")
+                _LOGGER.debug("Send substitutions")
                 await ws.send_json({"hello": "world"})
 
         listener = asyncio.ensure_future(send())

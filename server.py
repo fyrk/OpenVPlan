@@ -3,9 +3,9 @@ import logging
 import os
 import secrets
 import sys
-
 import time
 
+import atexit
 import jinja2
 from aiohttp import client, http, hdrs, web
 from aiohttp.web_fileresponse import FileResponse
@@ -91,8 +91,12 @@ async def logging_middleware(request: web.Request, handler):
     token = request_id_contextvar.set(req_id)
     try:
         response: web.Response = await handler(request)
-        _LOGGER.info(f'{request.method} {request.path} {response.status} {response.body_length} '
-                     f'{time.perf_counter_ns()-t1}ns "{request.headers.get(hdrs.USER_AGENT, "-")}"')
+        try:
+            user_agent = '"' + request.headers[hdrs.USER_AGENT].replace('"', '\"') + '"'
+        except KeyError:
+            user_agent = "-"
+        _LOGGER.info(f"{request.method} {request.path} {response.status} {response.body_length} "
+                     f"{time.perf_counter_ns()-t1}ns {user_agent}")
         return response
     finally:
         request_id_contextvar.reset(token)
@@ -119,10 +123,13 @@ async def error_middleware(request: web.Request, handler):
         return await handler(request)
     except web.HTTPException as e:
         if e.status == 404:
-            return web.Response(text=await TEMPLATE_ERROR404.render_async(), content_type="text/html", charset="utf-8")
+            return web.Response(text=await TEMPLATE_ERROR404.render_async(), status=404, content_type="text/html",
+                                charset="utf-8")
+        _LOGGER.exception(f"{request.method} {request.path} HTTPException while handling request")
     except Exception:
         _LOGGER.exception(f"{request.method} {request.path} Exception while handling request")
-    return web.Response(text=await TEMPLATE_ERROR500_STUDENTS.render_async(), content_type="text/html", charset="utf-8")
+    return web.Response(text=await TEMPLATE_ERROR500_STUDENTS.render_async(), status=500, content_type="text/html",
+                        charset="utf-8")
 
 
 def template_handler(template: jinja2.Template):
@@ -142,12 +149,22 @@ async def client_session(app: web.Application):
 async def app_factory(host, port, dev_mode=False):
     app = web.Application(middlewares=[logging_middleware, stats_middleware, error_middleware])
     _LOGGER.info(f"Starting server on {host}:{port}{' in dev mode' if dev_mode else ''}")
+
     loader_students = StudentSubstitutionLoader(URL_STUDENTS, "students")
     loader_students.on_status_changed = stats.add_last_site
     plan_students = SubstitutionPlan(loader_students, TEMPLATE_STUDENTS, TEMPLATE_ERROR500_STUDENTS)
+    plan_students.deserialize("data/substitutions/students.pickle")
+
     loader_teachers = TeacherSubstitutionLoader(URL_TEACHERS, "teachers")
     loader_teachers.on_status_changed = stats.add_last_site
     plan_teachers = SubstitutionPlan(loader_teachers, TEMPLATE_TEACHERS, TEMPLATE_ERROR500_TEACHERS)
+    plan_teachers.deserialize("data/substitutions/teachers.pickle")
+
+    def serialize_substitutions():
+        plan_students.serialize("data/substitutions/students.pickle")
+        plan_teachers.serialize("data/substitutions/teachers.pickle")
+
+    atexit.register(serialize_substitutions)
 
     app.add_routes([
         web.get("/", plan_students.handler),

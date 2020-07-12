@@ -56,9 +56,11 @@ const socket = new WebSocket("ws://localhost:8080/api/" + type + "/wait-for-upda
 
 socket.onopen = event => {
     console.log("WebSocket open", event);
+    onOnline(event);
 }
 socket.onclose = event => {
     console.log("WebSocket close", event);
+    onOffline(event);
 }
 socket.onmessage = event => {
     const msg = JSON.parse(event.data);
@@ -73,12 +75,11 @@ function onOnline(event) {
     onlineStatus.classList.add("online");
     onlineStatus.classList.remove("offline");
 }
-onOnline(null);
-
-window.onoffline = event => {
+function onOffline(event) {
     onlineStatus.textContent = "Keine Verbindung zum Server";
     onlineStatus.classList.add("offline");
     onlineStatus.classList.remove("online");
 }
 
 window.ononline = onOnline;
+window.onoffline = onOffline;

@@ -1,12 +1,10 @@
-import asyncio
 import datetime
 import logging
 import os.path
-import time
 
 from aiohttp import web, hdrs
 
-logger = logging.getLogger("gawvertretung")
+_LOGGER = logging.getLogger("gawvertretung")
 
 
 class Stats:
