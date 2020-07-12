@@ -1,20 +1,5 @@
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.min.js")
-        .then((registration) => {
-            console.log("Service worker registration succeeded:", registration);
-                if ("PushManager" in window) {
-                    window.Notification.requestPermission()
-                        .then(permission => {
-                                // value of permission can be 'granted', 'default', 'denied'
-
-                            if(permission !== 'granted'){
-                                throw new Error("Permission not granted for Notification:", permission);
-                            }
-                        });
-                }
-        })
-        .catch(reason => console.log("Service worker registration failed:", reason));
-}
+// ==================
+// GREY SUBSTITUTIONS
 
 const dates = document.getElementsByClassName("date");
 
@@ -49,23 +34,26 @@ function greySubstitutions() {
 
 greySubstitutions();
 
+
+// =================
+// WEBSOCKET UPDATES
+
 let type = window.location.pathname.split(1)[1];
 if (!type)
     type = "students"
 const socket = new WebSocket("ws://localhost:8080/api/" + type + "/wait-for-update");
 
 socket.onopen = event => {
-    console.log("WebSocket open", event);
+    console.log("WebSocket opened", event);
     onOnline(event);
 }
 socket.onclose = event => {
-    console.log("WebSocket close", event);
+    console.log("WebSocket closed", event);
     onOffline(event);
 }
 socket.onmessage = event => {
     const msg = JSON.parse(event.data);
-    console.log("onmessage", msg);
-    console.log("hello");
+    console.log("WebSocket message", msg);
     window.location.reload();
 }
 
@@ -81,5 +69,86 @@ function onOffline(event) {
     onlineStatus.classList.remove("online");
 }
 
-window.ononline = onOnline;
-window.onoffline = onOffline;
+
+// ============
+// PUSH NOTIFICATIONS
+
+const selection = document.getElementById("selectionInput").value;
+
+const notificationsBlock = document.getElementById("notifications-block");
+const toggleNotifications = document.getElementById("toggle-notifications");
+const notificationsInfo_none = document.getElementById("notifications-info-none");
+const notificationsInfo_all = document.getElementById("notifications-info-all");
+const notificationsInfo_selection = document.getElementById("notifications-info-selection");
+const notificationsInfo_selectionContent = document.getElementById("notifications-info-selection-content");
+let swRegistration;
+let isSubscribed;
+
+function onNotificationsDenied() {
+    toggleNotifications.disabled = true;
+    notificationsInfo.textContent = "Du hast Benachrichtigungen vom Vertretungsplan blockiert.";
+    notificationsInfo.classList.add("text-danger");
+}
+
+function onNotificationsAvailable() {
+    notificationsBlock.hidden = false;
+    if ("Notification" in window) {
+        switch (Notification.permission) {
+            case "denied":
+                onNotificationsDenied();
+                break;
+        }
+    }
+    swRegistration.pushManager.getSubscription()
+        .then(subscription => {
+            isSubscribed = subscription !== null;
+
+        });
+    toggleNotifications.addEventListener("change", event => {
+        if (toggleNotifications.checked) {
+            window.Notification.requestPermission()
+                .then(permission => {
+                    switch (permission) {
+                        case "denied":
+                            toggleNotifications.checked = false;
+                            onNotificationsDenied();
+                            break;
+                        case "default":
+                            toggleNotifications.checked = false;
+                            break;
+                        case "granted":
+                            notificationsInfo_none.hidden = true;
+                            if (selection !== "") {
+                                notificationsInfo_selectionContent.textContent = selection;
+                                notificationsInfo_selection.hidden = false;
+                            } else {
+                                notificationsInfo_all.hidden = false;
+                            }
+                            break;
+                    }
+                });
+        } else {
+            notificationsInfo_all.hidden = true;
+            notificationsInfo_selection.hidden = true;
+            notificationsInfo_none.hidden = false;
+        }
+    });
+}
+
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.min.js")
+            .then(registration => {
+                swRegistration = registration;
+                console.log("ServiceWorker registration successful:", registration);
+                if ("PushManager" in window) {
+                    onNotificationsAvailable();
+                } else {
+                    console.warn("PushManager is not supported");
+                }
+            })
+            .catch(reason => console.warn("ServiceWorker registration failed:", reason))
+    });
+} else {
+    console.warn("ServiceWorker is not supported");
+}

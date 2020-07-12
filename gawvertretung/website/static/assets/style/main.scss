@@ -58,6 +58,7 @@ $bookmark-icon-width: 1.2rem;
 @import "bootstrap/scss/tables";
 @import "bootstrap/scss/nav";
 @import "bootstrap/scss/forms";
+@import "bootstrap/scss/custom-forms";
 @import "bootstrap/scss/buttons";
 
 
@@ -113,15 +114,20 @@ body, html {
     }
 }
 
-.title-box {
-    text-align: center;
-    background-color: theme-color("secondary");
-    padding: $spacer * .8;
-    font-size: $font-size-base * 1.65;
+.no-select {
+
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+.title-box {
+    @extend .no-select;
+    text-align: center;
+    background-color: theme-color("secondary");
+    padding: $spacer * .8;
+    font-size: $font-size-base * 1.65;
 
     .selection {
         color: theme-color("primary");

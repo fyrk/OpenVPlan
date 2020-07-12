@@ -95,7 +95,7 @@ async def logging_middleware(request: web.Request, handler):
             user_agent = '"' + request.headers[hdrs.USER_AGENT].replace('"', '\"') + '"'
         except KeyError:
             user_agent = "-"
-        _LOGGER.info(f"{request.method} {request.path} {response.status} {response.body_length} "
+        _LOGGER.info(f"{request.method} {request.path} {response.status} {response.body_length} {response.content_type}"
                      f"{time.perf_counter_ns()-t1}ns {user_agent}")
         return response
     finally:
@@ -105,13 +105,19 @@ async def logging_middleware(request: web.Request, handler):
 @web.middleware
 async def stats_middleware(request: web.Request, handler):
     response: web.Response = await handler(request)
-    if not response.prepared and type(response) != FileResponse:
-        # noinspection PyBroadException
-        try:
-            await response.prepare(request)
-            await response.write_eof()
-        except Exception:
-            _LOGGER.exception("Exception occurred while preparing and writing response")
+    if not response.prepared:
+        if type(response) != FileResponse:
+            # noinspection PyBroadException
+            try:
+                await response.prepare(request)
+                await response.write_eof()
+            except Exception:
+                _LOGGER.exception("Exception occurred while preparing and writing response")
+        else:
+            if request.path.endswith("js"):
+                response.content_type = "text/javascript"
+            elif request.path.endswith(".css"):
+                response.content_type = "text/css"
     await stats.new_request(request, response)
     return response
 
@@ -178,7 +184,7 @@ async def app_factory(host, port, dev_mode=False):
     ])
 
     if dev_mode:
-        app.router.add_static("/", STATIC_PATH)
+        app.router.add_static("/", STATIC_PATH, )
 
     app.cleanup_ctx.append(client_session)
 

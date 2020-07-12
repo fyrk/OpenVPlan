@@ -1,5 +1,5 @@
 .DS_Store
-bot/secret.json
+secret_config.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

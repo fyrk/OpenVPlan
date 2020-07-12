@@ -4,6 +4,7 @@
     <span>Stand: {{ storage.status }}</span>
     <span class="float-right" id="online-status"></span>
 </div>
+
 {%- for day in storage.values() -%}
 {%- set day_loop = loop -%}
 <div class="box">
@@ -79,6 +80,7 @@
     Es gibt keine Vertretungen.
 </div>
 {%- endfor -%}
+
 <div class="box">
     <h2>{% block select_heading %}{% endblock %}</h2>
     <form class="form" type="get">
@@ -88,7 +90,8 @@
                 <input type="text" class="form-control" id="selectionInput" name="s" required
                        value="{%- if selection -%}{{ selection_str }}{%- endif -%}" aria-describedby="selectionHelp" >
                 <small id="selectionHelp" class="form-text text-muted">
-                    {% block selection_help_text %}{% endblock %}</small>
+                    {% block selection_help_text %}{% endblock %}
+                </small>
             </div>
             <div class="col-3 col-sm-1 col-md-1">
                 <button type="submit" class="btn btn-primary mb-2">OK</button>
@@ -96,8 +99,18 @@
         </div>
     </form>
 
-    <h2 class="mt-4">{% block push_notifications_heading %}Benachrichtigungen{% endblock %}</h2>
-
+    <div id="notifications-block" hidden>
+        <h2 class="mt-4">{% block push_notifications_heading %}Benachrichtigungen{% endblock %}</h2>
+        Erhalte Push-Benachrichtigungen, wenn es neue Vertretungen gibt.
+        <div class="custom-control custom-switch mt-3">
+            <input type="checkbox" class="custom-control-input" id="toggle-notifications">
+            <label class="custom-control-label no-select" for="toggle-notifications" id="notifications-info">
+                <span id="notifications-info-none">Benachrichtigungen sind deaktiviert</span>
+                <span id="notifications-info-all" hidden>{% block notifications_info_all %}{% endblock %}</span>
+                <span id="notifications-info-selection" hidden>{% block notifications_info_selection %}{% endblock %}<span id="notifications-info-selection-content"></span></span>
+            </label>
+        </div>
+    </div>
 </div>
 {%- endblock -%}
 

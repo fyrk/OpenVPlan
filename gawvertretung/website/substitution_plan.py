@@ -67,8 +67,9 @@ class SubstitutionPlan:
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
-                    self._event_new_substitutions.set()
-                    self._event_new_substitutions.clear()
+                    if not config.get_bool("dev"):
+                        self._event_new_substitutions.set()
+                        self._event_new_substitutions.clear()
                 return response
         except Exception:
             _LOGGER.exception("Exception occurred while handling request")
