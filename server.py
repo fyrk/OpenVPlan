@@ -11,18 +11,13 @@ from aiohttp import client, http, hdrs, web
 from aiohttp.web_fileresponse import FileResponse
 
 from gawvertretung import config
+from gawvertretung.db.db import SubstitutionPlanDBStorage
 from gawvertretung.substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
 from gawvertretung.website.stats import Stats
 from gawvertretung.website.substitution_plan import SubstitutionPlan
 
 
 __version__ = "3.0"
-
-URL_STUDENTS = config.get_str("url_students")
-URL_TEACHERS = config.get_str("url_teachers")
-REQUEST_USER_AGENT = config.get_str("user_agent", "GaWVertretungBot").format(version=__version__,
-                                                                             server_software=http.SERVER_SOFTWARE)
-REQUEST_HEADERS = {hdrs.USER_AGENT: REQUEST_USER_AGENT}
 
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -43,8 +38,11 @@ def init_logger(filepath):
     _LOGGER.addHandler(stdout_logger)
 
 
-TEMPLATES_PATH = os.path.join(WORKING_DIR, "gawvertretung/website/templates")
-TEMPLATES_CACHE_PATH = os.path.join(WORKING_DIR, "data/template_cache/")
+REQUEST_USER_AGENT = config.get_str("user_agent", "GaWVertretungBot").format(version=__version__,
+                                                                             server_software=http.SERVER_SOFTWARE)
+REQUEST_HEADERS = {hdrs.USER_AGENT: REQUEST_USER_AGENT}
+
+
 STATIC_PATH = os.path.join(WORKING_DIR, "gawvertretung/website/static/")
 STATS_PATH = os.path.join(WORKING_DIR, "data/stats/")
 
@@ -52,19 +50,16 @@ STATS_PATH = os.path.join(WORKING_DIR, "data/stats/")
 stats = Stats(STATS_PATH)
 
 env = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(TEMPLATES_PATH),
-    bytecode_cache=jinja2.FileSystemBytecodeCache(TEMPLATES_CACHE_PATH),
+    loader=jinja2.FileSystemLoader(os.path.join(WORKING_DIR, "gawvertretung/website/templates")),
+    bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(WORKING_DIR, "data/template_cache/")),
     autoescape=jinja2.select_autoescape(["html"]),
     enable_async=True,
     trim_blocks=True,
     lstrip_blocks=True)
-TEMPLATE_STUDENTS = env.get_template("substitution-plan-students.min.html")
-TEMPLATE_TEACHERS = env.get_template("substitution-plan-teachers.min.html")
 TEMPLATE_PRIVACY = env.get_template("privacy.min.html")
 TEMPLATE_ABOUT = env.get_template("about.min.html")
-TEMPLATE_ERROR404 = env.get_template("error-404.html")
-TEMPLATE_ERROR500_STUDENTS = env.get_template("error-500-students.html")
-TEMPLATE_ERROR500_TEACHERS = env.get_template("error-500-teachers.html")
+TEMPLATE_ERROR404 = env.get_template(config.get_str("template404"))
+TEMPLATE_ERROR500 = env.get_template(config.get_str("template500"))
 
 request_id_contextvar = contextvars.ContextVar("request_id")
 
@@ -95,7 +90,7 @@ async def logging_middleware(request: web.Request, handler):
             user_agent = '"' + request.headers[hdrs.USER_AGENT].replace('"', '\"') + '"'
         except KeyError:
             user_agent = "-"
-        _LOGGER.info(f"{request.method} {request.path} {response.status} {response.body_length} {response.content_type}"
+        _LOGGER.info(f"{request.method} {request.path} {response.status} {response.body_length} "
                      f"{time.perf_counter_ns()-t1}ns {user_agent}")
         return response
     finally:
@@ -131,10 +126,10 @@ async def error_middleware(request: web.Request, handler):
         if e.status == 404:
             return web.Response(text=await TEMPLATE_ERROR404.render_async(), status=404, content_type="text/html",
                                 charset="utf-8")
-        _LOGGER.exception(f"{request.method} {request.path} HTTPException while handling request")
+        raise e from None
     except Exception:
         _LOGGER.exception(f"{request.method} {request.path} Exception while handling request")
-    return web.Response(text=await TEMPLATE_ERROR500_STUDENTS.render_async(), status=500, content_type="text/html",
+    return web.Response(text=await TEMPLATE_ERROR500.render_async(), status=500, content_type="text/html",
                         charset="utf-8")
 
 
@@ -145,40 +140,55 @@ def template_handler(template: jinja2.Template):
     return handler
 
 
-async def client_session(app: web.Application):
+async def client_session_context(app: web.Application):
     _LOGGER.debug("Create ClientSession")
-    app["client_session"] = client.ClientSession(headers=REQUEST_HEADERS)
+    session = client.ClientSession(headers=REQUEST_HEADERS)
+    for substitution_plan in app["substitution_plans"].values():
+        substitution_plan.client_session = session
     yield
-    await app["client_session"].close()
+    await session.close()
+
+
+async def databases_context(app: web.Application):
+    for substitution_plan in app["substitution_plans"].values():
+        storage = SubstitutionPlanDBStorage("data/storage/" + substitution_plan.name + ".sqlite3")
+        substitution_plan.storage = storage
+    yield
+    for substitution_plan in app["substitution_plans"].values():
+        substitution_plan.storage.close()
 
 
 async def app_factory(host, port, dev_mode=False):
     app = web.Application(middlewares=[logging_middleware, stats_middleware, error_middleware])
     _LOGGER.info(f"Starting server on {host}:{port}{' in dev mode' if dev_mode else ''}")
 
-    loader_students = StudentSubstitutionLoader(URL_STUDENTS, "students")
-    loader_students.on_status_changed = stats.add_last_site
-    plan_students = SubstitutionPlan(loader_students, TEMPLATE_STUDENTS, TEMPLATE_ERROR500_STUDENTS)
-    plan_students.deserialize("data/substitutions/students.pickle")
+    app["substitution_plans"] = {}
+    for name, plan_config in config.get("substitution_plans").items():
+        loader_name = plan_config["loader"]
+        url = plan_config["url"]
+        template_name = plan_config["template"]
+        template500_name = plan_config["template500"]
+        loader = {"StudentSubstitutionLoader": StudentSubstitutionLoader,
+                  "TeacherSubstitutionLoader": TeacherSubstitutionLoader}[loader_name](url, name)
+        loader.on_status_changed = stats.add_last_site
+        plan = SubstitutionPlan(name, loader, env.get_template(template_name), env.get_template(template500_name))
 
-    loader_teachers = TeacherSubstitutionLoader(URL_TEACHERS, "teachers")
-    loader_teachers.on_status_changed = stats.add_last_site
-    plan_teachers = SubstitutionPlan(loader_teachers, TEMPLATE_TEACHERS, TEMPLATE_ERROR500_TEACHERS)
-    plan_teachers.deserialize("data/substitutions/teachers.pickle")
+        plan.deserialize(f"data/substitutions/{name}.pickle")
+
+        app.add_subapp(f"/{name}/", plan.create_app())
+
+        app["substitution_plans"][name] = plan
 
     def serialize_substitutions():
-        plan_students.serialize("data/substitutions/students.pickle")
-        plan_teachers.serialize("data/substitutions/teachers.pickle")
-
+        for name, plan in app["substitution_plans"].items():
+            plan.serialize(f"data/substitutions/{name}.pickle")
     atexit.register(serialize_substitutions)
 
+    async def root_handler(request: web.Request):
+        raise web.HTTPPermanentRedirect(location=f"/{config.get('default_plan')}/")
+
     app.add_routes([
-        web.get("/", plan_students.handler),
-        web.get("/teachers", plan_teachers.handler),
-
-        web.get("/api/students/wait-for-update", plan_students.wait_for_update_handler),
-        web.get("/api/teachers/wait-for-update", plan_teachers.wait_for_update_handler),
-
+        web.get("/", root_handler),
         web.get("/privacy", template_handler(TEMPLATE_PRIVACY)),
         web.get("/about", template_handler(TEMPLATE_ABOUT))
     ])
@@ -186,7 +196,7 @@ async def app_factory(host, port, dev_mode=False):
     if dev_mode:
         app.router.add_static("/", STATIC_PATH, )
 
-    app.cleanup_ctx.append(client_session)
+    app.cleanup_ctx.extend((client_session_context, databases_context))
 
     return app
 

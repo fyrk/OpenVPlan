@@ -38,20 +38,22 @@ greySubstitutions();
 // =================
 // WEBSOCKET UPDATES
 
-let type = window.location.pathname.split(1)[1];
-if (!type)
-    type = "students"
-const socket = new WebSocket("ws://localhost:8080/api/" + type + "/wait-for-update");
+let substitutionPlanType = window.location.pathname.split(1)[1];
+if (!substitutionPlanType)
+    substitutionPlanType = "students"
 
-socket.onopen = event => {
+const ws = new WebSocket(
+    (window.location.protocol === "http:" ? "ws:" : "wss:") + "//" +
+    window.location.host + window.location.pathname + "api/wait-for-updates");
+ws.onopen = event => {
     console.log("WebSocket opened", event);
     onOnline(event);
 }
-socket.onclose = event => {
+ws.onclose = event => {
     console.log("WebSocket closed", event);
     onOffline(event);
 }
-socket.onmessage = event => {
+ws.onmessage = event => {
     const msg = JSON.parse(event.data);
     console.log("WebSocket message", msg);
     window.location.reload();
@@ -81,24 +83,72 @@ const notificationsInfo_none = document.getElementById("notifications-info-none"
 const notificationsInfo_all = document.getElementById("notifications-info-all");
 const notificationsInfo_selection = document.getElementById("notifications-info-selection");
 const notificationsInfo_selectionContent = document.getElementById("notifications-info-selection-content");
+const notificationsInfo_blocked = document.getElementById("notifications-info-blocked");
 let swRegistration;
 let isSubscribed;
 
-function onNotificationsDenied() {
-    toggleNotifications.disabled = true;
-    notificationsInfo.textContent = "Du hast Benachrichtigungen vom Vertretungsplan blockiert.";
-    notificationsInfo.classList.add("text-danger");
+function base64UrlToUint8Array(base64UrlData) {
+    const padding = '='.repeat((4 - base64UrlData.length % 4) % 4);
+    const base64 = (base64UrlData + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+    const rawData = atob(base64);
+    const buffer = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+        buffer[i] = rawData.charCodeAt(i);
+    }
+
+    return buffer;
+}
+console.log(window.location);
+
+function onGotNotificationPermission(permission) {
+    switch (permission) {
+        case "granted":
+            notificationsInfo_none.hidden = true;
+            if (selection !== "") {
+                notificationsInfo_selectionContent.textContent = selection;
+                notificationsInfo_selection.hidden = false;
+            } else {
+                notificationsInfo_all.hidden = false;
+            }
+            swRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: base64UrlToUint8Array("BDu6tTwQHFlGb36-pLCzwMdgumSlyj_vqMR3I1KahllZd3v2se-LM25vhP3Yv_y0qXYx_KPOVOD2EYTaJaibzo8")
+            }).then(subscription => {
+                console.log("Subscription", subscription);
+                fetch(window.location.origin + window.location.pathname + "api/subscribe-push", {
+                    method: "post",
+                    "headers": {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: true})
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.ok) {
+                            // TODO subscribing failed
+                        }
+                    });
+            }).catch(reason => console.warn("Unable to subscribe to push", reason));
+            break;
+        case "denied":
+            toggleNotifications.checked = false;
+            toggleNotifications.disabled = true;
+            notificationsInfo_none.hidden = true;
+            notificationsInfo_blocked.hidden = false;
+            break;
+        case "default":
+            toggleNotifications.checked = false;
+            break;
+    }
 }
 
 function onNotificationsAvailable() {
     notificationsBlock.hidden = false;
-    if ("Notification" in window) {
-        switch (Notification.permission) {
-            case "denied":
-                onNotificationsDenied();
-                break;
-        }
-    }
+    onGotNotificationPermission(Notification.permission);
     swRegistration.pushManager.getSubscription()
         .then(subscription => {
             isSubscribed = subscription !== null;
@@ -107,32 +157,22 @@ function onNotificationsAvailable() {
     toggleNotifications.addEventListener("change", event => {
         if (toggleNotifications.checked) {
             window.Notification.requestPermission()
-                .then(permission => {
-                    switch (permission) {
-                        case "denied":
-                            toggleNotifications.checked = false;
-                            onNotificationsDenied();
-                            break;
-                        case "default":
-                            toggleNotifications.checked = false;
-                            break;
-                        case "granted":
-                            notificationsInfo_none.hidden = true;
-                            if (selection !== "") {
-                                notificationsInfo_selectionContent.textContent = selection;
-                                notificationsInfo_selection.hidden = false;
-                            } else {
-                                notificationsInfo_all.hidden = false;
-                            }
-                            break;
-                    }
-                });
+                .then(permission => onGotNotificationPermission(permission));
         } else {
             notificationsInfo_all.hidden = true;
             notificationsInfo_selection.hidden = true;
             notificationsInfo_none.hidden = false;
         }
     });
+
+    swRegistration.pushManager.getSubscription()
+        .then(subscription => {
+            if (subscription == null) {
+                console.log("Not subscribed to push service");
+            } else {
+                console.log("Subscription object:", subscription);
+            }
+        });
 }
 
 if ("serviceWorker" in navigator) {
@@ -141,13 +181,12 @@ if ("serviceWorker" in navigator) {
             .then(registration => {
                 swRegistration = registration;
                 console.log("ServiceWorker registration successful:", registration);
-                if ("PushManager" in window) {
+                if ("PushManager" in window && "Notification" in window) {
                     onNotificationsAvailable();
                 } else {
-                    console.warn("PushManager is not supported");
+                    console.warn("PushManager and/or Notification is not supported");
                 }
-            })
-            .catch(reason => console.warn("ServiceWorker registration failed:", reason))
+            }).catch(reason => console.warn("ServiceWorker registration failed:", reason))
     });
 } else {
     console.warn("ServiceWorker is not supported");

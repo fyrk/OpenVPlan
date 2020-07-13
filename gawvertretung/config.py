@@ -26,6 +26,10 @@ def load(filepath="config.json", filepath_secret="secret_config.json"):
 load()
 
 
+def get(key: str, default=None):
+    return _CONFIG.get(key, default)
+
+
 def get_str(key: str, default=""):
     try:
         return str(_CONFIG.get(key, default))

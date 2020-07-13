@@ -34,14 +34,19 @@ class SubstitutionStorage(SortedDict):
     def to_data(self, selection=None):
         return [day.to_data(selection) for day in self.values()]
 
-    def mark_new_substitutions(self, old_storage: "SubstitutionStorage"):
+    def mark_new_substitutions(self, old_storage: "SubstitutionStorage") -> Set[str]:
+        """
+        :return: a set of group names which are affected by new substitutions
+        """
+        affected_groups = set()
         for day in self.values():
             try:
                 old_day = old_storage[day.timestamp]
             except KeyError:
                 pass
             else:
-                day.mark_new_substitutions(old_day)
+                affected_groups.update(day.mark_new_substitutions(old_day))
+        return affected_groups
 
     # noinspection PyUnresolvedReferences
     def remove_old_days(self, current_timestamp: int):
@@ -87,14 +92,20 @@ class SubstitutionDay:
                                               ("groups", [g.to_data() for g in self.iter_groups(selection)])
                                               ) if value is not None}
 
-    def mark_new_substitutions(self, old_day: "SubstitutionDay"):
+    def mark_new_substitutions(self, old_day: "SubstitutionDay") -> Set[str]:
+        affected_groups: Set[str] = set()
         for name, group in self._group_name2group.items():
             try:
                 old_group = old_day.get_group(name)
             except KeyError:
                 group.mark_all_substitutions_as_new()
+                if group.affected_groups_pretty is not None:
+                    affected_groups.update(group.affected_groups_pretty)
             else:
-                group.mark_new_substitutions(old_group.substitutions)
+                if group.mark_new_substitutions(old_group.substitutions):
+                    # at least one substitution in group 'group' is new
+                    affected_groups.update(group.affected_groups_pretty)
+        return affected_groups
 
 
 @dataclasses.dataclass
@@ -175,10 +186,13 @@ class BaseSubstitutionGroup(ABC):
             return False
         return any(g in selection for g in self.affected_groups)
 
-    def mark_new_substitutions(self, old_substitutions: List["BaseSubstitution"]):
+    def mark_new_substitutions(self, old_substitutions: List["BaseSubstitution"]) -> bool:
+        has_new_substitutions = False
         for s in self.substitutions:
             if s not in old_substitutions:
+                has_new_substitutions = True
                 s.is_new = True
+        return has_new_substitutions
 
     def mark_all_substitutions_as_new(self):
         for s in self.substitutions:

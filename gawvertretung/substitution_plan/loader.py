@@ -4,7 +4,7 @@ import io
 import logging
 import pickle
 import time
-from typing import Type, Union, Any, Optional, Callable, IO
+from typing import Type, Union, Any, Optional, Callable, IO, Tuple, Set
 
 import aiohttp
 from aiohttp import client
@@ -78,7 +78,7 @@ class BaseSubstitutionLoader:
             if self._storage is not None:
                 _LOGGER.debug(f"Loaded substitutions from '{filepath}' with status '{self._storage.status}'")
 
-    async def update(self, session: aiohttp.ClientSession) -> bool:
+    async def update(self, session: aiohttp.ClientSession) -> Tuple[bool, Optional[Set[str]]]:
         _LOGGER.debug(f"[{self._plan_name}] Requesting first site ...")
         t1 = time.perf_counter_ns()
         async with session.get(self._url_first_site) as r:
@@ -89,10 +89,11 @@ class BaseSubstitutionLoader:
         _LOGGER.debug(f"[{self._plan_name}] Got answer in {t2 - t1}ns, status is {repr(new_status_string)} "
                      f"(old: {repr(old_status)})")
         changed_substitutions = False
+        affected_groups = None
         if new_status_string != old_status:
             # status changed, load new data
             t1 = time.perf_counter_ns()
-            last_site_num = await self._load_data(session, new_status_string, first_site)
+            last_site_num, affected_groups = await self._load_data(session, new_status_string, first_site)
             t2 = time.perf_counter_ns()
             if last_site_num is not None:
                 # last_site_num is None when another request has already loaded new data
@@ -108,9 +109,9 @@ class BaseSubstitutionLoader:
                 _LOGGER.debug(f"[{self._plan_name}] Date changed, removing old substitutions")
                 changed_substitutions = True
                 self._storage.remove_old_days(create_date_timestamp(today))
-        return changed_substitutions
+        return changed_substitutions, affected_groups
 
-    async def _load_data(self, session: aiohttp.ClientSession, status: str, first_site) -> Optional[int]:
+    async def _load_data(self, session: aiohttp.ClientSession, status: str, first_site) -> Tuple[Optional[int], Optional[Set[str]]]:
         async def parse_site(num, request, stream):
             _LOGGER.debug(f"[{self._plan_name}] {num} Parsing")
             parser = self._substitutions_parser_factory(storage, current_timestamp)
@@ -195,8 +196,7 @@ class BaseSubstitutionLoader:
                     if r is not None and r[0] is not None:
                         r[0].close()
                 if last_site_num is not None:
-                    self._data_postprocessing(storage)
-                    return last_site_num
+                    return last_site_num, self._data_postprocessing(storage)
                 current_site = next_site
             else:
                 current_site = 1
@@ -218,14 +218,16 @@ class BaseSubstitutionLoader:
                     if r is not None:
                         r[0].close()
                 if last_site_num is not None:
-                    self._data_postprocessing(storage)
-                    return last_site_num
+                    return last_site_num, self._data_postprocessing(storage)
                 current_site = next_site
 
     def _data_postprocessing(self, substitution_storage: SubstitutionStorage):
         if self._storage:
-            substitution_storage.mark_new_substitutions(self._storage)
+            res = substitution_storage.mark_new_substitutions(self._storage)
+        else:
+            res = None
         self._storage = substitution_storage
+        return res
 
 
 class StudentSubstitutionLoader(BaseSubstitutionLoader):
