@@ -103,28 +103,34 @@ function base64UrlToUint8Array(base64UrlData) {
     return buffer;
 }
 
-function subscribePush() {
+function subscribePush(isActive) {
     return new Promise((resolve, reject) => {
             swRegistration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: base64UrlToUint8Array("BDu6tTwQHFlGb36-pLCzwMdgumSlyj_vqMR3I1KahllZd3v2se-LM25vhP3Yv_y0qXYx_KPOVOD2EYTaJaibzo8")
         }).then(subscription => {
-            console.log("Got push subscription:", subscription);
+            console.log("Got push subscription:", subscription, isActive ? "(active)" : "(not active)");
             fetch(window.location.origin + window.location.pathname + "api/subscribe-push", {
                 method: "post",
                 "headers": {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: true})
+                body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: isActive})
             })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.ok)
+                    if (data.ok) {
+                        console.log("Push subscription successful");
                         resolve();
-                    else
+                    } else {
+                        console.error("Push subscription failed");
                         reject();
+                    }
                 });
-        }).catch(reason => reject(reason));
+        }).catch(reason => {
+            console.error("Push subscription failed", reason);
+            reject(reason);
+        });
     });
 }
 
@@ -132,6 +138,7 @@ function subscribePush() {
 let notificationState;
 
 function setNotificationsInfo(state) {
+    console.log("Setting notification-state to", state);
     notificationState = state;
     window.localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
     switch (notificationState) {
@@ -143,6 +150,10 @@ function setNotificationsInfo(state) {
             } else {
                 notificationsInfo.innerHTML = notificationsInfo_all.innerHTML;
             }
+            subscribePush(true)
+                .catch(reason => {
+                    setNotificationsInfo("failed");
+                });
             break;
         case "denied":
             toggleNotifications.checked = false;
@@ -152,8 +163,15 @@ function setNotificationsInfo(state) {
         case "failed":
             notificationsInfo.innerHTML = notificationsInfo_failed.innerHTML;
             break;
-        default:
         case "granted-and-disabled":
+            subscribePush(false)
+                .catch(reason => {
+                        setNotificationsInfo("failed");
+                    });
+            toggleNotifications.checked = false;
+            notificationsInfo.innerHTML = notificationsInfo_none.innerHTML;
+            break;
+        default:
         case "default":
             toggleNotifications.checked = false;
             notificationsInfo.innerHTML = notificationsInfo_none.innerHTML;
