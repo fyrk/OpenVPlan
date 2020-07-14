@@ -39,14 +39,20 @@ self.addEventListener("push", event => {
 });
 
 self.addEventListener("notificationclick", event => {
-    const notification = event.notification;
-    const primaryKey = notification.data.primaryKey;
-    const action = e.action;
-    switch (event.action) {
-        case "close":
-            break;
-        default:
-            self.clients.openWindow("https://gawvertretung.florian-raediker.de");
-    }
     event.notification.close();
+    event.waitUntil(
+        self.clients.matchAll({type: "window"})
+            .then(clientsArray => {
+                const hasWindow = clientsArray.some(windowClient => {
+                    if (windowClient.url === e.notification.data.url) {
+                        windowClient.focus()
+                        return true;
+                    }
+                    return false;
+                });
+                if (!hasWindow) {
+                    self.clients.openWindow(e.notification.data.url).then(windowClient => windowClient ? windowClient.focus() : null);
+                }
+            })
+    );
 })

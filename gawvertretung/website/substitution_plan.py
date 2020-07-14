@@ -128,7 +128,8 @@ class SubstitutionPlan:
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
                 affected_groups = [s.strip() for s in request.query["event"].split(",")]
-            if "s" in request.query and (selection := split_selection(selection_qs := ",".join(request.query.getall("s")))):
+            if "s" in request.query \
+                    and (selection := split_selection(selection_qs := ",".join(request.query.getall("s")))):
                 # noinspection PyUnboundLocalVariable
                 selection_str = self._prettify_selection(selection)
                 selection = [s.upper() for s in selection]

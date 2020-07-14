@@ -144,7 +144,7 @@ function setNotificationsInfo(state) {
     switch (notificationState) {
         case "granted-and-enabled":
             toggleNotifications.checked = true;
-            notificationsInfo_none.hidden = true;
+            toggleNotifications.disabled = false;
             if (selection !== "") {
                 notificationsInfo.innerHTML = notificationsInfo_selection.innerHTML.replace("{selection}", selection);
             } else {
@@ -161,6 +161,8 @@ function setNotificationsInfo(state) {
             notificationsInfo.innerHTML = notificationsInfo_blocked.innerHTML;
             break;
         case "failed":
+            toggleNotifications.checked = false;
+            toggleNotifications.disabled = true;
             notificationsInfo.innerHTML = notificationsInfo_failed.innerHTML;
             break;
         case "granted-and-disabled":
@@ -169,11 +171,13 @@ function setNotificationsInfo(state) {
                         setNotificationsInfo("failed");
                     });
             toggleNotifications.checked = false;
+            toggleNotifications.disabled = false;
             notificationsInfo.innerHTML = notificationsInfo_none.innerHTML;
             break;
         default:
         case "default":
             toggleNotifications.checked = false;
+            toggleNotifications.disabled = false;
             notificationsInfo.innerHTML = notificationsInfo_none.innerHTML;
             break;
     }
@@ -200,12 +204,27 @@ function onNotificationsAvailable() {
             }
         }
     });
+    function reloadPermissionState() {
+        if (!notificationState.startsWith(Notification.permission)) {
+            // permission has been changed
+            if (Notification.permission === "granted") {
+                setNotificationsInfo("granted-and-disabled");
+            } else {
+                setNotificationsInfo(Notification.permission);
+            }
+            return true;
+        }
+        return false;
+    }
+    window.addEventListener("focus", reloadPermissionState);
 
     notificationState = window.localStorage.getItem(substitutionPlanType + "-notification-state");
-    if (notificationState != null) {
-        setNotificationsInfo(notificationState);
-    } else {
-        setNotificationsInfo("default");
+    if (!reloadPermissionState()) {
+        if (notificationState != null) {
+            setNotificationsInfo(notificationState);
+        } else {
+            setNotificationsInfo("default");
+        }
     }
 }
 
