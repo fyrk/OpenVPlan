@@ -23,6 +23,8 @@ _LOGGER = logging.getLogger("gawvertretung")
 # Time when a "<plan-name>-selection" cookie expires. This is on 29th July, as on this date, summer holidays in Lower
 # Saxony normally take place.
 SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(datetime.datetime(datetime.datetime.now().year, 7, 29).timetuple()))
+# Time for a cookie which should be deleted (Thu, 01 Jan 1970 00:00:00 GMT)
+DELETE_COOKIE_EXPIRE = formatdate(0)
 
 
 class SubstitutionPlan:
@@ -147,22 +149,41 @@ class SubstitutionPlan:
                 response = web.Response(text=await self._template.render_async(
                     storage=self._substitution_loader.storage, selection=selection, selection_str=selection_str),
                                         content_type="text/html", charset="utf-8")
+                # unfortunately, "same_site" parameter is not in a realease yet (see
+                # https://github.com/aio-libs/aiohttp/pull/4224), so access SimpleCookie directly
+                # response.set_cookie(self._name + "-selection", selection_qs, expires=SELECTION_COOKIE_EXPIRE)
                 # noinspection PyUnboundLocalVariable
-                response.set_cookie(self._name + "-selection", selection_qs, expires=SELECTION_COOKIE_EXPIRE)
+                response.cookies[self._name + "-selection"] = selection_qs
+                cookie = response.cookies[self._name + "-selection"]
+                cookie["expires"] = SELECTION_COOKIE_EXPIRE
+                cookie["path"] = "/" + self._name + "/"
+                if not config.get_bool("dev"):
+                    cookie["secure"] = True
+                cookie["httponly"] = True
+                cookie["samesite"] = "Strict"
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
                     await self._on_new_substitutions(affected_groups)
                     await self._recreate_index_site()
             else:
-                if "all" not in request.query and self._name + "-selection" in request.cookies:
+                if "all" not in request.query and self._name + "-selection" in request.cookies and \
+                        request.cookies[self._name + "-selection"].strip():
                     raise web.HTTPSeeOther(
                         location="/" + self._name + "/?s=" + request.cookies[self._name + "-selection"]
                     )
                 if substitutions_have_changed:
                     await self._recreate_index_site()
                 response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8")
-                response.del_cookie(self._name + "-selection")
+                # response.del_cookie(self._name + "-selection")
+                response.cookies[self._name + "-selection"] = ""
+                cookie = response.cookies[self._name + "-selection"]
+                cookie["expires"] = DELETE_COOKIE_EXPIRE
+                cookie["path"] = "/" + self._name + "/"
+                if not config.get_bool("dev"):
+                    cookie["secure"] = True
+                cookie["httponly"] = True
+                cookie["samesite"] = "Strict"
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
