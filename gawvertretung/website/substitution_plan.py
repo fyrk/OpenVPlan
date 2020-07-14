@@ -1,6 +1,8 @@
 import asyncio
+import datetime
 import logging
 import time
+from email.utils import formatdate
 from typing import List, Optional
 
 import jinja2
@@ -16,6 +18,10 @@ from ..substitution_plan.loader import BaseSubstitutionLoader
 from ..substitution_plan.utils import split_selection
 
 _LOGGER = logging.getLogger("gawvertretung")
+
+# Time when a "<plan-name>-selection" cookie expires. This is on 29th July, as on this date, summer holidays in Lower
+# Saxony normally take place.
+SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(datetime.datetime(datetime.datetime.now().year, 7, 29).timetuple()))
 
 
 class SubstitutionPlan:
@@ -122,27 +128,36 @@ class SubstitutionPlan:
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
                 affected_groups = [s.strip() for s in request.query["event"].split(",")]
-            if "s" in request.query and (selection := split_selection(",".join(request.query.getall("s")))):
+            if "s" in request.query and (selection := split_selection(selection_qs := ",".join(request.query.getall("s")))):
                 # noinspection PyUnboundLocalVariable
                 selection_str = self._prettify_selection(selection)
                 selection = [s.upper() for s in selection]
                 response = web.Response(text=await self._template.render_async(
                     storage=self._substitution_loader.storage, selection=selection, selection_str=selection_str),
                                         content_type="text/html", charset="utf-8")
+                # noinspection PyUnboundLocalVariable
+                response.set_cookie(self._name + "-selection", selection_qs, expires="")
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
                     await self._on_new_substitutions(affected_groups)
                     await self._recreate_index_site()
             else:
+                if "all" not in request.query and self._name + "-selection" in request.cookies:
+                    raise web.HTTPSeeOther(
+                        location="/" + self._name + "/?s=" + request.cookies[self._name + "-selection"]
+                    )
                 if substitutions_have_changed:
                     await self._recreate_index_site()
                 response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8")
+                response.del_cookie(self._name + "-selection")
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
                     await self._on_new_substitutions(affected_groups)
                 return response
+        except web.HTTPException as e:
+            raise e from None
         except Exception:
             _LOGGER.exception("Exception occurred while handling request")
             response = web.Response(text=await self._error500_template.render_async(), status=500,
