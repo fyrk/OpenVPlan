@@ -231,12 +231,10 @@ function onNotificationsAvailable() {
     window.addEventListener("focus", reloadPermissionState);
 
     notificationState = window.localStorage.getItem(substitutionPlanType + "-notification-state");
+    if (notificationState == null)
+        notificationState = "default";
     if (!reloadPermissionState()) {
-        if (notificationState != null) {
-            setNotificationsInfo(notificationState);
-        } else {
-            setNotificationsInfo("default");
-        }
+        setNotificationsInfo(notificationState);
     }
 }
 

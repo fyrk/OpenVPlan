@@ -11,23 +11,26 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("push", event => {
     const data = event.data.json();
+
+    // convert status ("dd.mm.yyyy hh:MM") to milliseconds
+    let timestamp;
+    try {
+        let [, dd, mm, yyyy, hh, MM] = data.status.match(/(\d\d).(\d\d).(\d\d\d\d) (\d\d):(\d\d)/);
+        timestamp = Date.UTC(yyyy, mm, dd, hh, MM);
+    } catch (e) {
+        console.error(e);
+        timestamp = null;
+    }
+
     const options = {
         icon: "favicon.ico",
-        vibrate: [100, 50, 100],
+        badge: "favicon-96-monochrome.png",
+        lang: "de",
+        timestamp: timestamp,
+        vibrate: [300, 100, 400],
         data: {
-            url: new URL("/" + data["plan_type"] + "/", self.location.origin).href,
-            dateOfArrival: event.data.status
+            url: new URL("/" + data["plan_type"] + "/", self.location.origin).href
         }
-        /*actions: [
-            {
-                action: "explore", title: "Explore this new world",
-                icon: "images/checkmark.png"
-            },
-            {
-                action: "close", title: "Close",
-                icon: 'images/xmark.png'
-            }
-        ]*/
     };
     let title;
     if (Object.keys(data["affected_groups_by_day"]).length === 1) {
@@ -50,8 +53,7 @@ self.addEventListener("push", event => {
 self.addEventListener("notificationclick", event => {
     event.notification.close();
 
-    // This looks to see if the current is already open and
-    // focuses if it is
+    // open website
     event.waitUntil(self.clients.matchAll({
         type: "window"
     }).then(function (clientList) {
@@ -62,4 +64,9 @@ self.addEventListener("notificationclick", event => {
         if (self.clients.openWindow)
             return self.clients.openWindow(event.notification.data.url).then(windowClient => windowClient.focus());
     }));
+
+    // close all notifications
+    self.registration.getNotifications().then(notifications => {
+        notifications.forEach(n => n.close());
+    });
 });
