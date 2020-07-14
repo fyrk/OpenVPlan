@@ -5,7 +5,7 @@ import sqlite3
 import hashlib
 import urllib
 import urllib.parse
-from typing import Generator, Tuple, List
+from typing import Generator, Tuple, List, Dict
 
 _LOGGER = logging.getLogger("gawvertretung")
 
@@ -37,7 +37,7 @@ class SubstitutionPlanDBStorage:
             endpoint_hash = hashlib.blake2b(endpoint.encode("utf-8"), digest_size=3).hexdigest()
             parsed = urllib.parse.urlparse(endpoint)
             endpoint_origin = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
-            expiration_time = subscription["expirationTime"]
+            expiration_time = subscription.get("expirationTime")
         except Exception:
             raise ValueError("Wrong subscription object '" + str(subscription) + "'")
         self._cursor.execute("REPLACE INTO push_subscriptions VALUES (?,?,?,?,?,?,?)",
@@ -46,8 +46,8 @@ class SubstitutionPlanDBStorage:
         self._connection.commit()
         _LOGGER.debug(f"Add push subscription {endpoint_hash} ({endpoint_origin}) (is_active={is_active})")
 
-    def iter_active_push_subscriptions(self, affected_groups: List[str]) -> Generator[Tuple[dict, List[str]], None,
-                                                                                      None]:
+    def iter_active_push_subscriptions(self, affected_groups: Dict[str, List[str]]) -> Generator[Tuple[dict, Dict[str, List[str]]],
+                                                                                      None, None]:
         self._cursor.execute("SELECT * FROM push_subscriptions")
         current_time = time.time()
         for subscription_entry in self._cursor:
@@ -60,5 +60,16 @@ class SubstitutionPlanDBStorage:
                 if selection is None:
                     # selection is None when all groups are selected (empty selection)
                     yield subscription_entry, affected_groups
-                elif intersection := [s for s in selection if s in affected_groups]:
-                    yield subscription_entry, intersection
+                else:
+                    intersection = {}
+                    for day_name, groups in affected_groups.items():
+                        common_groups = [s for s in selection if s in groups]
+                        if common_groups:
+                            intersection[day_name] = common_groups
+                    if intersection:
+                        yield subscription_entry, intersection
+
+    def delete_push_subscription(self, subscription_entry: sqlite3.Row):
+        self._cursor.execute("DELETE FROM push_subscriptions WHERE endpoint=?", (subscription_entry["endpoint"],))
+        _LOGGER.debug(f"Deleted push subscription {subscription_entry['endpoint_hash']} "
+                      f"({subscription_entry['endpoint_origin']}")

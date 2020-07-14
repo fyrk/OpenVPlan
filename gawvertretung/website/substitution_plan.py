@@ -1,16 +1,17 @@
 import asyncio
 import datetime
+import json
 import logging
 import time
 from email.utils import formatdate
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 import jinja2
 import pywebpush
+from aiohttp import web, WSMessage, WSMsgType, ClientSession
 from cryptography.hazmat.primitives import serialization
 from py_vapid.jwt import sign
 from py_vapid.utils import b64urlencode
-from aiohttp import web, WSMessage, WSMsgType, ClientSession
 
 from .. import config
 from ..db.db import SubstitutionPlanDBStorage
@@ -61,21 +62,23 @@ class SubstitutionPlan:
     async def _recreate_index_site(self):
         self._index_site = await self._template.render_async(storage=self._substitution_loader.storage)
 
-    async def _on_new_substitutions(self, affected_groups: Optional[List[str]]):
+    async def _on_new_substitutions(self, affected_groups: Optional[Dict[str, List[str]]]):
         if not config.get_bool("dev"):
             self._event_new_substitutions.set()
             self._event_new_substitutions.clear()
         if affected_groups:
             _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
 
-            async def send_push_notification(subscription_entry, common_affected_groups):
+            async def send_push_notification(subscription_entry, common_affected_groups: Dict[str, List[str]]):
                 endpoint_hash = subscription_entry["endpoint_hash"]
                 endpoint_origin = subscription_entry["endpoint_origin"]
                 _LOGGER.debug("Sending push notification to " + endpoint_hash)
                 # noinspection PyBroadException
                 try:
+                    data = json.dumps({"affected_groups_by_day": common_affected_groups, "plan_type": self._name,
+                                       "status": self._substitution_loader.storage.status})
                     encoded = pywebpush.WebPusher(subscription_info=subscription_entry["subscription"]) \
-                        .encode(", ".join(common_affected_groups))
+                        .encode(data)
                     headers = {"content-encoding": "aes128gcm"}
                     if "crypto_key" in encoded:
                         headers["crypto-key"] = "dh=" + encoded["crypto_key"].decode("utf-8")
@@ -98,23 +101,31 @@ class SubstitutionPlan:
                             t=sig,
                             k=b64urlencode(pkey)
                         )
-                    print("headers:", headers)
 
                     async with self.client_session.post(subscription_entry["endpoint"], data=encoded["body"],
                                                         headers=headers) as r:
                         if r.status >= 400:
                             _LOGGER.error(f"Could not send push notification to {endpoint_hash} ({endpoint_origin}): "
                                           f"{r.status} {repr(await r.text())}")
+                            # if status code is 404 or 410, the endpoints are unavailable, so delete the subscription
+                            # See https://autopush.readthedocs.io/en/latest/http.html#error-codes
+                            if r.status in (404, 410):
+                                return subscription_entry
                         else:
                             _LOGGER.debug(f"Successfully sent push notification to {endpoint_hash}: {r.status} "
                                           f"{repr(await r.text())}")
                 except Exception:
                     _LOGGER.exception(f"Could not send push notification to {subscription_entry['endpoint_hash']} "
                                       f"({endpoint_origin})")
+                return None
 
-            await asyncio.gather(*(send_push_notification(subscription, common_affected_groups)
-                                   for subscription, common_affected_groups in
-                                   self.storage.iter_active_push_subscriptions(affected_groups)))
+            subscription_entries_to_delete = await asyncio.gather(
+                *(send_push_notification(subscription, common_affected_groups)
+                  for subscription, common_affected_groups in
+                  self.storage.iter_active_push_subscriptions(affected_groups)))
+            for subscription_entry in subscription_entries_to_delete:
+                if subscription_entry is not None:
+                    self.storage.delete_push_subscription(subscription_entry)
         self.serialize(self._serialization_filepath)
 
     async def _base_handler(self, request: web.Request) -> web.Response:
@@ -127,7 +138,7 @@ class SubstitutionPlan:
             if "event" in request.query and config.get_bool("dev"):
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
-                affected_groups = [s.strip() for s in request.query["event"].split(",")]
+                affected_groups = json.loads(request.query["event"])
             if "s" in request.query \
                     and (selection := split_selection(selection_qs := ",".join(request.query.getall("s")))):
                 # noinspection PyUnboundLocalVariable

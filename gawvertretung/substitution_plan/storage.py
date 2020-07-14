@@ -34,18 +34,18 @@ class SubstitutionStorage(SortedDict):
     def to_data(self, selection=None):
         return [day.to_data(selection) for day in self.values()]
 
-    def mark_new_substitutions(self, old_storage: "SubstitutionStorage") -> List[str]:
+    def mark_new_substitutions(self, old_storage: "SubstitutionStorage") -> Dict[str, List[str]]:
         """
-        :return: a list of group names which are affected by new substitutions
+        :return: a dict: {day_name: list of group names which are affected by new substitutions from this day}
         """
-        affected_groups: List[str] = []
+        affected_groups = {}
         for day in self.values():
             try:
                 old_day = old_storage[day.timestamp]
             except KeyError:
                 pass
             else:
-                affected_groups.extend(day.mark_new_substitutions(old_day))
+                affected_groups[day.day_name] = day.mark_new_substitutions(old_day)
         return affected_groups
 
     # noinspection PyUnresolvedReferences

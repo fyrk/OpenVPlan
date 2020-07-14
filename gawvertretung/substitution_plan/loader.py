@@ -4,7 +4,7 @@ import io
 import logging
 import pickle
 import time
-from typing import Type, Union, Any, Optional, Callable, Tuple, List
+from typing import Type, Union, Any, Optional, Callable, Tuple, List, Dict
 
 import aiohttp
 from aiohttp import client
@@ -79,7 +79,7 @@ class BaseSubstitutionLoader:
             if self._storage is not None:
                 _LOGGER.debug(f"Loaded substitutions from '{filepath}' with status '{self._storage.status}'")
 
-    async def update(self, session: aiohttp.ClientSession) -> Tuple[bool, Optional[List[str]]]:
+    async def update(self, session: aiohttp.ClientSession) -> Tuple[bool, Optional[Dict[str, List[str]]]]:
         _LOGGER.debug(f"[{self._plan_name}] Requesting first site ...")
         t1 = time.perf_counter_ns()
         async with session.get(self._url_first_site) as r:
@@ -114,7 +114,7 @@ class BaseSubstitutionLoader:
         return changed_substitutions, affected_groups
 
     async def _load_data(self, session: aiohttp.ClientSession, status: str, first_site) -> \
-            Optional[Tuple[Optional[int], Optional[List[str]]]]:
+            Optional[Tuple[Optional[int], Optional[Dict[str, List[str]]]]]:
         async def parse_site(num, request, stream):
             _LOGGER.debug(f"[{self._plan_name}] {num} Parsing")
             parser = self._substitutions_parser_factory(storage, current_timestamp)
@@ -224,7 +224,7 @@ class BaseSubstitutionLoader:
                     return last_site_num, self._data_postprocessing(storage)
                 current_site = next_site
 
-    def _data_postprocessing(self, substitution_storage: SubstitutionStorage) -> List[str]:
+    def _data_postprocessing(self, substitution_storage: SubstitutionStorage) -> Dict[str, List[str]]:
         if self._storage:
             res = substitution_storage.mark_new_substitutions(self._storage)
         else:
