@@ -2,6 +2,7 @@ import contextvars
 import logging
 import os
 import secrets
+import signal
 import sys
 import time
 
@@ -179,13 +180,11 @@ async def app_factory(host, port, dev_mode=False):
 
         app["substitution_plans"][name] = plan
 
-    def serialize_substitutions():
-        for name, plan in app["substitution_plans"].items():
-            plan.serialize(f"data/substitutions/{name}.pickle")
-    atexit.register(serialize_substitutions)
-
     async def root_handler(request: web.Request):
-        raise web.HTTPPermanentRedirect(location=f"/{config.get('default_plan')}/")
+        location = f"/{config.get('default_plan')}/"
+        if request.query_string:
+            location += "?" + request.query_string
+        raise web.HTTPPermanentRedirect(location=location)
 
     app.add_routes([
         web.get("/", root_handler),

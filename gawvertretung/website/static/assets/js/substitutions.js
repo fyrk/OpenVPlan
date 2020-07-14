@@ -77,15 +77,14 @@ function onOffline(event) {
 
 const selection = document.getElementById("selectionInput").value;
 
-const notificationsBlock = document.getElementById("notifications-block");
 const toggleNotifications = document.getElementById("toggle-notifications");
+const notificationsInfo = document.getElementById("notifications-info");
 const notificationsInfo_none = document.getElementById("notifications-info-none");
 const notificationsInfo_all = document.getElementById("notifications-info-all");
 const notificationsInfo_selection = document.getElementById("notifications-info-selection");
-const notificationsInfo_selectionContent = document.getElementById("notifications-info-selection-content");
 const notificationsInfo_blocked = document.getElementById("notifications-info-blocked");
+const notificationsInfo_failed = document.getElementById("notifications-info-failed");
 let swRegistration;
-let isSubscribed;
 
 function base64UrlToUint8Array(base64UrlData) {
     const padding = '='.repeat((4 - base64UrlData.length % 4) % 4);
@@ -102,77 +101,93 @@ function base64UrlToUint8Array(base64UrlData) {
 
     return buffer;
 }
-console.log(window.location);
 
-function onGotNotificationPermission(permission) {
-    switch (permission) {
-        case "granted":
+function subscribePush() {
+    return new Promise((resolve, reject) => {
+            swRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: base64UrlToUint8Array("BDu6tTwQHFlGb36-pLCzwMdgumSlyj_vqMR3I1KahllZd3v2se-LM25vhP3Yv_y0qXYx_KPOVOD2EYTaJaibzo8")
+        }).then(subscription => {
+            console.log("Got push subscription:", subscription);
+            fetch(window.location.origin + window.location.pathname + "api/subscribe-push", {
+                method: "post",
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: true})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok)
+                        resolve();
+                    else
+                        reject();
+                });
+        }).catch(reason => reject(reason));
+    });
+}
+
+
+let notificationState;
+
+function setNotificationsInfo(state) {
+    notificationState = state;
+    window.localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
+    switch (notificationState) {
+        case "granted-and-enabled":
+            toggleNotifications.checked = true;
             notificationsInfo_none.hidden = true;
             if (selection !== "") {
-                notificationsInfo_selectionContent.textContent = selection;
-                notificationsInfo_selection.hidden = false;
+                notificationsInfo.innerHTML = notificationsInfo_selection.innerHTML.replace("{selection}", selection);
             } else {
-                notificationsInfo_all.hidden = false;
+                notificationsInfo.innerHTML = notificationsInfo_all.innerHTML;
             }
-            swRegistration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: base64UrlToUint8Array("BDu6tTwQHFlGb36-pLCzwMdgumSlyj_vqMR3I1KahllZd3v2se-LM25vhP3Yv_y0qXYx_KPOVOD2EYTaJaibzo8")
-            }).then(subscription => {
-                console.log("Subscription", subscription);
-                fetch(window.location.origin + window.location.pathname + "api/subscribe-push", {
-                    method: "post",
-                    "headers": {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: true})
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.ok) {
-                            // TODO subscribing failed
-                        }
-                    });
-            }).catch(reason => console.warn("Unable to subscribe to push", reason));
             break;
         case "denied":
             toggleNotifications.checked = false;
             toggleNotifications.disabled = true;
-            notificationsInfo_none.hidden = true;
-            notificationsInfo_blocked.hidden = false;
+            notificationsInfo.innerHTML = notificationsInfo_blocked.innerHTML;
             break;
+        case "failed":
+            notificationsInfo.innerHTML = notificationsInfo_failed.innerHTML;
+            break;
+        default:
+        case "granted-and-disabled":
         case "default":
             toggleNotifications.checked = false;
+            notificationsInfo.innerHTML = notificationsInfo_none.innerHTML;
             break;
     }
 }
 
 function onNotificationsAvailable() {
-    notificationsBlock.hidden = false;
-    onGotNotificationPermission(Notification.permission);
-    swRegistration.pushManager.getSubscription()
-        .then(subscription => {
-            isSubscribed = subscription !== null;
-
-        });
+    document.getElementById("notifications-block").hidden = false;
     toggleNotifications.addEventListener("change", event => {
         if (toggleNotifications.checked) {
             window.Notification.requestPermission()
-                .then(permission => onGotNotificationPermission(permission));
+                .then(permission => {
+                    switch (permission) {
+                        case "granted":
+                            notificationState = "granted-and-enabled";
+                            break;
+                        default:
+                            notificationState = permission;
+                    }
+                    setNotificationsInfo(notificationState);
+                });
         } else {
-            notificationsInfo_all.hidden = true;
-            notificationsInfo_selection.hidden = true;
-            notificationsInfo_none.hidden = false;
+            if (notificationState === "granted-and-enabled") {
+                setNotificationsInfo("granted-and-disabled");
+            }
         }
     });
 
-    swRegistration.pushManager.getSubscription()
-        .then(subscription => {
-            if (subscription == null) {
-                console.log("Not subscribed to push service");
-            } else {
-                console.log("Subscription object:", subscription);
-            }
-        });
+    notificationState = window.localStorage.getItem(substitutionPlanType + "-notification-state");
+    if (notificationState != null) {
+        setNotificationsInfo(notificationState);
+    } else {
+        setNotificationsInfo("default");
+    }
 }
 
 if ("serviceWorker" in navigator) {
@@ -181,13 +196,17 @@ if ("serviceWorker" in navigator) {
             .then(registration => {
                 swRegistration = registration;
                 console.log("ServiceWorker registration successful:", registration);
-                if ("PushManager" in window && "Notification" in window) {
-                    onNotificationsAvailable();
-                } else {
-                    console.warn("PushManager and/or Notification is not supported");
+                if (!("Notification" in window)) {
+                    console.warn("Notification is not supported");
+                    return;
                 }
+                if (!("localStorage" in window)) {
+                    console.warn("localStorage is not supported");
+                    return;
+                }
+                onNotificationsAvailable();
             }).catch(reason => console.warn("ServiceWorker registration failed:", reason))
     });
 } else {
-    console.warn("ServiceWorker is not supported");
+    console.warn("serviceWorker is not supported");
 }

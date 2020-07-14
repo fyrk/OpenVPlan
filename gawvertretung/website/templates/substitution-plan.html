@@ -97,6 +97,11 @@
                 <button type="submit" class="btn btn-primary mb-2">OK</button>
             </div>
         </div>
+        {%- if selection -%}
+            <div class="col-5 col-sm-4 col-md-5 col-xl-4">
+                <a class="btn btn-primary" href="?s=">{% block selection_all %}{% endblock %}</a>
+            </div>
+        {%- endif -%}
     </form>
 
     <div id="notifications-block" hidden>
@@ -104,11 +109,13 @@
         Erhalte Push-Benachrichtigungen, wenn es neue Vertretungen gibt.
         <div class="custom-control custom-switch mt-3">
             <input type="checkbox" class="custom-control-input" id="toggle-notifications">
-            <label class="custom-control-label no-select" for="toggle-notifications" id="notifications-info">
-                <span id="notifications-info-none">Benachrichtigungen sind deaktiviert</span>
-                <span id="notifications-info-all" hidden>{% block notifications_info_all %}{% endblock %}</span>
-                <span id="notifications-info-selection" hidden>{% block notifications_info_selection %}{% endblock %}<span id="notifications-info-selection-content"></span></span>
-                <span id="notifications-info-blocked" hidden class="text-danger">Du hast Benachrichtigungen vom Vertretungsplan blockiert</span>
+            <label class="custom-control-label no-select" for="toggle-notifications">
+                <template id="notifications-info-none">Benachrichtigungen sind deaktiviert</template>
+                <template id="notifications-info-all">{% block notifications_info_all %}{% endblock %}</template>
+                <template id="notifications-info-selection">{% block notifications_info_selection %}Du wirst für <i>{selection}</i> benachrichtigt{% endblock %}</template>
+                <template id="notifications-info-blocked"><span class="text-danger">Du hast Benachrichtigungen vom Vertretungsplan blockiert</span></template>
+                <template id="notifications-info-failed">Das Aktivieren von Benachrichtigungen ist fehlgeschlagen. Versuche, einen anderen Browser zu verwenden.</template>
+                <span id="notifications-info">Benachrichtigungen sind deaktiviert</span>
             </label>
         </div>
     </div>

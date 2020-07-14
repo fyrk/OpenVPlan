@@ -1,11 +1,11 @@
 self.addEventListener("activate", event => {
     event.waitUntil(() => {
-        idb.open("settings", 1, upgradeDB => {
+        /*self.idb.open("settings", 1, upgradeDB => {
             const storage = upgradeDB.createObjectStore("settings", {
                 keyPath: "key"
             });
             storage.put({key: "hasEnabledPushNotifications", value: false});
-        })
+        })*/
     });
 })
 
@@ -28,10 +28,13 @@ self.addEventListener("push", event => {
             }
         ]*/
     };
+    let title;
     if (event.data)
-        options.body = "Neue Vertretungen für " + event.data.text();
+        title = "Neue Vertretungen für " + event.data.text();
+    else
+        title = "Neue Vertretungen";
     event.waitUntil(
-        self.registration.showNotification("Neue Vertretungen", options)
+        self.registration.showNotification(title, options)
     );
 });
 
@@ -43,7 +46,7 @@ self.addEventListener("notificationclick", event => {
         case "close":
             break;
         default:
-            clients.openWindow("https://gawvertretung.florian-raediker.de");
+            self.clients.openWindow("https://gawvertretung.florian-raediker.de");
     }
     event.notification.close();
 })

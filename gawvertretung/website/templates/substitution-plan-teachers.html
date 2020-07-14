@@ -8,8 +8,8 @@
 
 {% block title_end %}
     <nav class="nav nav-pills flex-sm-row justify-content-around">
-        <a class="nav-item nav-link" href="{{ base_path }}/">Schüler*innen</a>
-        <a class="nav-item nav-link active" href="{{ base_path }}/teachers">Lehrer*innen</a>
+        <a class="nav-item nav-link" href="{{ base_path }}/students/">Schüler*innen</a>
+        <a class="nav-item nav-link active" href="{{ base_path }}/teachers/">Lehrer*innen</a>
     </nav>
 {% endblock %}
 
@@ -33,12 +33,10 @@
     Einizelne Lehrer*innenkürzel können mit dem Lesezeichen-Symbol ausgewählt werden.<br>
     Mehrere Kürzel oder Kürzel, für die es gerade keine Vertretungen gibt, können hier ausgewählt werden:
 {%- endblock %}
-{%- block selection_help_text %}
-    Mehrere Kürzel durch Kommata trennen
-{% endblock -%}
+{%- block selection_help_text %}Mehrere Kürzel durch Kommata trennen{% endblock -%}
+{% block selection_all %}Alle Vertretungen{% endblock %}
 
 {% block push_notifications_heading %}Benachrichtigungen{% endblock %}
 {% block notifications_info_all %}Du wirst für alle Vertretungen benachrichtigt. Wähle Kürzel aus, um nur für bestimmte Kürzel benachrichtigt zu werden.{% endblock %}
-{% block notifications_info_selection %}Du wirst für folgende Kürzel benachrichtigt: {% endblock %}
 
 {% block gaw_verden_link %}https://gaw-verden.de/images/vertretung/lehrer/subst_001.htm{% endblock %}

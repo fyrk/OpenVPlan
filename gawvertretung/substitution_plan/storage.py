@@ -34,18 +34,18 @@ class SubstitutionStorage(SortedDict):
     def to_data(self, selection=None):
         return [day.to_data(selection) for day in self.values()]
 
-    def mark_new_substitutions(self, old_storage: "SubstitutionStorage") -> Set[str]:
+    def mark_new_substitutions(self, old_storage: "SubstitutionStorage") -> List[str]:
         """
-        :return: a set of group names which are affected by new substitutions
+        :return: a list of group names which are affected by new substitutions
         """
-        affected_groups = set()
+        affected_groups: List[str] = []
         for day in self.values():
             try:
                 old_day = old_storage[day.timestamp]
             except KeyError:
                 pass
             else:
-                affected_groups.update(day.mark_new_substitutions(old_day))
+                affected_groups.extend(day.mark_new_substitutions(old_day))
         return affected_groups
 
     # noinspection PyUnresolvedReferences
@@ -92,19 +92,20 @@ class SubstitutionDay:
                                               ("groups", [g.to_data() for g in self.iter_groups(selection)])
                                               ) if value is not None}
 
-    def mark_new_substitutions(self, old_day: "SubstitutionDay") -> Set[str]:
-        affected_groups: Set[str] = set()
+    def mark_new_substitutions(self, old_day: "SubstitutionDay") -> List[str]:
+        affected_groups: List[str] = []
         for name, group in self._group_name2group.items():
             try:
                 old_group = old_day.get_group(name)
             except KeyError:
                 group.mark_all_substitutions_as_new()
-                if group.affected_groups_pretty is not None:
-                    affected_groups.update(group.affected_groups_pretty)
+                if group.affected_groups is not None:
+                    affected_groups.extend(group.affected_groups)
             else:
                 if group.mark_new_substitutions(old_group.substitutions):
                     # at least one substitution in group 'group' is new
-                    affected_groups.update(group.affected_groups_pretty)
+                    if group.affected_groups:
+                        affected_groups.extend(group.affected_groups)
         return affected_groups
 
 
@@ -112,7 +113,7 @@ class SubstitutionDay:
 class BaseSubstitutionGroupName(ABC):
     name: str
 
-    def get_affected_groups(self) -> Tuple[Optional[Set[str]], Optional[Set[str]]]:
+    def get_affected_groups(self) -> Tuple[Optional[List[str]], Optional[List[str]]]:
         raise NotImplementedError
 
     def to_html(self):
@@ -129,16 +130,16 @@ class StudentSubstitutionGroupName(BaseSubstitutionGroupName):
         self._number_part, self._letters_part = split_class_name(self.name)
         self.split_name = (int(self._number_part) if self._number_part else 0, self._letters_part)
 
-    def get_affected_groups(self) -> Tuple[Optional[Set[str]], Optional[Set[str]]]:
+    def get_affected_groups(self) -> Tuple[Optional[List[str]], Optional[List[str]]]:
         letters_upper = self._letters_part.upper()
         if self._number_part:
             if self._letters_part:
-                return ({self._number_part + letter for letter in letters_upper},
-                        {self._number_part + letter for letter in self._letters_part})
+                return ([self._number_part + letter for letter in letters_upper],
+                        [self._number_part + letter for letter in self._letters_part])
             else:
-                return {self._number_part}, {self._number_part}
+                return [self._number_part], [self._number_part]
         if self.name:
-            return {letters_upper}, {self._letters_part}
+            return [letters_upper], [self._letters_part]
         return None, None
 
     def __lt__(self, other: "StudentSubstitutionGroupName"):
@@ -149,9 +150,9 @@ class StudentSubstitutionGroupName(BaseSubstitutionGroupName):
 class TeacherSubstitutionGroupName(BaseSubstitutionGroupName):
     is_striked: bool
 
-    def get_affected_groups(self) -> Tuple[Optional[Set[str]], Optional[Set[str]]]:
+    def get_affected_groups(self) -> Tuple[Optional[List[str]], Optional[List[str]]]:
         if self.name != "???":
-            return {self.name.upper()}, {self.name}
+            return [self.name.upper()], [self.name]
         return None, None
 
     def to_html(self):
@@ -169,8 +170,8 @@ class TeacherSubstitutionGroupName(BaseSubstitutionGroupName):
 class BaseSubstitutionGroup(ABC):
     name: BaseSubstitutionGroupName
     substitutions: List["BaseSubstitution"] = dataclasses.field(default_factory=list)
-    affected_groups: Optional[Set[str]] = dataclasses.field(init=False)
-    affected_groups_pretty: Optional[Set[str]] = dataclasses.field(init=False)
+    affected_groups: Optional[List[str]] = dataclasses.field(init=False)
+    affected_groups_pretty: Optional[List[str]] = dataclasses.field(init=False)
 
     def __post_init__(self):
         self.affected_groups, self.affected_groups_pretty = self.name.get_affected_groups()

@@ -6,13 +6,11 @@ from typing import Optional, Callable, Any
 
 from .. import config
 from .storage import (StudentSubstitution, TeacherSubstitution, SubstitutionDay,
-                                       SubstitutionStorage, BaseSubstitutionGroup, StudentSubstitutionGroup,
-                                       BaseSubstitution, TeacherSubstitutionGroup)
+                      SubstitutionStorage, BaseSubstitutionGroup, StudentSubstitutionGroup,
+                      BaseSubstitution, TeacherSubstitutionGroup)
 from .utils import create_date_timestamp, split_class_name
 
-
 INCLUDE_OUTDATED_SUBSTITUTIONS = config.get_bool("include_outdated_substitutions")
-
 
 _REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
 

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import List, Optional, Set
+from typing import List, Optional
 
 import jinja2
 import pywebpush
@@ -25,9 +25,10 @@ class SubstitutionPlan:
         self._substitution_loader = substitution_loader
         self._template = template
         self._error500_template = error500_template
-        self._index_site = None
         self._event_new_substitutions = asyncio.Event()
 
+        self._index_site = None
+        self._serialization_filepath = None
         self.storage: Optional[SubstitutionPlanDBStorage] = None
         self.client_session: Optional[ClientSession] = None
         self._app: Optional[web.Application] = None
@@ -42,9 +43,11 @@ class SubstitutionPlan:
 
     def serialize(self, filepath: str):
         self._substitution_loader.serialize(filepath)
+        self._serialization_filepath = filepath
 
     def deserialize(self, filepath: str):
         self._substitution_loader.deserialize(filepath)
+        self._serialization_filepath = filepath
 
     def _prettify_selection(self, selection: List[str]) -> str:
         return ", ".join(selection)
@@ -52,17 +55,20 @@ class SubstitutionPlan:
     async def _recreate_index_site(self):
         self._index_site = await self._template.render_async(storage=self._substitution_loader.storage)
 
-    async def _on_new_substitutions(self, affected_groups: Optional[Set[str]]):
+    async def _on_new_substitutions(self, affected_groups: Optional[List[str]]):
         if not config.get_bool("dev"):
             self._event_new_substitutions.set()
             self._event_new_substitutions.clear()
         if affected_groups:
             _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
 
-            async def send_push_notification(subscription, common_affected_groups):
+            async def send_push_notification(subscription_entry, common_affected_groups):
+                endpoint_hash = subscription_entry["endpoint_hash"]
+                endpoint_origin = subscription_entry["endpoint_origin"]
+                _LOGGER.debug("Sending push notification to " + endpoint_hash)
                 # noinspection PyBroadException
                 try:
-                    encoded = pywebpush.WebPusher(subscription_info=subscription) \
+                    encoded = pywebpush.WebPusher(subscription_info=subscription_entry["subscription"]) \
                         .encode(", ".join(common_affected_groups))
                     headers = {"content-encoding": "aes128gcm"}
                     if "crypto_key" in encoded:
@@ -73,7 +79,7 @@ class SubstitutionPlan:
                     vv = pywebpush.Vapid.from_string(private_key=config.get_str("private_vapid_key"))
                     sig = sign({
                         "sub": config.get_str("vapid_sub"),
-                        "aud": subscription["endpoint"],
+                        "aud": endpoint_origin,
                         "exp": str(int(time.time()) + (24 * 60 * 60))  # 24 hours (maximum)
                     }, vv.private_key)
                     pkey = vv.public_key.public_bytes(
@@ -82,27 +88,28 @@ class SubstitutionPlan:
                     )
                     headers["ttl"] = str(86400)
                     headers["Authorization"] = "{schema} t={t},k={k}".format(
-                            schema=vv._schema,
+                            schema="vapid",
                             t=sig,
                             k=b64urlencode(pkey)
                         )
-                    #vapid_headers = vv.sign({"sub": config.get_str("vapid_sub"),
-                    #                         "aud": subscription["endpoint"]})
-                    #headers.update(vapid_headers)
                     print("headers:", headers)
 
-                    async with self.client_session.post(subscription["endpoint"], data=encoded["body"],
+                    async with self.client_session.post(subscription_entry["endpoint"], data=encoded["body"],
                                                         headers=headers) as r:
                         if r.status >= 400:
-                            _LOGGER.error(f"Could not send push data for {subscription}: {r.status} {await r.text()}")
+                            _LOGGER.error(f"Could not send push notification to {endpoint_hash} ({endpoint_origin}): "
+                                          f"{r.status} {repr(await r.text())}")
                         else:
-                            _LOGGER.debug(f"Successfully sent push notification: {r.status} {await r.text()}")
+                            _LOGGER.debug(f"Successfully sent push notification to {endpoint_hash}: {r.status} "
+                                          f"{repr(await r.text())}")
                 except Exception:
-                    _LOGGER.exception(f"Could not encode push data for {subscription}")
+                    _LOGGER.exception(f"Could not send push notification to {subscription_entry['endpoint_hash']} "
+                                      f"({endpoint_origin})")
 
             await asyncio.gather(*(send_push_notification(subscription, common_affected_groups)
                                    for subscription, common_affected_groups in
                                    self.storage.iter_active_push_subscriptions(affected_groups)))
+        self.serialize(self._serialization_filepath)
 
     async def _base_handler(self, request: web.Request) -> web.Response:
         _LOGGER.info(f"{request.method} {request.path}")
@@ -114,7 +121,7 @@ class SubstitutionPlan:
             if "event" in request.query and config.get_bool("dev"):
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
-                affected_groups = set(s.strip() for s in request.query["event"].split(","))
+                affected_groups = [s.strip() for s in request.query["event"].split(",")]
             if "s" in request.query and (selection := split_selection(",".join(request.query.getall("s")))):
                 # noinspection PyUnboundLocalVariable
                 selection_str = self._prettify_selection(selection)
@@ -174,7 +181,6 @@ class SubstitutionPlan:
         try:
             data = await request.json()
             self.storage.add_push_subscription(data["subscription"], data["selection"], data["is_active"])
-            _LOGGER.info("Subscribed new push service")
         except Exception:
             _LOGGER.exception("Subscribing push service failed")
             return web.json_response({"ok": False}, status=400)
