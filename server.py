@@ -174,7 +174,8 @@ async def app_factory(host, port, dev_mode=False):
 
         plan.deserialize(f"data/substitutions/{name}.pickle")
 
-        app.add_subapp(f"/{name}/", plan.create_app())
+        app.add_subapp(f"/{name}/", plan.create_app(os.path.abspath("gawvertretung/website/static/" + name)
+                                                    if config.get_bool("dev") else None))
 
         app["substitution_plans"][name] = plan
 
@@ -191,7 +192,7 @@ async def app_factory(host, port, dev_mode=False):
     ])
 
     if dev_mode:
-        app.router.add_static("/", STATIC_PATH, )
+        app.router.add_static("/", STATIC_PATH)
 
     app.cleanup_ctx.extend((client_session_context, databases_context))
 

@@ -1,5 +1,5 @@
 {
-	"name": "Vertretungsplan Gymnasium am Wall Verden",
+	"name": "Schüler*innen - Vertretungsplan Gymnasium am Wall Verden",
 	"short_name": "GaW VPlan",
 	"theme_color": "#e67b10",
 	"background_color": "#e67b10",
@@ -75,5 +75,6 @@
 			"sizes": "512x512",
 			"type": "image/png"
 		}
-	]
+	],
+	"start_url": "/students/"
 }

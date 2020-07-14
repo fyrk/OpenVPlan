@@ -9,6 +9,8 @@ self.addEventListener("activate", event => {
     });
 })
 
+self.addEventListener("fetch", function(event) {});
+
 self.addEventListener("push", event => {
     const data = event.data.json();
 

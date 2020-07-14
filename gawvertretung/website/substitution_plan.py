@@ -249,13 +249,15 @@ class SubstitutionPlan:
             return web.json_response({"ok": False}, status=400)
         return web.json_response({"ok": True})
 
-    def create_app(self) -> web.Application:
+    def create_app(self, static_path: Optional[str] = None) -> web.Application:
         self._app = web.Application()
         self._app.add_routes([
             web.get("/", self._base_handler),
             web.get("/api/wait-for-updates", self._wait_for_updates_handler),
             web.post("/api/subscribe-push", self._subscribe_push_handler)
         ])
+        if static_path:
+            self._app.router.add_static("/", static_path)
         return self._app
 
 
