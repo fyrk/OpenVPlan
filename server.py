@@ -1,3 +1,4 @@
+import argparse
 import contextvars
 import logging
 import os
@@ -199,10 +200,25 @@ async def app_factory(host, port, dev_mode=False):
     return app
 
 
-def run(host, port, dev_mode=False):
-    web.run_app(app_factory(host, port, dev_mode), host=host, port=port)
+def run(path, host, port, dev_mode=False):
+    web.run_app(app_factory(host, port, dev_mode), path=path, host=host, port=port)
 
+
+parser = argparse.ArgumentParser(description="gawvertretung server")
+parser.add_argument("--path")
+parser.add_argument("--port")
 
 if __name__ == "__main__":
+    args = parser.parse_args()
+    if args.path:
+        path = args.path
+        host = None
+    else:
+        path = None
+        host = config.get_str("host", "localhost")
+    if args.port:
+        port = args.port
+    else:
+        port = config.get_int("port", 8080)
     init_logger(os.path.join(WORKING_DIR, config.get_str("logfile", "logs/website.log")))
-    run(config.get_str("host", "localhost"), config.get_int("port", 8080), config.get_bool("dev"))
+    run(path, host, port, config.get_bool("dev"))
