@@ -25,6 +25,7 @@ function greySubstitutions() {
                     x.classList.add("grey");
                 }
             } else {
+                // noinspection JSCheckFunctionSignatures
                 setTimeout(greySubstitutions, new Date(now.getFullYear(), now.getMonth(), now.getDate(), i[1], i[2]).getTime() - now.getTime());
                 break
             }
@@ -38,7 +39,7 @@ greySubstitutions();
 // =================
 // WEBSOCKET UPDATES
 
-let substitutionPlanType = window.location.pathname.split(1)[1];
+let substitutionPlanType = window.location.pathname.split("/", 2)[1];
 if (!substitutionPlanType)
     substitutionPlanType = "students"
 

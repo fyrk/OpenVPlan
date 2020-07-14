@@ -2,11 +2,9 @@ import contextvars
 import logging
 import os
 import secrets
-import signal
 import sys
 import time
 
-import atexit
 import jinja2
 from aiohttp import client, http, hdrs, web
 from aiohttp.web_fileresponse import FileResponse

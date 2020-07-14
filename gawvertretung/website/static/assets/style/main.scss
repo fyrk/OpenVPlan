@@ -9,8 +9,6 @@
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  */
 
-$base_path: ""; // change to "" for production
-
 $primary: #fc8600;
 $secondary: #f7d45e;
 
@@ -189,6 +187,9 @@ body, html {
     font-weight: bold;
 }
 
+// .substitutions-table is actually used in substitution-plan.html, but it is followed by "{", so code analysis doesn't
+// detect it
+//noinspection CssUnusedSymbol
 .substitutions-table {
     white-space: nowrap;
 
@@ -220,6 +221,8 @@ body, html {
         padding-left: $table-cell-padding-sm + $bookmark-icon-width;
     }
 
+    // see comment for .substitutions-table
+    //noinspection CssUnusedSymbol
     .group-name.selectable {
         @extend .position-relative;
     }
@@ -228,6 +231,9 @@ body, html {
 #online-status {
     @extend .font-weight-bold;
 }
+
+// .online is added by JavaScript
+//noinspection CssUnusedSymbol
 #online-status.online::before {
     background-color: #34ce57;
     width: 0.8em;
@@ -254,6 +260,8 @@ body, html {
     }
 }
 
+// .offline is added by JavaScript
+//noinspection CssUnusedSymbol
 #online-status.offline {
     color: red;
 }
@@ -280,9 +288,9 @@ a {
 }
 
 .i-bookmark::before {
-    @include icon($base_path + "/assets/img/bootstrap/bookmark.svg", $width: $bookmark-icon-width, $position-y: -0.23rem);
+    @include icon("/assets/img/bootstrap/bookmark.svg", $width: $bookmark-icon-width, $position-y: -0.23rem);
 }
 
 .external::after {
-    @include icon($base_path + "/assets/img/bootstrap/box-arrow-up-right.svg", $position-y: -0.1rem);
+    @include icon("/assets/img/bootstrap/box-arrow-up-right.svg", $position-y: -0.1rem);
 }

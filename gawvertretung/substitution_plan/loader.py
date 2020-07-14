@@ -4,7 +4,7 @@ import io
 import logging
 import pickle
 import time
-from typing import Type, Union, Any, Optional, Callable, IO, Tuple, Set, List
+from typing import Type, Union, Any, Optional, Callable, Tuple, List
 
 import aiohttp
 from aiohttp import client
@@ -68,7 +68,8 @@ class BaseSubstitutionLoader:
         try:
             with open(filepath, "rb") as f:
                 if f.read(1) != self._STORAGE_VERSION:
-                    _LOGGER.warning(f"Could not deserialize substitutions from '{filepath}': Storage versions do not match")
+                    _LOGGER.warning(f"Could not deserialize substitutions from '{filepath}': "
+                                    "Storage versions do not match")
                 else:
                     self._storage = pickle.load(f)
                     self._current_status_date = pickle.load(f)
@@ -87,7 +88,7 @@ class BaseSubstitutionLoader:
         new_status_string = get_status_string(first_site)
         old_status = self._storage.status if self._storage is not None else None
         _LOGGER.debug(f"[{self._plan_name}] Got answer in {t2 - t1}ns, status is {repr(new_status_string)} "
-                     f"(old: {repr(old_status)})")
+                      f"(old: {repr(old_status)})")
         changed_substitutions = False
         affected_groups = None
         if new_status_string != old_status:

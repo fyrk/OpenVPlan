@@ -5,7 +5,7 @@ import sqlite3
 import hashlib
 import urllib
 import urllib.parse
-from typing import Set, Generator, Tuple, List
+from typing import Generator, Tuple, List
 
 _LOGGER = logging.getLogger("gawvertretung")
 

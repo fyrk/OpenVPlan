@@ -2,7 +2,7 @@ import dataclasses
 import re
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import List, Tuple, Optional, Iterable, Union, Dict, Set
+from typing import List, Tuple, Optional, Iterable, Dict
 
 from sortedcontainers import SortedDict, SortedList
 

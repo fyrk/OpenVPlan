@@ -5,14 +5,14 @@
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>{% block title %}{% endblock %} - Vertretungsplan GaW Verden</title>
     {% block breadcrumb_list %}{% endblock %}
-    <link rel="icon" href="{{ base_path }}/favicon.svg" sizes="any" type="image/svg+xml">
-    <link rel="icon" href="{{ base_path }}/favicon.ico" sizes="16x16 32x32 48x48" type="image/x-icon">
-    <link rel="icon" href="{{ base_path }}/favicon-16.png" sizes="16x16" type="image/png">
-    <link rel="icon" href="{{ base_path }}/favicon-32.png" sizes="32x32" type="image/png">
-    <link rel="icon" href="{{ base_path }}/favicon-64.png" sizes="64x64" type="image/png">
-    <link rel="icon" href="{{ base_path }}/favicon-192.png" sizes="192x192" type="image/png">
-    <link rel="manifest" href="{{ base_path }}/manifest.json">
-    <link rel="apple-touch-icon" href="{{ base_path }}/favicon-128.png">
+    <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" type="image/x-icon">
+    <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="/favicon-64.png" sizes="64x64" type="image/png">
+    <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/favicon-128.png">
     <meta name="apple-mobile-web-app-title" content="GaW VPlan">
     <meta name="application-name" content="GaW VPlan">
     <meta name="msapplication-TileColor" content="#00a300">
@@ -23,12 +23,12 @@
     <meta property="og:url" content="https://gawvertretung.florian-raediker.de">
     <meta property="og:title" content="{% block og_title %}{% endblock %} - Vertretungsplan GaW Verden">
     <meta property="og:locale" content="de_DE">
-    <meta property="og:image" content="{{ base_path }}/favicon.svg">
+    <meta property="og:image" content="/favicon.svg">
     <meta property="og:image:type" content="image/svg+xml">
-    <meta property="og:image" content="{{ base_path }}/favicon-192.png">
+    <meta property="og:image" content="/favicon-192.png">
     <meta property="og:image:type" content="image/png">
 
-    <link href="{{ base_path }}/assets/style/main.css" rel="stylesheet">
+    <link href="/assets/style/main.css" rel="stylesheet">
 </head>
 <body class="d-flex flex-column">
 <a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
@@ -58,9 +58,10 @@
         Programmiert von Florian Rädiker.
     </p>
     <p>
-        <a href="{{ base_path }}/about">Impressum</a> | <a href="{{ base_path }}/privacy">Datenschutzerklärung</a>
+        <!--suppress HtmlUnknownTarget -->
+        <a href="/about">Impressum</a> | <!--suppress HtmlUnknownTarget --><a href="/privacy">Datenschutzerklärung</a>
     </p>
-    <object data="{{ base_path }}/assets/img/python-powered.svg">python powered</object>
+    <object data="/assets/img/python-powered.svg">python powered</object>
 </footer>
 {% block body_end %}{% endblock %}
 </body>
