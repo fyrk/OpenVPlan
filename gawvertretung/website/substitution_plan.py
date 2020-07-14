@@ -136,7 +136,7 @@ class SubstitutionPlan:
                     storage=self._substitution_loader.storage, selection=selection, selection_str=selection_str),
                                         content_type="text/html", charset="utf-8")
                 # noinspection PyUnboundLocalVariable
-                response.set_cookie(self._name + "-selection", selection_qs, expires="")
+                response.set_cookie(self._name + "-selection", selection_qs, expires=SELECTION_COOKIE_EXPIRE)
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
