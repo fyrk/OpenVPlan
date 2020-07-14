@@ -172,7 +172,7 @@ class SubstitutionPlan:
                     raise web.HTTPSeeOther(
                         location="/" + self._name + "/?s=" + request.cookies[self._name + "-selection"]
                     )
-                if substitutions_have_changed:
+                if substitutions_have_changed or not self._index_site:
                     await self._recreate_index_site()
                 response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8")
                 # response.del_cookie(self._name + "-selection")
