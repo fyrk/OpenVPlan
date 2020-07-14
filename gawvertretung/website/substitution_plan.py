@@ -186,15 +186,30 @@ class SubstitutionPlan:
         async def listen():
             msg: WSMessage
             async for msg in ws:
-                _LOGGER.debug("Got message " + str(msg))
+                _LOGGER.debug("WebSocket: Got message " + str(msg))
                 if msg.type in (WSMsgType.CLOSE, WSMsgType.ERROR):
                     return
+                elif msg.type == WSMsgType.TEXT:
+                    try:
+                        data = msg.json()
+                    except json.JSONDecodeError:
+                        _LOGGER.exception("WebSocket: Received malformed JSON message")
+                    else:
+                        if "type" in data:
+                            if data["type"] == "check_status":
+                                if "status" in data:
+                                    if self._substitution_loader.storage.status != data["status"]:
+                                        # inform client that substitutions are not up-to-date
+                                        await send_new_substitutions_message()
+
+        async def send_new_substitutions_message():
+            return await ws.send_json({"type": "new_substitutions"})
 
         async def send():
             while True:
                 await self._event_new_substitutions.wait()
                 _LOGGER.debug("Send substitutions")
-                await ws.send_json({"hello": "world"})
+                await send_new_substitutions_message()
 
         listener = asyncio.ensure_future(send())
         sender = asyncio.ensure_future(listen())

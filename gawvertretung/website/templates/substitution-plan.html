@@ -1,7 +1,7 @@
 {% extends "_base.min.html" %}
 {%- block content -%}
 <div class="box status-box clearfix">
-    <span>Stand: {{ storage.status }}</span>
+    <span>Stand: <span id="status">{{ storage.status }}</span></span>
     <span class="float-right" id="online-status"></span>
 </div>
 

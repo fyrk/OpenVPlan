@@ -36,41 +36,53 @@ function greySubstitutions() {
 greySubstitutions();
 
 
+
+let substitutionPlanType = window.location.pathname.split("/", 2)[1];
+
+
 // =================
 // WEBSOCKET UPDATES
 
-let substitutionPlanType = window.location.pathname.split("/", 2)[1];
-if (!substitutionPlanType)
-    substitutionPlanType = "students"
-
-const ws = new WebSocket(
-    (window.location.protocol === "http:" ? "ws:" : "wss:") + "//" +
-    window.location.host + window.location.pathname + "api/wait-for-updates");
-ws.onopen = event => {
-    console.log("WebSocket opened", event);
-    onOnline(event);
-}
-ws.onclose = event => {
-    console.log("WebSocket closed", event);
-    onOffline(event);
-}
-ws.onmessage = event => {
-    const msg = JSON.parse(event.data);
-    console.log("WebSocket message", msg);
-    window.location.reload();
-}
-
 const onlineStatus = document.getElementById("online-status");
-function onOnline(event) {
-    onlineStatus.textContent = "Aktuell";
-    onlineStatus.classList.add("online");
-    onlineStatus.classList.remove("offline");
+let isWebSocketOnline = false;
+
+function createWebSocket() {
+    const ws = new WebSocket(
+        (window.location.protocol === "http:" ? "ws:" : "wss:") + "//" +
+        window.location.host + window.location.pathname + "api/wait-for-updates");
+    ws.addEventListener("open", event => {
+        console.log("WebSocket opened", event);
+        isWebSocketOnline = true;
+        onlineStatus.textContent = "Aktuell";
+        onlineStatus.classList.add("online");
+        onlineStatus.classList.remove("offline");
+    });
+    ws.addEventListener("close", event => {
+        console.log("WebSocket closed", event);
+        isWebSocketOnline = false;
+        onlineStatus.textContent = "Keine Verbindung zum Server";
+        onlineStatus.classList.add("offline");
+        onlineStatus.classList.remove("online");
+    });
+    ws.addEventListener("message", event => {
+        const msg = JSON.parse(event.data);
+        console.log("WebSocket message", msg);
+        window.location.reload();
+    });
+    return ws;
 }
-function onOffline(event) {
-    onlineStatus.textContent = "Keine Verbindung zum Server";
-    onlineStatus.classList.add("offline");
-    onlineStatus.classList.remove("online");
-}
+createWebSocket();
+
+window.addEventListener("focus", () => {
+    if (!isWebSocketOnline) {
+        const ws = createWebSocket();
+        ws.addEventListener("open", () => {
+            // Send status to server. The server checks whether the status is still up-to-date. If not, it sends a
+            // message, and thus the page is reloaded.
+            ws.send(JSON.stringify({type: "check_status", status: document.getElementById("status").textContent}));
+        });
+    }
+});
 
 
 // ============
