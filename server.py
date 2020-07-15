@@ -173,7 +173,7 @@ async def app_factory(host, port, dev_mode=False):
         loader.on_status_changed = stats.add_last_site
         plan = SubstitutionPlan(name, loader, env.get_template(template_name), env.get_template(template500_name))
 
-        plan.deserialize(f"data/substitutions/{name}.pickle")
+        await plan.deserialize(f"data/substitutions/{name}.pickle")
 
         app.add_subapp(f"/{name}/", plan.create_app(os.path.abspath("gawvertretung/website/static/" + name)
                                                     if config.get_bool("dev") else None))

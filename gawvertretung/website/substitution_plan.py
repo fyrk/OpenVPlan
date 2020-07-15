@@ -50,13 +50,14 @@ class SubstitutionPlan:
     def app(self):
         return self._app
 
-    def serialize(self, filepath: str):
+    async def serialize(self, filepath: str):
         self._substitution_loader.serialize(filepath)
         self._serialization_filepath = filepath
 
-    def deserialize(self, filepath: str):
+    async def deserialize(self, filepath: str):
         self._substitution_loader.deserialize(filepath)
         self._serialization_filepath = filepath
+        await self._recreate_index_site()
 
     def _prettify_selection(self, selection: List[str]) -> str:
         return ", ".join(selection)
@@ -128,7 +129,7 @@ class SubstitutionPlan:
             for subscription_entry in subscription_entries_to_delete:
                 if subscription_entry is not None:
                     self.storage.delete_push_subscription(subscription_entry)
-        self.serialize(self._serialization_filepath)
+        await self.serialize(self._serialization_filepath)
 
     async def _base_handler(self, request: web.Request) -> web.Response:
         _LOGGER.info(f"{request.method} {request.path}")
@@ -172,7 +173,7 @@ class SubstitutionPlan:
                     raise web.HTTPSeeOther(
                         location="/" + self._name + "/?s=" + request.cookies[self._name + "-selection"]
                     )
-                if substitutions_have_changed or not self._index_site:
+                if substitutions_have_changed:
                     await self._recreate_index_site()
                 response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8")
                 # response.del_cookie(self._name + "-selection")
