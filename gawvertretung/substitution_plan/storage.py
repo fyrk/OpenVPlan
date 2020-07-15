@@ -45,7 +45,9 @@ class SubstitutionStorage(SortedDict):
             except KeyError:
                 pass
             else:
-                affected_groups[day.day_name] = day.mark_new_substitutions(old_day)
+                new_subs = day.mark_new_substitutions(old_day)
+                if new_subs:
+                    affected_groups[day.day_name] = new_subs
         return affected_groups
 
     # noinspection PyUnresolvedReferences
