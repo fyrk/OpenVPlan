@@ -136,7 +136,6 @@ const notificationsInfo_all = document.getElementById("notifications-info-all");
 const notificationsInfo_selection = document.getElementById("notifications-info-selection");
 const notificationsInfo_blocked = document.getElementById("notifications-info-blocked");
 const notificationsInfo_failed = document.getElementById("notifications-info-failed");
-let swRegistration;
 
 function base64UrlToUint8Array(base64UrlData) {
     const padding = '='.repeat((4 - base64UrlData.length % 4) % 4);
@@ -154,9 +153,9 @@ function base64UrlToUint8Array(base64UrlData) {
     return buffer;
 }
 
-function subscribePush(isActive) {
+function subscribePush(isActive, registration) {
     return new Promise((resolve, reject) => {
-            swRegistration.pushManager.subscribe({
+        registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: base64UrlToUint8Array("BDu6tTwQHFlGb36-pLCzwMdgumSlyj_vqMR3I1KahllZd3v2se-LM25vhP3Yv_y0qXYx_KPOVOD2EYTaJaibzo8")
         }).then(subscription => {
@@ -188,7 +187,7 @@ function subscribePush(isActive) {
 
 let notificationState;
 
-function setNotificationsInfo(state) {
+function setNotificationsInfo(state, registration) {
     console.log("Setting notification-state to", state);
     notificationState = state;
     window.localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
@@ -201,9 +200,9 @@ function setNotificationsInfo(state) {
             } else {
                 notificationsInfo.innerHTML = notificationsInfo_all.innerHTML;
             }
-            subscribePush(true)
-                .catch(reason => {
-                    setNotificationsInfo("failed");
+            subscribePush(true, registration)
+                .catch(() => {
+                    setNotificationsInfo("failed", registration);
                 });
             break;
         case "denied":
@@ -217,10 +216,10 @@ function setNotificationsInfo(state) {
             notificationsInfo.innerHTML = notificationsInfo_failed.innerHTML;
             break;
         case "granted-and-disabled":
-            subscribePush(false)
-                .catch(reason => {
-                        setNotificationsInfo("failed");
-                    });
+            subscribePush(false, registration)
+                .catch(() => {
+                    setNotificationsInfo("failed", registration);
+                });
             toggleNotifications.checked = false;
             toggleNotifications.disabled = false;
             notificationsInfo.innerHTML = notificationsInfo_none.innerHTML;
@@ -234,9 +233,9 @@ function setNotificationsInfo(state) {
     }
 }
 
-function onNotificationsAvailable() {
+function onNotificationsAvailable(registration) {
     document.getElementById("notifications-block").hidden = false;
-    toggleNotifications.addEventListener("change", event => {
+    toggleNotifications.addEventListener("change", () => {
         if (toggleNotifications.checked) {
             window.Notification.requestPermission()
                 .then(permission => {
@@ -247,21 +246,22 @@ function onNotificationsAvailable() {
                         default:
                             notificationState = permission;
                     }
-                    setNotificationsInfo(notificationState);
+                    setNotificationsInfo(notificationState, registration);
                 });
         } else {
             if (notificationState === "granted-and-enabled") {
-                setNotificationsInfo("granted-and-disabled");
+                setNotificationsInfo("granted-and-disabled", registration);
             }
         }
     });
+
     function reloadPermissionState() {
         if (!notificationState.startsWith(Notification.permission)) {
             // permission has been changed
             if (Notification.permission === "granted") {
-                setNotificationsInfo("granted-and-disabled");
+                setNotificationsInfo("granted-and-disabled", registration);
             } else {
-                setNotificationsInfo(Notification.permission);
+                setNotificationsInfo(Notification.permission, registration);
             }
             return true;
         }
@@ -273,16 +273,15 @@ function onNotificationsAvailable() {
     if (notificationState == null)
         notificationState = "default";
     if (!reloadPermissionState()) {
-        setNotificationsInfo(notificationState);
+        setNotificationsInfo(notificationState, registration);
     }
 }
 
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.min.js")
+        navigator.serviceWorker.ready
             .then(registration => {
-                swRegistration = registration;
-                console.log("ServiceWorker registration successful:", registration);
+                console.log("ServiceWorker is active:", registration.active);
                 if (!("Notification" in window)) {
                     console.warn("Notification is not supported");
                     return;
@@ -291,7 +290,11 @@ if ("serviceWorker" in navigator) {
                     console.warn("localStorage is not supported");
                     return;
                 }
-                onNotificationsAvailable();
+                onNotificationsAvailable(registration);
+            });
+        navigator.serviceWorker.register("/sw.min.js")
+            .then(registration => {
+                console.log("ServiceWorker registration successful:", registration);
             }).catch(reason => console.warn("ServiceWorker registration failed:", reason))
     });
 } else {
