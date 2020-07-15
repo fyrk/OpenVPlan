@@ -47,41 +47,80 @@ const onlineStatus = document.getElementById("online-status");
 let isWebSocketOnline = false;
 
 function createWebSocket() {
+    if (isWebSocketOnline) return null;
     const ws = new WebSocket(
         (window.location.protocol === "http:" ? "ws:" : "wss:") + "//" +
         window.location.host + window.location.pathname + "api/wait-for-updates");
+
+    /*let heartbeatInterval;
+    let disconnectTimeout;*/
+
     ws.addEventListener("open", event => {
-        console.log("WebSocket opened", event);
         isWebSocketOnline = true;
         onlineStatus.textContent = "Aktuell";
         onlineStatus.classList.add("online");
         onlineStatus.classList.remove("offline");
+        /*heartbeatInterval = setInterval(() => {
+            if (hasFocus) {
+                disconnectTimeout = setTimeout(() => ws.close(), 14000); // give server 14 seconds to respond
+                ws.send('{"heartbeat": true}');
+            }
+        }, 15000);*/
+        console.log("WebSocket opened", event);
     });
     ws.addEventListener("close", event => {
-        console.log("WebSocket closed", event);
+        //clearInterval(heartbeatInterval);
         isWebSocketOnline = false;
         onlineStatus.textContent = "Keine Verbindung zum Server";
         onlineStatus.classList.add("offline");
         onlineStatus.classList.remove("online");
+        console.log("WebSocket closed", event);
     });
     ws.addEventListener("message", event => {
         const msg = JSON.parse(event.data);
         console.log("WebSocket message", msg);
-        window.location.reload();
+        switch (msg.type) {
+            /*case "heartbeat":
+                clearTimeout(disconnectTimeout);
+                break;*/
+            case "new_substitutions":
+                window.location.reload();
+                break;
+            default:
+                console.warn("Unknown WebSocket message type");
+                break;
+        }
+    });
+    window.addEventListener("offline", () => {
+        console.log("offline, closing WebSocket connection");
+        ws.close();
     });
     return ws;
 }
 createWebSocket();
 
-window.addEventListener("focus", () => {
-    if (!isWebSocketOnline) {
-        const ws = createWebSocket();
+function createNewWebSocket() {
+    // called after connection has been lost
+    const ws = createWebSocket();
+    if (ws != null) {
         ws.addEventListener("open", () => {
             // Send status to server. The server checks whether the status is still up-to-date. If not, it sends a
             // message, and thus the page is reloaded.
             ws.send(JSON.stringify({type: "check_status", status: document.getElementById("status").textContent}));
         });
     }
+}
+
+let hasFocus = true;
+
+window.addEventListener("focus", () => {
+    hasFocus = true;
+    createNewWebSocket();
+});
+
+window.addEventListener("online", () => {
+    console.log("online");
+    createNewWebSocket();
 });
 
 
