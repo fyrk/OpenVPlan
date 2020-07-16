@@ -46,8 +46,8 @@ class SubstitutionPlanDBStorage:
         self._connection.commit()
         _LOGGER.debug(f"Add push subscription {endpoint_hash} ({endpoint_origin}) (is_active={is_active})")
 
-    def iter_active_push_subscriptions(self, affected_groups: Dict[str, List[str]]) -> Generator[Tuple[dict, Dict[str, List[str]]],
-                                                                                      None, None]:
+    def iter_active_push_subscriptions(self, affected_groups: Dict[str, List[str]]) -> \
+            Generator[Tuple[dict, Dict[str, List[str]]], None, None]:
         self._cursor.execute("SELECT * FROM push_subscriptions")
         current_time = time.time()
         for subscription_entry in self._cursor:
@@ -72,4 +72,4 @@ class SubstitutionPlanDBStorage:
     def delete_push_subscription(self, subscription_entry: sqlite3.Row):
         self._cursor.execute("DELETE FROM push_subscriptions WHERE endpoint=?", (subscription_entry["endpoint"],))
         _LOGGER.debug(f"Deleted push subscription {subscription_entry['endpoint_hash']} "
-                      f"({subscription_entry['endpoint_origin']}")
+                      f"({subscription_entry['endpoint_origin']})")
