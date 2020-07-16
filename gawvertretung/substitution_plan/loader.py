@@ -228,7 +228,7 @@ class BaseSubstitutionLoader:
         if self._storage:
             res = substitution_storage.mark_new_substitutions(self._storage)
         else:
-            res = None
+            res = substitution_storage.get_all_affected_groups()
         self._storage = substitution_storage
         return res
 

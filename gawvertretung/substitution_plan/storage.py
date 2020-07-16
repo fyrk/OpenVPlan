@@ -50,6 +50,16 @@ class SubstitutionStorage(SortedDict):
                     affected_groups[day.day_name] = new_subs
         return affected_groups
 
+    def get_all_affected_groups(self):
+        affected_groups = {}
+        for day in self.values():
+            groups = []
+            for group in day.iter_groups(None):
+                if group.affected_groups:
+                    groups.extend(group.affected_groups)
+            affected_groups[day.day_name] = groups
+        return affected_groups
+
     # noinspection PyUnresolvedReferences
     def remove_old_days(self, current_timestamp: int):
         timestamps = self.keys()
