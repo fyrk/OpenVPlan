@@ -52,7 +52,6 @@ stats = Stats(STATS_PATH)
 env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.join(WORKING_DIR, "gawvertretung/website/templates")),
     bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(WORKING_DIR, "data/template_cache/")),
-    autoescape=jinja2.select_autoescape(["html"]),
     enable_async=True,
     trim_blocks=True,
     lstrip_blocks=True)

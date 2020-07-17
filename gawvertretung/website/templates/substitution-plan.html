@@ -10,26 +10,29 @@
 <div class="box">
     <div class="p-0 mb-3">
         <div class="row">
-            <div class="col-auto">
+            <div class="col-md">
                 <div class="day-heading">
                     <span class="day-name pr-1">{{- day.day_name -}}</span>
                     <span class="text-muted date">{{- day.date -}}</span>
                 </div>
                 Woche {{ day.week -}}
                 {%- if day.news -%}
-                    <div>
-                        <span class="day-info">Nachrichten:</span>
-                        {%- for news_line in day.news[:-1] -%}
-                            {{ news_line|safe }}<br>
-                        {%- endfor -%}
-                        {{ day.news[-1]|safe }}
+                    <div class="day-info">
+                        <input type="checkbox" class="day-info-checkbox" id="day-info-checkbox-news" aria-hidden="true">
+                        <label class="day-info-label" for="day-info-checkbox-news">
+                            <span class="day-info-heading">Nachrichten: </span>{{ day.news|map("safe")|join("<br>") }}
+                        </label>
                     </div>
                 {%- endif -%}
             </div>
             <div class="col-md">
                 {%- for title, text in day.info -%}
-                    <span class="day-info">{{ title }}:</span>
-                    {{ text }}
+                    <div class="day-info">
+                        <input type="checkbox" class="day-info-checkbox" id="day-info-checkbox-{{ loop.index0 }}" aria-hidden="true">
+                        <label class="day-info-label" for="day-info-checkbox-{{ loop.index0 }}">
+                            <span class="day-info-heading">{{ title }}: </span>{{ text }}
+                        </label>
+                    </div>
                 {%- endfor -%}
             </div>
         </div>
@@ -88,7 +91,7 @@
         <div class="form-row">
             <div class="col-9 col-sm-6 col-md-4 col-xl-3">
                 <input type="text" class="form-control" id="selectionInput" name="s" required
-                       value="{%- if selection -%}{{ selection_str }}{%- endif -%}" aria-describedby="selectionHelp" >
+                       value="{%- if selection -%}{{ selection_str }}{%- endif -%}" aria-describedby="selectionHelp">
                 <small id="selectionHelp" class="form-text text-muted">
                     {% block selection_help_text %}{% endblock %}
                 </small>
@@ -105,7 +108,7 @@
     </form>
 
     <div id="notifications-block" hidden>
-        <h2 class="mt-4">{% block push_notifications_heading %}Benachrichtigungen{% endblock %}</h2>
+        <h2 class="mt-4">{% block push_notifications_heading %}Benachrichtigungen <span class="badge badge-pill badge-success">Neu</span>{% endblock %}</h2>
         Erhalte Push-Benachrichtigungen, wenn es neue Vertretungen gibt.
         <div class="custom-control custom-switch mt-3">
             <input type="checkbox" class="custom-control-input" id="toggle-notifications">
