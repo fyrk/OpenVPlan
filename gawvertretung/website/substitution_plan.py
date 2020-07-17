@@ -79,7 +79,6 @@ class SubstitutionPlan:
         try:
             substitutions_have_changed, self._affected_groups = \
                 await self._substitution_loader.update(self.client_session)
-            substitutions_have_changed = substitutions_have_changed or config.get_bool("dev")
             if "event" in request.query and config.get_bool("dev"):
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
@@ -116,7 +115,7 @@ class SubstitutionPlan:
                     raise web.HTTPSeeOther(
                         location="/" + self._name + "/?s=" + request.cookies[self._name + "-selection"]
                     )
-                if substitutions_have_changed:
+                if substitutions_have_changed or config.get_bool("dev"):
                     await self._recreate_index_site()
                 response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8")
                 # response.del_cookie(self._name + "-selection")
