@@ -236,7 +236,6 @@ $day-info-heading-font-size: 1.15rem;
 }
 
 .day-info-label {
-    @include clearfix;
     display: block;
     cursor: pointer;
     margin-bottom: 0;
