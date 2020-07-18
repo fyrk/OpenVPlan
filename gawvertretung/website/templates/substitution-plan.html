@@ -20,7 +20,8 @@
                     <div class="day-info">
                         <input type="checkbox" class="day-info-checkbox" id="day-info-checkbox-news" aria-hidden="true">
                         <label class="day-info-label" for="day-info-checkbox-news">
-                            <span class="day-info-heading">Nachrichten: </span>{{ day.news|map("safe")|join("<br>") }}
+                            <span class="day-info-heading">Nachrichten: </span>
+                            <span class="day-info-content">{{ day.news|map("safe")|join("<br>") }}</span>
                         </label>
                     </div>
                 {%- endif -%}
@@ -30,7 +31,8 @@
                     <div class="day-info">
                         <input type="checkbox" class="day-info-checkbox" id="day-info-checkbox-{{ loop.index0 }}" aria-hidden="true">
                         <label class="day-info-label" for="day-info-checkbox-{{ loop.index0 }}">
-                            <span class="day-info-heading">{{ title }}: </span>{{ text }}
+                            <span class="day-info-heading">{{ title }}: </span>
+                            <span class="day-info-content">{{ text }}</span>
                         </label>
                     </div>
                 {%- endfor -%}
@@ -116,8 +118,8 @@
                 <template id="notifications-info-none">Benachrichtigungen sind deaktiviert</template>
                 <template id="notifications-info-all">{% block notifications_info_all %}{% endblock %}</template>
                 <template id="notifications-info-selection">{% block notifications_info_selection %}Du wirst für <i>{selection}</i> benachrichtigt{% endblock %}</template>
-                <template id="notifications-info-blocked"><span class="text-danger">Du hast Benachrichtigungen vom Vertretungsplan blockiert</span></template>
-                <template id="notifications-info-failed">Das Aktivieren von Benachrichtigungen ist fehlgeschlagen. Versuche, einen anderen Browser zu verwenden.</template>
+                <template id="notifications-info-blocked"><span class="text-danger">Du hast Benachrichtigungen vom Vertretungsplan blockiert. Erlaube Benachrichtigungen in den Einstellungen deines Browsers.</span></template>
+                <template id="notifications-info-failed">Das Aktivieren von Benachrichtigungen ist fehlgeschlagen. Lade die Seite neu oder verwende einen anderen Browser.</template>
                 <span id="notifications-info">Benachrichtigungen sind deaktiviert</span>
             </label>
         </div>
