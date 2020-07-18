@@ -43,14 +43,14 @@ REQUEST_USER_AGENT = config.get_str("user_agent", "GaWVertretungBot").format(ver
 REQUEST_HEADERS = {hdrs.USER_AGENT: REQUEST_USER_AGENT}
 
 
-STATIC_PATH = os.path.join(WORKING_DIR, "gawvertretung/website/static/")
+STATIC_PATH = os.path.join(WORKING_DIR, "assets/static/")
 STATS_PATH = os.path.join(WORKING_DIR, "data/stats/")
 
 
 stats = Stats(STATS_PATH)
 
 env = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.join(WORKING_DIR, "gawvertretung/website/templates")),
+    loader=jinja2.FileSystemLoader(os.path.join(WORKING_DIR, "assets/templates")),
     bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(WORKING_DIR, "data/template_cache/")),
     enable_async=True,
     trim_blocks=True,
@@ -174,7 +174,7 @@ async def app_factory(host, port, dev_mode=False):
 
         await plan.deserialize(f"data/substitutions/{name}.pickle")
 
-        app.add_subapp(f"/{name}/", plan.create_app(os.path.abspath("gawvertretung/website/static/" + name)
+        app.add_subapp(f"/{name}/", plan.create_app(os.path.abspath("assets/static/" + name)
                                                     if config.get_bool("dev") else None))
 
         app["substitution_plans"][name] = plan
