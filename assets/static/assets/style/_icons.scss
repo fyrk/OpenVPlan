@@ -4,21 +4,18 @@
 %icon {
     display: inline-block;
     content: "";
+}
+
+%icon-primary {
     background-color: theme-color("primary");
 }
 
-@mixin icon($path, $width: 1.2rem, $height: 1.2rem, $position-x: null, $position-y: null, $vertical-align: null, $margin-left: null) {
+@mixin icon($path, $width: 1.2rem, $height: 1.2rem, $position-x: null, $position-y: null) {
     @extend %icon;
     mask: $path no-repeat 0 0/#{$width} $height;
     -webkit-mask: $path no-repeat 0 0/#{$width} $height;
     width: $width;
     height: $height;
-    @if $vertical-align {
-        vertical-align: $vertical-align;
-    }
-    @if $margin-left {
-        margin-left: $margin-left;
-    }
     @if $position-x {
         margin-left: $position-x;
         margin-right: -$position-x;
@@ -30,18 +27,20 @@
 }
 
 .i-bookmark::before {
+    @extend %icon-primary;
     @include icon(
                     url('data:image/svg+xml,<svg width="1em" height="1em" viewBox="0 0 20 20" class="bi bi-bookmark" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 12l5 3V3a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12l5-3zm-4 1.234l4-2.4 4 2.4V3a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10.234z"/></svg>'),
-            $position-x: 0.1rem,
-            $vertical-align: bottom
+            $position-x: 0.1rem
     );
+    vertical-align: bottom;
 }
 
 .external::after {
+    @extend %icon-primary;
     @include icon(
                     url('data:image/svg+xml,<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-box-arrow-up-right" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M1.5 13A1.5 1.5 0 0 0 3 14.5h8a1.5 1.5 0 0 0 1.5-1.5V9a.5.5 0 0 0-1 0v4a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 0 0-1H3A1.5 1.5 0 0 0 1.5 5v8zm7-11a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0V2.5H9a.5.5 0 0 1-.5-.5z"/><path fill-rule="evenodd" d="M14.354 1.646a.5.5 0 0 1 0 .708l-8 8a.5.5 0 0 1-.708-.708l8-8a.5.5 0 0 1 .708 0z"/></svg>'),
             $width: 1rem,
             $height: 1rem,
-            $margin-left: 0.1rem
     );
+    margin-left: 0.1rem;
 }
