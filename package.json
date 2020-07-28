@@ -18,7 +18,14 @@
     "bootstrap-icons": "^1.0.0-alpha5"
   },
   "devDependencies": {
+    "google-closure-compiler": "^20200628.0.0",
+    "gulp": "^4.0.2",
+    "gulp-postcss": "^8.0.0",
+    "gulp-purgecss": "^2.3.0",
+    "gulp-sass": "^4.1.0",
+    "gulp-sourcemaps": "^2.6.5",
     "html-minifier": "^4.0.0",
-    "web-push": "^3.4.4"
+    "web-push": "^3.4.4",
+    "yargs": "^15.4.1"
   }
 }
