@@ -141,7 +141,7 @@ body, html {
     .title-small {
         display: none;
     }
-    @media (max-width: 768px) {
+    @media (max-width: 768px - 1px) {
         .title-middle {
             display: inline;
         }
