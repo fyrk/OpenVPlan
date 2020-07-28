@@ -165,6 +165,7 @@ class SubstitutionPlan:
                         if "type" in data:
                             if data["type"] == "check_status":
                                 if "status" in data:
+                                    await self._substitution_loader.update(self.client_session)
                                     if self._substitution_loader.storage.status != data["status"]:
                                         # inform client that substitutions are not up-to-date
                                         await ws.send_json({"type": "new_substitutions"})

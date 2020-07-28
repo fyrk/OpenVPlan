@@ -1,4 +1,6 @@
+import csv
 import datetime
+import hashlib
 import logging
 import os.path
 
@@ -16,41 +18,25 @@ class Stats:
         "google"  # Google Image Proxy 11
     ]
 
-    def __init__(self, stats_dir):
-        self._directory = stats_dir
-
-        self._path_last_sites = os.path.join(self._directory, "statuses.txt")
-        self._path_requests = os.path.join(self._directory, "requests.txt")
-        self._path_bad_requests = os.path.join(self._directory, "bad_requests.txt")
-        self._path_bot_requests = os.path.join(self._directory, "bot_requests.txt")
-
-    @staticmethod
-    async def _add_to_file(path, text):
-        with open(path, "a", encoding="utf-8") as f:
-            f.write(text)
+    def __init__(self, directory):
+        self._last_sites = csv.writer(open(os.path.join(directory, "statuses.csv"), "a", newline=""))
+        self._requests = csv.writer(open(os.path.join(directory, "requests.csv"), "a", newline=""))
 
     async def add_last_site(self, plan_name: str, status: str, last_site: int):
-        await self._add_to_file(self._path_last_sites, plan_name + " " + status + " " + str(last_site) + "\n")
+        self._last_sites.writerow((plan_name, status, last_site))
 
-    async def new_request(self, request: web.Request, response: web.Response):
+    async def new_request(self, request: web.Request, response: web.Response, time):
+        remote = request.remote
         if response.status >= 400:
-            return await self.new_bad_request(request, response)
-        if request.remote != request.host:
-            user_agent = request.headers[hdrs.USER_AGENT]
-            user_agent_lower = user_agent.lower()
-            t = datetime.datetime.now().strftime("%Y-%m-%d %X")
-            if referer := request.headers.get(hdrs.REFERER):
-                referer = ' Referer:"' + referer + '"'
-            else:
-                referer = ""
+            type_ = "BAD"
+        else:
+            user_agent_lower = request.headers.get(hdrs.USER_AGENT).lower()
             if any(agent in user_agent_lower for agent in self._BOT_USER_AGENTS):
-                await self._add_to_file(self._path_bot_requests, t + " " + request.method + " " + request.path + " " +
-                                        request.remote + " " + user_agent + referer + "\n")
+                type_ = "BOT"
             else:
-                await self._add_to_file(self._path_requests, t + " " + request.method + " " + request.path + " " +
-                                        " " + user_agent + referer + "\n")
-
-    async def new_bad_request(self, request: web.Request, response: web.Response):
-        with open(self._path_bad_requests, "a", encoding="utf-8") as f:
-            f.write(str(response.status) + " " + response.reason + " " + request.method + " " + request.path + " " +
-                    request.remote + "\n")
+                type_ = "ALL"
+                remote = hashlib.blake2b(remote.encode("utf-8"), digest_size=3).hexdigest()
+        self._requests.writerow((type_, datetime.datetime.now().strftime("%Y-%m-%d %X"),
+                                 response.status, response.reason, request.method,
+                                 request.path, time, response.body_length,
+                                 request.headers.get(hdrs.USER_AGENT), request.headers.get(hdrs.REFERER), remote))

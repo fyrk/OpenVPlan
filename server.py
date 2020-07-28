@@ -79,18 +79,12 @@ add_logging_factory()
 
 @web.middleware
 async def logging_middleware(request: web.Request, handler):
-    t1 = time.perf_counter_ns()
     req_id = secrets.token_hex(4)
     request["request_id"] = req_id
     token = request_id_contextvar.set(req_id)
     try:
         response: web.Response = await handler(request)
-        try:
-            user_agent = '"' + request.headers[hdrs.USER_AGENT].replace('"', '\"') + '"'
-        except KeyError:
-            user_agent = "-"
-        _LOGGER.info(f"{request.method} {request.path} {response.status} {response.body_length} "
-                     f"{time.perf_counter_ns()-t1}ns {user_agent}")
+        _LOGGER.info(f"{request.method} {request.path} {response.status}")
         return response
     finally:
         request_id_contextvar.reset(token)
@@ -98,6 +92,7 @@ async def logging_middleware(request: web.Request, handler):
 
 @web.middleware
 async def stats_middleware(request: web.Request, handler):
+    t1 = time.perf_counter_ns()
     response: web.Response = await handler(request)
     if not response.prepared:
         if type(response) != FileResponse:
@@ -112,7 +107,7 @@ async def stats_middleware(request: web.Request, handler):
                 response.content_type = "text/javascript"
             elif request.path.endswith(".css"):
                 response.content_type = "text/css"
-    await stats.new_request(request, response)
+    await stats.new_request(request, response, time.perf_counter_ns()-t1)
     return response
 
 
