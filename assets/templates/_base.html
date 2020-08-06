@@ -36,7 +36,7 @@
     <header class="main-container">
         <div class="box title-box">
             {% block title_bar %}
-                {% if selection %}<span class="selection">{{ selection_str }}</span><!-- htmlmin:ignore --> <!-- htmlmin:ignore -->- {% endif %}
+                {% if selection %}<span class="selection">{{ selection_str|e }}</span><!-- htmlmin:ignore --> <!-- htmlmin:ignore -->- {% endif %}
                 <span class="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
                 <span class="title-middle">GaW Vertretungsplan</span>
                 <span class="title-small">GaW VPlan</span>
