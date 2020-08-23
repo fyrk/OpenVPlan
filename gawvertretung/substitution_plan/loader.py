@@ -74,7 +74,7 @@ class BaseSubstitutionLoader:
                     self._storage = pickle.load(f)
                     self._current_status_date = pickle.load(f)
         except Exception:
-            _LOGGER.exception(f"Could not deserialize substitutions from '{filepath}'")
+            _LOGGER.warning(f"Could not deserialize substitutions from '{filepath}'")
         else:
             if self._storage is not None:
                 _LOGGER.debug(f"Loaded substitutions from '{filepath}' with status '{self._storage.status}'")

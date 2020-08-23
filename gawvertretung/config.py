@@ -9,18 +9,15 @@ _CONFIG = {}
 
 def load(filepath="config.json", filepath_secret="secret_config.json"):
     global _CONFIG
-    # noinspection PyBroadException
-    try:
-        with open(filepath, "r") as f:
-            config = json.load(f)
-            if type(config) == dict:
-                _CONFIG.update(config)
-        with open(filepath_secret, "r") as f:
-            config = json.load(f)
-            if type(config) == dict:
-                _CONFIG.update(config)
-    except Exception:
-        _LOGGER.exception(f"Could not load config files '{filepath}' and '{filepath_secret}'")
+    for fp in (filepath, filepath_secret):
+        # noinspection PyBroadException
+        try:
+            with open(fp, "r") as f:
+                config = json.load(f)
+                if type(config) == dict:
+                    _CONFIG.update(config)
+        except Exception:
+            _LOGGER.warning(f"Could not load config file '{fp}'")
 
 
 load()

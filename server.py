@@ -152,10 +152,8 @@ async def databases_context(app: web.Application):
         substitution_plan.storage.close()
 
 
-async def app_factory(host, port, dev_mode=False):
+async def app_factory(dev_mode=False):
     app = web.Application(middlewares=[logging_middleware, stats_middleware, error_middleware])
-    _LOGGER.info(f"Starting server on {host}:{port}{' in dev mode' if dev_mode else ''}")
-
     app["substitution_plans"] = {}
     for name, plan_config in config.get("substitution_plans").items():
         loader_name = plan_config["loader"]
@@ -195,11 +193,13 @@ async def app_factory(host, port, dev_mode=False):
 
 
 def run(path, host, port, dev_mode=False):
-    web.run_app(app_factory(host, port, dev_mode), path=path, host=host, port=port)
+    _LOGGER.info(f"Starting server on {path if path else str(host) + ':' + str(port)}{' in dev mode' if dev_mode else ''}")
+    web.run_app(app_factory(dev_mode), path=path, host=host, port=port)
 
 
 parser = argparse.ArgumentParser(description="gawvertretung server")
 parser.add_argument("--path")
+parser.add_argument("--host")
 parser.add_argument("--port")
 
 if __name__ == "__main__":
@@ -207,12 +207,10 @@ if __name__ == "__main__":
     if args.path:
         path = args.path
         host = None
+        port = None
     else:
         path = None
-        host = config.get_str("host", "localhost")
-    if args.port:
-        port = args.port
-    else:
-        port = config.get_int("port", 8080)
+        host = args.host if args.host else config.get_str("host", "localhost")
+        port = args.port if args.port else config.get_int("port", 8080)
     init_logger(os.path.join(WORKING_DIR, config.get_str("logfile", "logs/website.log")))
     run(path, host, port, config.get_bool("dev"))
