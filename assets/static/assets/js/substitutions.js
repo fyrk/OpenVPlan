@@ -173,7 +173,7 @@ function subscribePush(isActive, registration) {
                         console.log("Push subscription successful");
                         resolve();
                     } else {
-                        console.error("Push subscription failed");
+                        console.error("Push subscription failed", data);
                         reject();
                     }
                 });
@@ -201,7 +201,8 @@ function setNotificationsInfo(state, registration) {
                 notificationsInfo.innerHTML = notificationsInfo_all.innerHTML;
             }
             subscribePush(true, registration)
-                .catch(() => {
+                .catch(reason => {
+                    console.error("Push subscription failed", reason);
                     setNotificationsInfo("failed", registration);
                 });
             break;
@@ -217,7 +218,8 @@ function setNotificationsInfo(state, registration) {
             break;
         case "granted-and-disabled":
             subscribePush(false, registration)
-                .catch(() => {
+                .catch(reason => {
+                    console.error("Push subscription failed", reason);
                     setNotificationsInfo("failed", registration);
                 });
             toggleNotifications.checked = false;
@@ -288,6 +290,10 @@ if ("serviceWorker" in navigator) {
                 }
                 if (!("localStorage" in window)) {
                     console.warn("localStorage is not supported");
+                    return;
+                }
+                if (!("PushManager" in window)) {
+                    console.warn("PushManager is not supported");
                     return;
                 }
                 onNotificationsAvailable(registration);
