@@ -114,7 +114,7 @@
         Erhalte Push-Benachrichtigungen, wenn es neue Vertretungen gibt.
         <div class="custom-control custom-switch mt-3">
             <input type="checkbox" class="custom-control-input" id="toggle-notifications">
-            <label class="custom-control-label no-select" for="toggle-notifications">
+            <label class="custom-control-label user-select-none" for="toggle-notifications">
                 <template id="notifications-info-none">Benachrichtigungen sind deaktiviert</template>
                 <template id="notifications-info-all">{% block notifications_info_all %}{% endblock %}</template>
                 <template id="notifications-info-selection">{% block notifications_info_selection %}Du wirst für <i>{{ selection_str|e }}</i> benachrichtigt{% endblock %}</template>

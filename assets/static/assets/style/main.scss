@@ -45,6 +45,7 @@ $box-bg: white;
 @import "bootstrap/scss/utilities/position";
 @import "bootstrap/scss/utilities/float";
 @import "bootstrap/scss/utilities/text";
+@import "bootstrap/scss/utilities/interactions";
 
 @import "bootstrap/scss/vendor/rfs";
 
@@ -112,16 +113,8 @@ body, html {
     }
 }
 
-.no-select {
-
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
 .title-box {
-    @extend .no-select;
+    @extend .user-select-none;
     text-align: center;
     background-color: theme-color("secondary");
     padding: $spacer * .8;
