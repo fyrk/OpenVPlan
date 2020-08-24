@@ -32,12 +32,10 @@ const purgecss = require("postcss-purgecss");
 gulp.task("build-sass", () => {
     const srcPath = argv.src;
     const destPath = argv.dest;
-    const loadPath = argv.loadpath;
     return gulp.src(srcPath)
         .pipe(sourcemaps.init())
         .pipe(sass({
-                outputStyle: "compressed",
-                includePaths: [loadPath]
+                outputStyle: "compressed"
         }))
         .pipe(postcss([
             purgecss({

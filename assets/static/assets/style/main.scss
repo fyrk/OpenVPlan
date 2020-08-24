@@ -75,6 +75,7 @@ body, html {
 }
 
 #content {
+    //noinspection CssUnusedSymbol
     @extend .p-0, .px-sm-3;
     flex: 1 0 auto;
 }
@@ -267,6 +268,8 @@ $day-info-heading-font-size: 1.15rem;
         }
     }
 
+    // see comment for .substitutions-table
+    //noinspection CssUnusedSymbol
     &:not(.has-selection) .group-name:not(.selectable) {
         padding-left: $table-cell-padding-sm + 1.2rem;
     }
@@ -320,6 +323,7 @@ $day-info-heading-font-size: 1.15rem;
 }
 
 a {
+    //noinspection CssUnusedSymbol
     @extend .text-decoration-none
 }
 

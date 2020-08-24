@@ -266,7 +266,7 @@ class SubstitutionPlan:
                                     f"Could not send push notification to {endpoint_hash} ({endpoint_origin}): "
                                     f"{r.status} {repr(await r.text())}")
                                 # If status code is 404 or 410, the endpoints are unavailable, so delete the
-                                # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes
+                                # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
                                 if r.status in (404, 410):
                                     return subscription_entry
                             else:

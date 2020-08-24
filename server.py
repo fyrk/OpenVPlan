@@ -193,7 +193,8 @@ async def app_factory(dev_mode=False):
 
 
 def run(path, host, port, dev_mode=False):
-    _LOGGER.info(f"Starting server on {path if path else str(host) + ':' + str(port)}{' in dev mode' if dev_mode else ''}")
+    _LOGGER.info(f"Starting server on {path if path else str(host) + ':' + str(port)}"
+                 f"{' in dev mode' if dev_mode else ''}")
     web.run_app(app_factory(dev_mode), path=path, host=host, port=port)
 
 
