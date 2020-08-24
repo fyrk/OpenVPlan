@@ -62,7 +62,7 @@ class SubstitutionPlan:
     async def deserialize(self, filepath: str):
         self._substitution_loader.deserialize(filepath)
         self._serialization_filepath = filepath
-        if self._substitution_loader.storage:
+        if self._substitution_loader.storage is not None:
             await self._recreate_index_site()
 
     def _prettify_selection(self, selection: List[str]) -> str:
