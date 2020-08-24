@@ -23,7 +23,9 @@ _LOGGER = logging.getLogger("gawvertretung")
 
 # Time when a "<plan-name>-selection" cookie expires. This is on 29th July, as on this date, summer holidays in Lower
 # Saxony normally take place.
-SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(datetime.datetime(datetime.datetime.now().year, 7, 29).timetuple()))
+now = datetime.datetime.now()
+SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(
+    datetime.datetime(now.year if now < datetime.datetime(now.year, 7, 29) else now.year+1, 7, 29).timetuple()))
 # Time for a cookie which should be deleted (Thu, 01 Jan 1970 00:00:00 GMT)
 DELETE_COOKIE_EXPIRE = formatdate(0)
 
