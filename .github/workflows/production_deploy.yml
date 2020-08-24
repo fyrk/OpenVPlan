@@ -21,3 +21,11 @@ jobs:
         remote_user: ${{ secrets.REMOTE_USER }}
         remote_key:  ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
         remote_path: ${{ secrets.REMOTE_PRODUCTION_TARGET }}
+    - name: Restart server
+      uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
+          script: ${{ secrets.REMOTE_RESTART_PRODUCTION_CMD }}
+          command_timeout: 30s
