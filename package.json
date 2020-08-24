@@ -13,11 +13,10 @@
     "gymnasium-am-wall-verden"
   ],
   "author": "Florian Rädiker",
-  "dependencies": {
-    "bootstrap": "^4.5.2",
-    "bootstrap-icons": "^1.0.0-alpha5"
-  },
+  "dependencies": { },
   "devDependencies": {
+    "bootstrap": "^4.5.2",
+    "bootstrap-icons": "^1.0.0-alpha5",
     "autoprefixer": "^9.8.6",
     "google-closure-compiler": "^20200719.0.0",
     "gulp": "^4.0.2",
