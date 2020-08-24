@@ -14,7 +14,7 @@ from gawvertretung import config
 from gawvertretung.db.db import SubstitutionPlanDBStorage
 from gawvertretung.substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
 from gawvertretung.website.stats import Stats
-from gawvertretung.website.substitution_plan import SubstitutionPlan
+from gawvertretung.website.substitution_plan import SubstitutionPlan, RESPONSE_HEADERS
 
 
 __version__ = "3.0"
@@ -119,18 +119,18 @@ async def error_middleware(request: web.Request, handler):
     except web.HTTPException as e:
         if e.status == 404:
             return web.Response(text=await TEMPLATE_ERROR404.render_async(), status=404, content_type="text/html",
-                                charset="utf-8")
+                                charset="utf-8", headers=RESPONSE_HEADERS)
         raise e from None
     except Exception:
         _LOGGER.exception(f"{request.method} {request.path} Exception while handling request")
     return web.Response(text=await TEMPLATE_ERROR500.render_async(), status=500, content_type="text/html",
-                        charset="utf-8")
+                        charset="utf-8", headers=RESPONSE_HEADERS)
 
 
 def template_handler(template: jinja2.Template):
     # noinspection PyUnusedLocal
     async def handler(request: web.Request):
-        return web.Response(text=await template.render_async(), content_type="text/html")
+        return web.Response(text=await template.render_async(), content_type="text/html", headers=RESPONSE_HEADERS)
     return handler
 
 

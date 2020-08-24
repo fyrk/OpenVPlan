@@ -29,6 +29,15 @@ SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(
 # Time for a cookie which should be deleted (Thu, 01 Jan 1970 00:00:00 GMT)
 DELETE_COOKIE_EXPIRE = formatdate(0)
 
+RESPONSE_HEADERS = {
+    "Content-Security-Policy": "default-src 'self'; img-src 'self' data:",
+    "Strict-Transport-Security": "max-age=63072000",
+    "Referrer-Policy": "same-origin",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1"
+}
+
 
 class SubstitutionPlan:
     def __init__(self, name: str, substitution_loader: BaseSubstitutionLoader, template: jinja2.Template,
@@ -92,7 +101,7 @@ class SubstitutionPlan:
                 selection = [s.upper() for s in selection]
                 response = web.Response(text=await self._template.render_async(
                     storage=self._substitution_loader.storage, selection=selection, selection_str=selection_str),
-                                        content_type="text/html", charset="utf-8")
+                                        content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
                 # unfortunately, "same_site" parameter is not in a release yet (see
                 # https://github.com/aio-libs/aiohttp/pull/4224), so access SimpleCookie directly
                 # response.set_cookie(self._name + "-selection", selection_qs, expires=SELECTION_COOKIE_EXPIRE)
@@ -119,7 +128,8 @@ class SubstitutionPlan:
                     )
                 if substitutions_have_changed or config.get_bool("dev"):
                     await self._recreate_index_site()
-                response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8")
+                response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8",
+                                        headers=RESPONSE_HEADERS)
                 # response.del_cookie(self._name + "-selection")
                 response.cookies[self._name + "-selection"] = ""
                 cookie = response.cookies[self._name + "-selection"]
@@ -140,7 +150,7 @@ class SubstitutionPlan:
         except Exception:
             _LOGGER.exception("Exception occurred while handling request")
             response = web.Response(text=await self._error500_template.render_async(), status=500,
-                                    content_type="text/html", charset="utf-8")
+                                    content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
         return response
 
     # /api/wait-for-updates
