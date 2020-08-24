@@ -1,11 +1,12 @@
 const gulp = require("gulp");
 const argv = require("yargs").argv;
 const sourcemaps = require("gulp-sourcemaps");
-const sass = require("gulp-sass");
-const purgecss = require("gulp-purgecss");
+const rename = require("gulp-rename");
+
+
 const closureCompiler = require("google-closure-compiler").gulp();
 
-gulp.task("js", () => {
+gulp.task("build-js", () => {
     const srcPath = argv.src;
     const outputFile = argv.output_file;
     const destPath = argv.dest;
@@ -22,7 +23,13 @@ gulp.task("js", () => {
         .pipe(gulp.dest(destPath));
 })
 
-gulp.task("sass", () => {
+
+const sass = require("gulp-sass");
+const postcss = require("gulp-postcss");
+const autoprefixer = require("autoprefixer");
+const purgecss = require("postcss-purgecss");
+
+gulp.task("build-sass", () => {
     const srcPath = argv.src;
     const destPath = argv.dest;
     const loadPath = argv.loadpath;
@@ -32,13 +39,32 @@ gulp.task("sass", () => {
                 outputStyle: "compressed",
                 includePaths: [loadPath]
         }))
-        .pipe(purgecss({
-            content: [
-                "assets/templates/*.min.html",
-                "assets/static/assets/js/substitutions.min.js"
-            ],
-            css: [srcPath],
-        }))
+        .pipe(postcss([
+            purgecss({
+                content: [
+                    "assets/templates/*.min.html",
+                    "assets/static/assets/js/substitutions.min.js"
+                ],
+                whitelist: [
+                    "view-email"  // about.scss
+                ],
+                css: [srcPath]
+            }),
+            autoprefixer()
+        ]))
         .pipe(sourcemaps.write("/"))
+        .pipe(gulp.dest(destPath));
+});
+
+
+const htmlmin = require("gulp-html-minifier");
+
+gulp.task("build-html", () => {
+    const srcPath = argv.src;
+    const destPath = argv.dest;
+    const destName = argv.dest_name;
+    return gulp.src(srcPath)
+        .pipe(htmlmin({collapseWhitespace: true, conservativeCollapse: true, removeComments: true}))
+        .pipe(rename(destName))
         .pipe(gulp.dest(destPath));
 });

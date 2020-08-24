@@ -14,17 +14,20 @@
   ],
   "author": "Florian Rädiker",
   "dependencies": {
-    "bootstrap": "^4.5.0",
+    "bootstrap": "^4.5.2",
     "bootstrap-icons": "^1.0.0-alpha5"
   },
   "devDependencies": {
-    "google-closure-compiler": "^20200628.0.0",
+    "autoprefixer": "^9.8.6",
+    "google-closure-compiler": "^20200719.0.0",
     "gulp": "^4.0.2",
+    "gulp-html-minifier": "^0.1.8",
     "gulp-postcss": "^8.0.0",
-    "gulp-purgecss": "^2.3.0",
+    "gulp-rename": "^2.0.0",
     "gulp-sass": "^4.1.0",
     "gulp-sourcemaps": "^2.6.5",
     "html-minifier": "^4.0.0",
+    "postcss-purgecss": "^2.0.3",
     "web-push": "^3.4.4",
     "yargs": "^15.4.1"
   }
