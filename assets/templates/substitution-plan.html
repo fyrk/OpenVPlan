@@ -1,4 +1,7 @@
 {% extends "_base.min.html" %}
+{% block manifest_link %}
+    <!--suppress HtmlUnknownTarget -->
+    <link rel="manifest" href="manifest.json">{% endblock %}
 {%- block content -%}
 <div class="box status-box clearfix">
     <span>Stand: <span id="status">{{ storage.status }}</span></span>

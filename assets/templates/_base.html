@@ -11,7 +11,7 @@
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
     <link rel="icon" href="/favicon-64.png" sizes="64x64" type="image/png">
     <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
-    <link rel="manifest" href="{% block manifest_path %}/manifest.json{% endblock %}">
+    {% block manifest_link %}{% endblock %}
     <link rel="apple-touch-icon" href="/favicon-128.png">
     <meta name="apple-mobile-web-app-title" content="GaW VPlan">
     <meta name="application-name" content="GaW VPlan">
@@ -28,6 +28,7 @@
     <meta property="og:image" content="/favicon-192.png">
     <meta property="og:image:type" content="image/png">
 
+    <!--suppress HtmlUnknownTarget -->
     <link href="/assets/style/main.css" rel="stylesheet">
 </head>
 <body class="d-flex flex-column">
@@ -36,7 +37,7 @@
     <header class="main-container">
         <div class="box title-box">
             {% block title_bar %}
-                {% if selection %}<span class="selection">{{ selection_str|e }}</span><!-- htmlmin:ignore --> <!-- htmlmin:ignore -->- {% endif %}
+                {% if selection %}<span class="selection">{{ selection_str|e }}</span> - {% endif %}
                 <span class="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
                 <span class="title-middle">GaW Vertretungsplan</span>
                 <span class="title-small">GaW VPlan</span>
@@ -61,6 +62,7 @@
         <!--suppress HtmlUnknownTarget -->
         <a href="/about">Impressum</a> | <!--suppress HtmlUnknownTarget --><a href="/privacy">Datenschutzerklärung</a>
     </p>
+    <!--suppress HtmlUnknownTarget -->
     <object data="/assets/img/python-powered.svg">python powered</object>
 </footer>
 {% block body_end %}{% endblock %}
