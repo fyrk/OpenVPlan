@@ -21,8 +21,9 @@
                 Woche {{ day.week -}}
                 {%- if day.news -%}
                     <div class="day-info">
-                        <input type="checkbox" class="day-info-checkbox" id="day-info-checkbox-news" aria-hidden="true">
-                        <label class="day-info-label" for="day-info-checkbox-news">
+                        {% set id %}day-info-checkbox-{{ day.date|replace(".", "_") }}-news{% endset %}
+                        <input type="checkbox" class="day-info-checkbox" id="{{ id }}" aria-hidden="true">
+                        <label class="day-info-label" for="{{ id }}">
                             <span class="day-info-heading">Nachrichten: </span>
                             <span class="day-info-content">{{ day.news|join("<br>")|safe }}</span>
                         </label>
@@ -32,8 +33,9 @@
             <div class="col-md">
                 {%- for title, text in day.info -%}
                     <div class="day-info">
-                        <input type="checkbox" class="day-info-checkbox" id="day-info-checkbox-{{ loop.index0 }}" aria-hidden="true">
-                        <label class="day-info-label" for="day-info-checkbox-{{ loop.index0 }}">
+                        {% set id %}day-info-checkbox-{{ day.date|replace(".", "_") }}-{{ loop.index0 }}{% endset %}
+                        <input type="checkbox" class="day-info-checkbox" id="{{ id }}" aria-hidden="true">
+                        <label class="day-info-label" for="{{ id }}">
                             <span class="day-info-heading">{{ title }}: </span>
                             <span class="day-info-content">{{ text }}</span>
                         </label>
