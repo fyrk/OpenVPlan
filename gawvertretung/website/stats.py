@@ -6,6 +6,8 @@ import os.path
 
 from aiohttp import web, hdrs
 
+from .. import config
+
 _LOGGER = logging.getLogger("gawvertretung")
 
 
@@ -26,7 +28,7 @@ class Stats:
         self._last_sites.writerow((plan_name, status, last_site))
 
     async def new_request(self, request: web.Request, response: web.Response, time):
-        remote = request.remote
+        remote = request.remote if not config.get_bool("is_proxied") else request.headers.get("X-Real-IP")
         if response.status >= 400:
             type_ = "BAD"
         else:
