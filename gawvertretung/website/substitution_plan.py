@@ -182,12 +182,15 @@ class SubstitutionPlan:
                         if "type" in data:
                             if data["type"] == "check_status":
                                 if "status" in data:
-                                    substitutions_have_changed, self._affected_groups = \
+                                    substitutions_have_changed, affected_groups = \
                                         await self._substitution_loader.update(self.client_session)
+                                    if affected_groups:
+                                        self._affected_groups = affected_groups
                                     if self._substitution_loader.storage.status != data["status"]:
                                         # inform client that substitutions are not up-to-date
                                         await ws.send_json({"type": "new_substitutions"})
                                     if substitutions_have_changed:
+                                        await self._recreate_index_site()
                                         self._event_new_substitutions.set()
                                         self._event_new_substitutions.clear()
         finally:
