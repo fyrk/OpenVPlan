@@ -236,7 +236,8 @@ function setNotificationsInfo(state, registration) {
 }
 
 function onNotificationsAvailable(registration) {
-    document.getElementById("notifications-block").hidden = false;
+    document.getElementById("notifications-not-available-alert").hidden = true;
+    document.getElementById("toggle-notifications-wrapper").hidden = false;
     toggleNotifications.addEventListener("change", () => {
         if (toggleNotifications.checked) {
             window.Notification.requestPermission()

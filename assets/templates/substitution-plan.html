@@ -112,10 +112,13 @@
         {%- endif -%}
     </form>
 
-    <div id="notifications-block" hidden>
+    <div id="notifications-block">
         <h2 class="mt-4" id="notifications-heading">{% block push_notifications_heading %}Benachrichtigungen <span class="badge badge-pill badge-success">Neu</span>{% endblock %}</h2>
         Erhalte Push-Benachrichtigungen, wenn es neue Vertretungen gibt.
-        <div class="custom-control custom-switch mt-3">
+        <div id="notifications-not-available-alert" class="alert alert-danger mt-3">
+            Push-Benachrichtigungen werden von deinem Browser nicht unterstützt. Versuche, einen moderneren Browser zu verwenden.
+        </div>
+        <div class="custom-control custom-switch mt-3" id="toggle-notifications-wrapper" hidden>
             <input type="checkbox" class="custom-control-input" id="toggle-notifications">
             <label class="custom-control-label user-select-none" for="toggle-notifications">
                 <template id="notifications-info-none">Benachrichtigungen sind deaktiviert</template>
