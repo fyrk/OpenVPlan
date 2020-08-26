@@ -5,7 +5,7 @@ import logging
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import List, Optional, Dict, MutableSet
+from typing import List, Optional, Dict, MutableSet, Callable
 
 import jinja2
 import pywebpush
@@ -89,12 +89,16 @@ class SubstitutionPlan:
         _LOGGER.info(f"{request.method} {request.path}")
         # noinspection PyBroadException
         try:
-            substitutions_have_changed, self._affected_groups = \
+            substitutions_have_changed, affected_groups = \
                 await self._substitution_loader.update(self.client_session)
+            if affected_groups:
+                self._affected_groups = affected_groups
             if "event" in request.query and config.get_bool("dev"):
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
                 self._affected_groups = json.loads(request.query["event"])
+            if substitutions_have_changed:
+                _LOGGER.info("SUBSTITUTIONS HAVE CHANGED")
             if "s" in request.query \
                     and (selection := split_selection(selection_qs := ",".join(request.query.getall("s")))):
                 # noinspection PyUnboundLocalVariable
@@ -178,10 +182,14 @@ class SubstitutionPlan:
                         if "type" in data:
                             if data["type"] == "check_status":
                                 if "status" in data:
-                                    await self._substitution_loader.update(self.client_session)
+                                    substitutions_have_changed, self._affected_groups = \
+                                        await self._substitution_loader.update(self.client_session)
                                     if self._substitution_loader.storage.status != data["status"]:
                                         # inform client that substitutions are not up-to-date
                                         await ws.send_json({"type": "new_substitutions"})
+                                    if substitutions_have_changed:
+                                        self._event_new_substitutions.set()
+                                        self._event_new_substitutions.clear()
         finally:
             self._websockets.remove(ws)
         return ws
@@ -221,73 +229,81 @@ class SubstitutionPlan:
         return self._app
 
     async def _background_tasks(self):
-        while True:
-            await self._event_new_substitutions.wait()
-            affected_groups = self._affected_groups
+        token = logger.PLAN_NAME_CONTEXTVAR.set(self._name)
+        try:
+            while True:
+                _LOGGER.debug("Waiting for new substitutions event...")
+                await self._event_new_substitutions.wait()
+                affected_groups = self._affected_groups
+                self._affected_groups = None
 
-            # SERIALIZE
-            await self.serialize(self._serialization_filepath)
+                # SERIALIZE
+                await self.serialize(self._serialization_filepath)
 
-            # WEBSOCKETS
-            _LOGGER.debug("Sending update event via WebSockets")
-            for ws in self._websockets:
-                await ws.send_json({"type": "new_substitutions"})
+                # WEBSOCKETS
+                _LOGGER.debug("Sending update event via WebSockets")
+                for ws in self._websockets:
+                    await ws.send_json({"type": "new_substitutions"})
 
-            # PUSH NOTIFICATIONS
-            if affected_groups:
-                _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
+                # PUSH NOTIFICATIONS
+                if affected_groups:
+                    _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
 
-                async def send_push_notification(subscription_entry, common_affected_groups: Dict[str, List[str]]):
-                    endpoint_hash = subscription_entry["endpoint_hash"]
-                    endpoint_origin = subscription_entry["endpoint_origin"]
-                    _LOGGER.debug("Sending push notification to " + endpoint_hash)
-                    # noinspection PyBroadException
-                    try:
-                        data = json.dumps({"affected_groups_by_day": common_affected_groups, "plan_type": self._name,
-                                           "status": self._substitution_loader.storage.status})
-                        encoded = pywebpush.WebPusher(subscription_info=subscription_entry["subscription"]).encode(data)
-                        headers = {"content-encoding": "aes128gcm"}
-                        if "crypto_key" in encoded:
-                            headers["crypto-key"] = "dh=" + encoded["crypto_key"].decode("utf-8")
-                        if "salt" in encoded:
-                            headers["encryption"] = "salt=" + encoded["salt"].decode("utf-8")
+                    async def send_push_notification(subscription_entry, common_affected_groups: Dict[str, List[str]]):
+                        endpoint_hash = subscription_entry["endpoint_hash"]
+                        endpoint_origin = subscription_entry["endpoint_origin"]
+                        _LOGGER.debug("Sending push notification to " + endpoint_hash)
+                        # noinspection PyBroadException
+                        try:
+                            data = json.dumps({"affected_groups_by_day": common_affected_groups,
+                                               "plan_type": self._name,
+                                               "status": self._substitution_loader.storage.status})
+                            encoded = \
+                                pywebpush.WebPusher(subscription_info=subscription_entry["subscription"]).encode(data)
+                            headers = {"content-encoding": "aes128gcm"}
+                            if "crypto_key" in encoded:
+                                headers["crypto-key"] = "dh=" + encoded["crypto_key"].decode("utf-8")
+                            if "salt" in encoded:
+                                headers["encryption"] = "salt=" + encoded["salt"].decode("utf-8")
 
-                        vv = pywebpush.Vapid.from_string(private_key=config.get_str("private_vapid_key"))
-                        sig = sign({
-                            "sub": config.get_str("vapid_sub"),
-                            "aud": endpoint_origin,
-                            "exp": str(int(time.time()) + (24 * 60 * 60))
-                        }, vv.private_key)
-                        pkey = vv.public_key.public_bytes(serialization.Encoding.X962,
-                                                          serialization.PublicFormat.UncompressedPoint)
-                        headers["ttl"] = str(86400)
-                        headers["Authorization"] = f"{'vapid'} t={sig},k={b64urlencode(pkey)}"
+                            vv = pywebpush.Vapid.from_string(private_key=config.get_str("private_vapid_key"))
+                            sig = sign({
+                                "sub": config.get_str("vapid_sub"),
+                                "aud": endpoint_origin,
+                                "exp": str(int(time.time()) + (24 * 60 * 60))
+                            }, vv.private_key)
+                            pkey = vv.public_key.public_bytes(serialization.Encoding.X962,
+                                                              serialization.PublicFormat.UncompressedPoint)
+                            headers["ttl"] = str(86400)
+                            headers["Authorization"] = f"{'vapid'} t={sig},k={b64urlencode(pkey)}"
 
-                        async with self.client_session.post(subscription_entry["endpoint"], data=encoded["body"],
-                                                            headers=headers) as r:
-                            if r.status >= 400:
-                                _LOGGER.error(
-                                    f"Could not send push notification to {endpoint_hash} ({endpoint_origin}): "
-                                    f"{r.status} {repr(await r.text())}")
-                                # If status code is 404 or 410, the endpoints are unavailable, so delete the
-                                # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
-                                if r.status in (404, 410):
-                                    return subscription_entry
-                            else:
-                                _LOGGER.debug(f"Successfully sent push notification to {endpoint_hash}: {r.status} "
-                                              f"{repr(await r.text())}")
-                    except Exception:
-                        _LOGGER.exception(f"Could not send push notification to {subscription_entry['endpoint_hash']} "
-                                          f"({endpoint_origin})")
-                    return None
+                            async with self.client_session.post(subscription_entry["endpoint"], data=encoded["body"],
+                                                                headers=headers) as r:
+                                if r.status >= 400:
+                                    _LOGGER.error(
+                                        f"Could not send push notification to {endpoint_hash} ({endpoint_origin}): "
+                                        f"{r.status} {repr(await r.text())}")
+                                    # If status code is 404 or 410, the endpoints are unavailable, so delete the
+                                    # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
+                                    if r.status in (404, 410):
+                                        return subscription_entry
+                                else:
+                                    _LOGGER.debug(f"Successfully sent push notification to {endpoint_hash}: {r.status} "
+                                                  f"{repr(await r.text())}")
+                        except Exception:
+                            _LOGGER.exception(f"Could not send push notification to "
+                                              f"{subscription_entry['endpoint_hash']} ({endpoint_origin})")
+                        return None
 
-                subscription_entries_to_delete = await asyncio.gather(
-                    *(send_push_notification(subscription, common_affected_groups)
-                      for subscription, common_affected_groups in
-                      self.storage.iter_active_push_subscriptions(affected_groups)))
-                for subscription_entry in subscription_entries_to_delete:
-                    if subscription_entry is not None:
-                        self.storage.delete_push_subscription(subscription_entry)
+                    subscription_entries_to_delete = await asyncio.gather(
+                        *(send_push_notification(subscription, common_affected_groups)
+                          for subscription, common_affected_groups in
+                          self.storage.iter_active_push_subscriptions(affected_groups)))
+                    for subscription_entry in subscription_entries_to_delete:
+                        if subscription_entry is not None:
+                            self.storage.delete_push_subscription(subscription_entry)
+        finally:
+            logger.PLAN_NAME_CONTEXTVAR.reset(token)
 
 
 class SubstitutionPlanUppercaseSelection(SubstitutionPlan):

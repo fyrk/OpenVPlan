@@ -123,8 +123,8 @@ async def app_factory(dev_mode=False):
         template_name = plan_config["template"]
         template500_name = plan_config["template500"]
         loader = {"StudentSubstitutionLoader": StudentSubstitutionLoader,
-                  "TeacherSubstitutionLoader": TeacherSubstitutionLoader}[loader_name](url, name)
-        loader.on_status_changed = stats.add_last_site
+                  "TeacherSubstitutionLoader": TeacherSubstitutionLoader}[loader_name](url)
+        loader.on_status_changed = lambda *a: stats.add_last_site(name, *a)
         plan = SubstitutionPlan(name, loader, env.get_template(template_name), env.get_template(template500_name))
 
         await plan.deserialize(os.path.join(DATA_DIR, f"substitutions/{name}.pickle"))

@@ -35,12 +35,11 @@ class BaseSubstitutionLoader:
     TIMEOUT = client.ClientTimeout(1)
 
     def __init__(self, substitutions_parser_factory: Type[BaseSubstitutionParser],
-                 substitution_group_factory: Type[BaseSubstitutionGroup], url: str, plan_name: str):
+                 substitution_group_factory: Type[BaseSubstitutionGroup], url: str):
         self._substitutions_parser_factory = substitutions_parser_factory
         self._substitution_group_factory = substitution_group_factory
         self._url = url
-        self._plan_name = plan_name
-        self.on_status_changed: Optional[Callable[[str, str, int], Any]] = None
+        self.on_status_changed: Optional[Callable[[str, int], Any]] = None
         self.on_new_substitution_storage: Optional[Callable[[SubstitutionStorage], Any]] = None
 
         self._url_first_site = self._url.format(1)
@@ -80,15 +79,14 @@ class BaseSubstitutionLoader:
                 _LOGGER.debug(f"Loaded substitutions from '{filepath}' with status '{self._storage.status}'")
 
     async def update(self, session: aiohttp.ClientSession) -> Tuple[bool, Optional[Dict[str, List[str]]]]:
-        _LOGGER.debug(f"[{self._plan_name}] Requesting first site ...")
+        _LOGGER.debug(f"Requesting first site ...")
         t1 = time.perf_counter_ns()
         async with session.get(self._url_first_site) as r:
             first_site = await r.read()
         t2 = time.perf_counter_ns()
         new_status_string = get_status_string(first_site)
         old_status = self._storage.status if self._storage is not None else None
-        _LOGGER.debug(f"[{self._plan_name}] Got answer in {t2 - t1}ns, status is {repr(new_status_string)} "
-                      f"(old: {repr(old_status)})")
+        _LOGGER.debug(f"Got answer in {t2 - t1}ns, status is {repr(new_status_string)} (old: {repr(old_status)})")
         changed_substitutions = False
         affected_groups = None
         if new_status_string != old_status:
@@ -101,14 +99,14 @@ class BaseSubstitutionLoader:
                 last_site_num, affected_groups = res
                 changed_substitutions = True
                 if self.on_status_changed:
-                    await self.on_status_changed(self._plan_name, new_status_string, last_site_num)
-                _LOGGER.debug(f"[{self._plan_name}] Loaded data in {t2 - t1}ns")
+                    await self.on_status_changed(new_status_string, last_site_num)
+                _LOGGER.debug(f"Loaded data in {t2 - t1}ns")
         today = datetime.datetime.now()
         today_date = today.date()
         if today_date > self._current_status_date:
             self._current_status_date = today_date
             if not changed_substitutions and not INCLUDE_OUTDATED_SUBSTITUTIONS:
-                _LOGGER.debug(f"[{self._plan_name}] Date changed, removing old substitutions")
+                _LOGGER.debug(f"Date changed, removing old substitutions")
                 changed_substitutions = True
                 self._storage.remove_old_days(create_date_timestamp(today))
         return changed_substitutions, affected_groups
@@ -116,7 +114,7 @@ class BaseSubstitutionLoader:
     async def _load_data(self, session: aiohttp.ClientSession, status: str, first_site) -> \
             Optional[Tuple[Optional[int], Optional[Dict[str, List[str]]]]]:
         async def parse_site(num, request, stream):
-            _LOGGER.debug(f"[{self._plan_name}] {num} Parsing")
+            _LOGGER.debug(f"{num} Parsing")
             parser = self._substitutions_parser_factory(storage, current_timestamp)
             while True:
                 r = (await stream.readany()).decode(BaseSubstitutionLoader.ENCODING)
@@ -129,24 +127,24 @@ class BaseSubstitutionLoader:
                 try:
                     parser.feed(r)
                 except SubstitutionsTooOldException:
-                    _LOGGER.debug(f"[{self._plan_name}] {num} is outdated, skipping")
+                    _LOGGER.debug(f"{num} is outdated, skipping")
                     return
                 except Exception:
-                    _LOGGER.exception(f"[{self._plan_name}] {num} Exception while parsing")
+                    _LOGGER.exception(f"{num} Exception while parsing")
 
         async def load_from_website(num):
-            _LOGGER.debug(f"[{self._plan_name}] {num} Requesting page")
+            _LOGGER.debug(f"{num} Requesting page")
             r = await session.get(self._url.format(num), timeout=self.TIMEOUT)
-            _LOGGER.debug(f"[{self._plan_name}] {num} Got {r.status}")
+            _LOGGER.debug(f"{num} Got {r.status}")
             if r.status == 200:
                 await load_from_stream(num, r.content, r)
 
         async def load_from_stream(num, stream: Union[aiohttp.StreamReader, AsyncBytesIOWrapper], request=None):
-            _LOGGER.debug(f"[{self._plan_name}] {num} Loading")
+            _LOGGER.debug(f"{num} Loading")
             nonlocal next_waiting_result, last_site_num
             next_site = await parse_next_site(stream)
             if b"001" == next_site:
-                _LOGGER.debug(f"[{self._plan_name}] {num} is last site")
+                _LOGGER.debug(f"{num} is last site")
                 last_site_num = num
                 for l in loads[num-current_site+1:]:
                     l.cancel()
@@ -172,9 +170,9 @@ class BaseSubstitutionLoader:
                                      for num, (request, stream) in results_to_load))
 
         if self._load_substitutions_lock.locked():
-            _LOGGER.debug(f"[{self._plan_name}] Substitutions are already being loaded")
+            _LOGGER.debug(f"Substitutions are already being loaded")
             async with self._load_substitutions_lock:
-                _LOGGER.debug(f"[{self._plan_name}] Substitution loading finished")
+                _LOGGER.debug(f"Substitution loading finished")
                 return None
         async with self._load_substitutions_lock:
             last_site_num = None
@@ -188,7 +186,7 @@ class BaseSubstitutionLoader:
                 results = [None for _ in range(self.SITE_LOAD_COUNT)]
                 loads = [asyncio.ensure_future(load_from_stream(1, AsyncBytesIOWrapper(first_site)))] + \
                         [asyncio.ensure_future(load_from_website(num)) for num in range(current_site+1, next_site)]
-                _LOGGER.debug(f"[{self._plan_name}] Loading pages {current_site} to {next_site - 1}")
+                _LOGGER.debug(f"Loading pages {current_site} to {next_site - 1}")
                 try:
                     await asyncio.wait_for(asyncio.wait(loads), timeout=1.0)
                 except asyncio.TimeoutError as e:
@@ -210,7 +208,7 @@ class BaseSubstitutionLoader:
                 results = [None for _ in range(self.SITE_LOAD_COUNT)]
 
                 loads = [asyncio.ensure_future(load_from_website(num)) for num in range(current_site, next_site)]
-                _LOGGER.debug(f"[{self._plan_name}] Loading pages {current_site} to {next_site - 1}")
+                _LOGGER.debug(f"Loading pages {current_site} to {next_site - 1}")
                 try:
                     await asyncio.wait_for(asyncio.wait(loads), timeout=1.0)
                 except asyncio.TimeoutError as e:
@@ -234,10 +232,10 @@ class BaseSubstitutionLoader:
 
 
 class StudentSubstitutionLoader(BaseSubstitutionLoader):
-    def __init__(self, url: str, plan_name: str):
-        super().__init__(StudentSubstitutionParser, StudentSubstitutionGroup, url, plan_name)
+    def __init__(self, url: str):
+        super().__init__(StudentSubstitutionParser, StudentSubstitutionGroup, url)
 
 
 class TeacherSubstitutionLoader(BaseSubstitutionLoader):
-    def __init__(self, url: str, plan_name: str):
-        super().__init__(TeacherSubstitutionParser, TeacherSubstitutionGroup, url, plan_name)
+    def __init__(self, url: str):
+        super().__init__(TeacherSubstitutionParser, TeacherSubstitutionGroup, url)

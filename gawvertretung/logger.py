@@ -8,8 +8,8 @@ from aiohttp import web
 
 _logger = logging.getLogger("gawvertretung")
 
-_plan_name_contextvar = contextvars.ContextVar("plan_name")
-_request_id_contextvar = contextvars.ContextVar("request_id")
+PLAN_NAME_CONTEXTVAR = contextvars.ContextVar("plan_name")
+REQUEST_ID_CONTEXTVAR = contextvars.ContextVar("request_id")
 
 _root = logging.getLogger()
 _root.setLevel(logging.DEBUG)
@@ -33,10 +33,13 @@ def init(filepath):
 
     def factory(name, level, fn, lno, msg, args, exc_info, func=None, sinfo=None, **kwargs):
         record = old_factory(name, level, fn, lno, msg, args, exc_info, func=func, sinfo=sinfo, **kwargs)
-        plan_name = _plan_name_contextvar.get("*")
-        req_id = _request_id_contextvar.get(None)
-        if req_id:
-            record.msg = f"[{plan_name}] [{req_id}] {record.msg}"
+        plan_name = PLAN_NAME_CONTEXTVAR.get(None)
+        req_id = REQUEST_ID_CONTEXTVAR.get(None)
+        if plan_name:
+            if req_id:
+                record.msg = f"[{plan_name}] [{req_id}] {record.msg}"
+            else:
+                record.msg = f"[{plan_name}] {record.msg}"
         return record
 
     logging.setLogRecordFactory(factory)
@@ -50,11 +53,13 @@ def get_plan_middleware(plan_name: str):
     @web.middleware
     async def logging_middleware(request: web.Request, handler):
         req_id = secrets.token_hex(4)
-        req_token = _request_id_contextvar.set(req_id)
-        pname_token = _plan_name_contextvar.set(plan_name)
+        req_token = REQUEST_ID_CONTEXTVAR.set(req_id)
+        pname_token = PLAN_NAME_CONTEXTVAR.set(plan_name)
         try:
-            return await handler(request)
+            response = await handler(request)
+            _logger.info(f"{request.method} {request.path} {response.status}")
+            return response
         finally:
-            _request_id_contextvar.reset(req_token)
-            _plan_name_contextvar.reset(pname_token)
+            REQUEST_ID_CONTEXTVAR.reset(req_token)
+            PLAN_NAME_CONTEXTVAR.reset(pname_token)
     return logging_middleware

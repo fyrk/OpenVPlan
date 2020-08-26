@@ -13,8 +13,8 @@ _LOGGER = logging.getLogger("gawvertretung")
 
 class Stats:
     _BOT_USER_AGENTS = [
-        "bot",  # GoogleBots, Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
-        "spider",  # Baiduspider, Sogou Spider
+        "bot",    # Google Bots, Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
+        "spider", # Baiduspider, Sogou Spider
         "crawl",  # ia_archiver (Alexa)
         "yahoo",  # Slurp (Yahoo)
         "google"  # Google Image Proxy 11
