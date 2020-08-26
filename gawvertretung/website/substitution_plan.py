@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives import serialization
 from py_vapid.jwt import sign
 from py_vapid.utils import b64urlencode
 
-from .. import config
+from .. import config, logger
 from ..db.db import SubstitutionPlanDBStorage
 from ..substitution_plan.loader import BaseSubstitutionLoader
 from ..substitution_plan.utils import split_selection
@@ -197,7 +197,7 @@ class SubstitutionPlan:
             return web.json_response({"ok": False}, status=400)
         return web.json_response({"ok": True})
 
-    def create_app(self, static_path: Optional[str] = None) -> web.Application:
+    def create_app(self, static_path: Optional[str] = None, middlewares=None) -> web.Application:
         async def create_background_tasks(app):
             app["background_tasks"] = asyncio.create_task(self._background_tasks())
 
@@ -205,7 +205,10 @@ class SubstitutionPlan:
             app["background_tasks"].cancel()
             await app["background_tasks"]
 
-        self._app = web.Application()
+        mw = [logger.get_plan_middleware(self._name)]
+        if middlewares is not None:
+            mw.extend(middlewares)
+        self._app = web.Application(middlewares=mw)
         self._app.on_startup.append(create_background_tasks)
         self._app.on_cleanup.append(cleanup_background_tasks)
         self._app.add_routes([

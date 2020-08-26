@@ -1,15 +1,12 @@
 import argparse
-import contextvars
-import logging
 import os
-import secrets
-import sys
 import time
 
 import jinja2
 from aiohttp import client, http, hdrs, web
 from aiohttp.web_fileresponse import FileResponse
 
+from gawvertretung import logger
 from gawvertretung import config
 from gawvertretung.db.db import SubstitutionPlanDBStorage
 from gawvertretung.substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
@@ -20,22 +17,12 @@ from gawvertretung.website.substitution_plan import SubstitutionPlan, RESPONSE_H
 __version__ = "3.0"
 
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
+DATA_DIR = os.path.abspath(config.get_str("data_dir"))
 
-_LOGGER = logging.getLogger("gawvertretung")
-_LOGGER.setLevel(logging.DEBUG)
+config.load()
 
-
-def init_logger(filepath):
-    log_formatter = logging.Formatter("{asctime} [{levelname:^8}]: {message}", style="{")
-
-    file_logger = logging.FileHandler(filepath, encoding="utf-8")
-    file_logger.setFormatter(log_formatter)
-    _LOGGER.addHandler(file_logger)
-
-    stdout_logger = logging.StreamHandler(sys.stdout)
-    stdout_logger.setLevel(logging.ERROR)
-    stdout_logger.setFormatter(log_formatter)
-    _LOGGER.addHandler(stdout_logger)
+logger.init(os.path.join(WORKING_DIR, config.get_str("logfile")))
+_LOGGER = logger.get_logger()
 
 
 REQUEST_USER_AGENT = config.get_str("user_agent", "GaWVertretungBot").format(version=__version__,
@@ -44,14 +31,14 @@ REQUEST_HEADERS = {hdrs.USER_AGENT: REQUEST_USER_AGENT}
 
 
 STATIC_PATH = os.path.join(WORKING_DIR, "assets/static/")
-STATS_PATH = os.path.join(WORKING_DIR, "data/stats/")
+STATS_PATH = os.path.join(DATA_DIR, "stats/")
 
 
 stats = Stats(STATS_PATH)
 
 env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.join(WORKING_DIR, "assets/templates")),
-    bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(WORKING_DIR, "data/template_cache/")),
+    bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(DATA_DIR, "template_cache/")),
     enable_async=True,
     trim_blocks=True,
     lstrip_blocks=True)
@@ -59,35 +46,6 @@ TEMPLATE_PRIVACY = env.get_template("privacy.min.html")
 TEMPLATE_ABOUT = env.get_template("about.min.html")
 TEMPLATE_ERROR404 = env.get_template(config.get_str("template404"))
 TEMPLATE_ERROR500 = env.get_template(config.get_str("template500"))
-
-request_id_contextvar = contextvars.ContextVar("request_id")
-
-
-def add_logging_factory():
-    def new_factory(*args, **kwargs):
-        record = old_factory(*args, **kwargs)
-        req_id = request_id_contextvar.get(None)
-        if req_id:
-            record.msg = f"[{req_id}] {record.msg}"
-        return record
-    old_factory = logging.getLogRecordFactory()
-    logging.setLogRecordFactory(new_factory)
-
-
-add_logging_factory()
-
-
-@web.middleware
-async def logging_middleware(request: web.Request, handler):
-    req_id = secrets.token_hex(4)
-    request["request_id"] = req_id
-    token = request_id_contextvar.set(req_id)
-    try:
-        response: web.Response = await handler(request)
-        _LOGGER.info(f"{request.method} {request.path} {response.status}")
-        return response
-    finally:
-        request_id_contextvar.reset(token)
 
 
 @web.middleware
@@ -145,7 +103,7 @@ async def client_session_context(app: web.Application):
 
 async def databases_context(app: web.Application):
     for substitution_plan in app["substitution_plans"].values():
-        storage = SubstitutionPlanDBStorage("data/storage/" + substitution_plan.name + ".sqlite3")
+        storage = SubstitutionPlanDBStorage(os.path.join(DATA_DIR, "storage/" + substitution_plan.name + ".sqlite3"))
         substitution_plan.storage = storage
     yield
     for substitution_plan in app["substitution_plans"].values():
@@ -153,7 +111,11 @@ async def databases_context(app: web.Application):
 
 
 async def app_factory(dev_mode=False):
-    app = web.Application(middlewares=[logging_middleware, stats_middleware, error_middleware])
+    if config.get("substitution_plans") is None:
+        raise ValueError("No substitution_plans configured")
+    if config.get("default_plan") is None:
+        raise ValueError("No default_plan configured")
+    app = web.Application()
     app["substitution_plans"] = {}
     for name, plan_config in config.get("substitution_plans").items():
         loader_name = plan_config["loader"]
@@ -165,10 +127,11 @@ async def app_factory(dev_mode=False):
         loader.on_status_changed = stats.add_last_site
         plan = SubstitutionPlan(name, loader, env.get_template(template_name), env.get_template(template500_name))
 
-        await plan.deserialize(f"data/substitutions/{name}.pickle")
+        await plan.deserialize(os.path.join(DATA_DIR, f"substitutions/{name}.pickle"))
 
-        app.add_subapp(f"/{name}/", plan.create_app(os.path.abspath("assets/static/" + name)
-                                                    if config.get_bool("dev") else None))
+        app.add_subapp(f"/{name}/",
+                       plan.create_app(os.path.abspath("assets/static/" + name) if config.get_bool("dev") else None,
+                                       [stats_middleware, error_middleware]))
 
         app["substitution_plans"][name] = plan
 
@@ -195,15 +158,14 @@ async def app_factory(dev_mode=False):
 def run(path, host, port, dev_mode=False):
     _LOGGER.info(f"Starting server on {path if path else str(host) + ':' + str(port)}"
                  f"{' in dev mode' if dev_mode else ''}")
-    web.run_app(app_factory(dev_mode), path=path, host=host, port=port)
+    web.run_app(app_factory(dev_mode), path=path, host=host, port=port, print=_LOGGER.info)
 
-
-parser = argparse.ArgumentParser(description="gawvertretung server")
-parser.add_argument("--path")
-parser.add_argument("--host")
-parser.add_argument("--port")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="gawvertretung server")
+    parser.add_argument("--path")
+    parser.add_argument("--host")
+    parser.add_argument("--port")
     args = parser.parse_args()
     if args.path:
         path = args.path
@@ -213,5 +175,4 @@ if __name__ == "__main__":
         path = None
         host = args.host if args.host else config.get_str("host", "localhost")
         port = args.port if args.port else config.get_int("port", 8080)
-    init_logger(os.path.join(WORKING_DIR, config.get_str("logfile", "logs/website.log")))
     run(path, host, port, config.get_bool("dev"))

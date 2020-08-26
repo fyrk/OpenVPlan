@@ -1,11 +1,4 @@
 {
-    "host": "localhost",
-    "port": 8080,
-    "logfile": "logs/website.log",
-    "user_agent": "GaWVertretungBot/{version} (+https://gawvertretung.florian-raediker.de) {server_software}",
-    "template404": "error-404.min.html",
-    "template500": "error-500-students.min.html",
-
     "default_plan": "students",
 
     "substitution_plans": {
