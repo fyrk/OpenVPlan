@@ -16,10 +16,10 @@ from gawvertretung.website.substitution_plan import SubstitutionPlan, RESPONSE_H
 
 __version__ = "3.0"
 
+config.load()
+
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.path.abspath(config.get_str("data_dir"))
-
-config.load()
 
 logger.init(os.path.join(WORKING_DIR, config.get_str("logfile")))
 _LOGGER = logger.get_logger()
