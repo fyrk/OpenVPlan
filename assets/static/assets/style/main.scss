@@ -243,6 +243,7 @@ $day-info-heading-font-size: 1.15rem;
 // .substitutions-table is actually used in substitution-plan.html, but it is followed by "{", so code analysis doesn't
 // detect it
 //noinspection CssUnusedSymbol
+/*! purgecss start ignore */  // for .grey and .new-subs
 .substitutions-table {
     white-space: nowrap;
 
@@ -265,6 +266,7 @@ $day-info-heading-font-size: 1.15rem;
             color: $gray-500;
         }
 
+
         tr.new-subs td:not(.group-name) {
             background-color: rgba(map_get($theme-colors, "primary"), 0.1);
         }
@@ -282,6 +284,7 @@ $day-info-heading-font-size: 1.15rem;
         @extend .position-relative;
     }
 }
+/*! purgecss end ignore */
 
 #online-status {
     @extend .font-weight-bold;

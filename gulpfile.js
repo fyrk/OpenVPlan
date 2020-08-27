@@ -35,16 +35,13 @@ gulp.task("build-sass", () => {
     return gulp.src(srcPath)
         .pipe(sourcemaps.init())
         .pipe(sass({
-                outputStyle: "compressed"
+            outputStyle: "compressed"
         }))
         .pipe(postcss([
             purgecss({
                 content: [
                     "assets/templates/*.min.html",
                     "assets/static/assets/js/substitutions.min.js"
-                ],
-                whitelist: [
-                    "view-email"  // about.scss
                 ],
                 css: [srcPath]
             }),
