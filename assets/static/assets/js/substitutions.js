@@ -46,25 +46,30 @@ let substitutionPlanType = window.location.pathname.split("/", 2)[1];
 const onlineStatus = document.getElementById("online-status");
 
 let webSocket = null;
+function onOnline() {
+    onlineStatus.textContent = "Aktuell";
+    onlineStatus.classList.add("online");
+    onlineStatus.classList.remove("offline");
+}
+function onOffline() {
+    onlineStatus.textContent = "Keine Verbindung zum Server";
+    onlineStatus.classList.add("offline");
+    onlineStatus.classList.remove("online");
+}
 function createWebSocket(openCallback=null) {
     webSocket = new WebSocket(
         (window.location.protocol === "http:" ? "ws:" : "wss:") + "//" +
         window.location.host + window.location.pathname + "api/wait-for-updates");
 
     webSocket.addEventListener("open", event => {
-        onlineStatus.textContent = "Aktuell";
-        onlineStatus.classList.add("online");
-        onlineStatus.classList.remove("offline");
         console.log("WebSocket opened", event);
+        onOnline();
         if (openCallback)
             openCallback();
     });
     webSocket.addEventListener("close", event => {
-        //clearInterval(heartbeatInterval);
-        onlineStatus.textContent = "Keine Verbindung zum Server";
-        onlineStatus.classList.add("offline");
-        onlineStatus.classList.remove("online");
         console.log("WebSocket closed", event);
+        onOffline();
     });
     webSocket.addEventListener("message", event => {
         const msg = JSON.parse(event.data);
@@ -80,10 +85,6 @@ function createWebSocket(openCallback=null) {
                 console.warn("Unknown WebSocket message type");
                 break;
         }
-    });
-    window.addEventListener("offline", () => {
-        console.log("offline, closing WebSocket connection");
-        webSocket.close();
     });
 }
 createWebSocket();
@@ -106,6 +107,11 @@ window.addEventListener("focus", () => {
 window.addEventListener("online", () => {
     console.log("online, checking for new substitutions");
     updateWebSocket();
+});
+window.addEventListener("offline", () => {
+    console.log("offline, closing WebSocket connection");
+    onOffline();
+    webSocket.close();
 });
 
 
