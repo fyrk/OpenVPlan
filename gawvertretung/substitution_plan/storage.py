@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from functools import lru_cache
 from typing import List, Tuple, Optional, Iterable, Dict
 
-from sortedcontainers import SortedDict, SortedList
+from sortedcontainers import SortedDict, SortedList, SortedSet
 
 from ..substitution_plan.utils import split_class_name
 
@@ -43,14 +43,14 @@ class SubstitutionStorage(SortedDict):
             try:
                 old_day = old_storage[day.timestamp]
             except KeyError:
-                pass
+                affected_groups[day.day_name] = day.get_all_affected_groups()
             else:
                 new_subs = day.mark_new_substitutions(old_day)
                 if new_subs:
                     affected_groups[day.day_name] = new_subs
         return affected_groups
 
-    def get_all_affected_groups(self):
+    def get_all_affected_groups(self) -> Dict[str, List[str]]:
         affected_groups = {}
         for day in self.values():
             groups = []
@@ -112,12 +112,25 @@ class SubstitutionDay:
             except KeyError:
                 group.mark_all_substitutions_as_new()
                 if group.affected_groups is not None:
-                    affected_groups.extend(group.affected_groups)
+                    for g in group.affected_groups:
+                        if g not in affected_groups:  # TODO improve
+                            affected_groups.extend(group.affected_groups)
             else:
                 if group.mark_new_substitutions(old_group.substitutions):
                     # at least one substitution in group 'group' is new
                     if group.affected_groups:
-                        affected_groups.extend(group.affected_groups)
+                        for g in group.affected_groups:
+                            if g not in affected_groups:  # TODO improve
+                                affected_groups.append(g)
+        return affected_groups
+
+    def get_all_affected_groups(self) -> List[str]:
+        affected_groups: List[str] = []
+        for group in self._substitution_groups:
+            if group.affected_groups:
+                for g in group.affected_groups:
+                    if g not in affected_groups:
+                        affected_groups.append(g)
         return affected_groups
 
 

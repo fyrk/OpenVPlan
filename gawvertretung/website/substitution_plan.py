@@ -124,7 +124,6 @@ class SubstitutionPlan:
                     await response.write_eof()
                     await self._recreate_index_site()
                     self._event_new_substitutions.set()
-                    self._event_new_substitutions.clear()
             else:
                 if "all" not in request.query and self._name + "-selection" in request.cookies and \
                         request.cookies[self._name + "-selection"].strip():
@@ -148,7 +147,6 @@ class SubstitutionPlan:
                     await response.prepare(request)
                     await response.write_eof()
                     self._event_new_substitutions.set()
-                    self._event_new_substitutions.clear()
                 return response
         except web.HTTPException as e:
             raise e from None
@@ -192,7 +190,6 @@ class SubstitutionPlan:
                                     if substitutions_have_changed:
                                         await self._recreate_index_site()
                                         self._event_new_substitutions.set()
-                                        self._event_new_substitutions.clear()
         finally:
             self._websockets.remove(ws)
         return ws
@@ -237,6 +234,7 @@ class SubstitutionPlan:
             while True:
                 _LOGGER.debug("Waiting for new substitutions event...")
                 await self._event_new_substitutions.wait()
+                self._event_new_substitutions.clear()
                 affected_groups = self._affected_groups
                 self._affected_groups = None
 
@@ -273,7 +271,9 @@ class SubstitutionPlan:
                             sig = sign({
                                 "sub": config.get_str("vapid_sub"),
                                 "aud": endpoint_origin,
-                                "exp": str(int(time.time()) + (24 * 60 * 60))
+                                # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not be
+                                # longer than 24 hours from the time the request is made)
+                                "exp": int(time.time()) + 86395
                             }, vv.private_key)
                             pkey = vv.public_key.public_bytes(serialization.Encoding.X962,
                                                               serialization.PublicFormat.UncompressedPoint)
