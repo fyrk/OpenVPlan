@@ -111,10 +111,7 @@ function createNewWebSocket() {
     }
 }
 
-let hasFocus = true;
-
 window.addEventListener("focus", () => {
-    hasFocus = true;
     createNewWebSocket();
 });
 
