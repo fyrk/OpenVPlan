@@ -36,7 +36,13 @@ RESPONSE_HEADERS = {
     "Referrer-Policy": "same-origin",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "X-XSS-Protection": "1"
+    "X-XSS-Protection": "1",
+    "X-Robots-Tag": "noarchive, notranslate"
+}
+
+RESPONSE_HEADERS_SELECTION = {
+    **RESPONSE_HEADERS,
+    "X-Robots-Tag": "noindex"
 }
 
 
@@ -106,7 +112,7 @@ class SubstitutionPlan:
                 selection = [s.upper() for s in selection]
                 response = web.Response(text=await self._template.render_async(
                     storage=self._substitution_loader.storage, selection=selection, selection_str=selection_str),
-                                        content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
+                                        content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS_SELECTION)
                 # unfortunately, "same_site" parameter is not in a release yet (see
                 # https://github.com/aio-libs/aiohttp/pull/4224), so access SimpleCookie directly
                 # response.set_cookie(self._name + "-selection", selection_qs, expires=SELECTION_COOKIE_EXPIRE)
