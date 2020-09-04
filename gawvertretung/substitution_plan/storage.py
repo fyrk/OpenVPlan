@@ -210,7 +210,7 @@ class BaseSubstitutionGroup(ABC):
     def is_selected(self, selection: Iterable[str]):
         if not self.affected_groups:
             return False
-        return any(g in selection for g in self.affected_groups)
+        return any(any(s in g for s in selection) for g in self.affected_groups)
 
     def mark_new_substitutions(self, old_substitutions: List["BaseSubstitution"]) -> bool:
         has_new_substitutions = False
