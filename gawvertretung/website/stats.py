@@ -21,11 +21,17 @@ class Stats:
     ]
 
     def __init__(self, directory):
-        self._last_sites = csv.writer(open(os.path.join(directory, "statuses.csv"), "a", newline=""))
-        self._requests = csv.writer(open(os.path.join(directory, "requests.csv"), "a", newline=""))
+        self._status_file = open(os.path.join(directory, "status.csv"), "a", newline="", buffering=1)
+        self._status = csv.writer(self._status_file)
+        self._requests_file = open(os.path.join(directory, "requests.csv"), "a", newline="", buffering=1)
+        self._requests = csv.writer(self._requests_file)
+
+    def __del__(self, exc_type, exc_val, exc_tb):
+        self._status_file.close()
+        self._requests_file.close()
 
     async def add_last_site(self, plan_name: str, status: str, last_site: int):
-        self._last_sites.writerow((plan_name, status, last_site))
+        self._status.writerow((plan_name, status, last_site))
 
     async def new_request(self, request: web.Request, response: web.Response, time):
         remote = request.remote if not config.get_bool("is_proxied") else request.headers.get("X-Real-IP")
@@ -40,5 +46,5 @@ class Stats:
                 remote = hashlib.blake2b(remote.encode("utf-8"), digest_size=3).hexdigest()
         self._requests.writerow((type_, datetime.datetime.now().strftime("%Y-%m-%d %X"),
                                  response.status, response.reason, request.method,
-                                 request.path, time, response.body_length,
+                                 request.path_qs, time, response.body_length,
                                  request.headers.get(hdrs.USER_AGENT), request.headers.get(hdrs.REFERER), remote))
