@@ -52,20 +52,14 @@ def get_logger():
 
 def request_wrapper(request_handler):
     async def wrapper(self, request: web.Request) -> web.Response:
-        req_id = secrets.token_hex(4)
-        req_token = REQUEST_ID_CONTEXTVAR.set(req_id)
-        pname_token = PLAN_NAME_CONTEXTVAR.set(self._name)
-        try:
-            response = await request_handler(self, request)
-            return response
-        finally:
-            REQUEST_ID_CONTEXTVAR.reset(req_token)
-            PLAN_NAME_CONTEXTVAR.reset(pname_token)
+        PLAN_NAME_CONTEXTVAR.set(self._name)
+        return await request_handler(self, request)
     return wrapper
 
 
 @web.middleware
 async def logging_middleware(request: web.Request, handler):
+    REQUEST_ID_CONTEXTVAR.set(secrets.token_hex(4))
     response: web.Response = await handler(request)
-    _logger.info(f"{request.method} {request.path} {response.status}")
+    _logger.info(f"Finished: {request.method} {request.path_qs} {response.status}")
     return response

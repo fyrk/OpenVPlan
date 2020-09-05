@@ -93,11 +93,18 @@ class SubstitutionPlan:
     # /
     @logger.request_wrapper
     async def _root_handler(self, request: web.Request) -> web.Response:
-        _LOGGER.info(f"{request.method} {request.path}")
+        _LOGGER.info(f"{request.method} {request.path_qs}")
         # noinspection PyBroadException
         try:
-            substitutions_have_changed, affected_groups = \
-                await self._substitution_loader.update(self.client_session)
+            if "all" not in request.query and "s" not in request.query:
+                if self._name + "-selection" in request.cookies and \
+                        request.cookies[self._name + "-selection"].strip():
+                    raise web.HTTPSeeOther(
+                        location="/" + self._name + "/?s=" + request.cookies[self._name + "-selection"]
+                    )
+                else:
+                    raise web.HTTPSeeOther(location="/" + self._name + "/?all")
+            substitutions_have_changed, affected_groups = await self._substitution_loader.update(self.client_session)
             if affected_groups:
                 self._affected_groups = affected_groups
             if "event" in request.query and config.get_bool("dev"):
@@ -132,14 +139,6 @@ class SubstitutionPlan:
                     await self._recreate_index_site()
                     self._event_new_substitutions.set()
             else:
-                if "all" not in request.query:
-                    if self._name + "-selection" in request.cookies and \
-                            request.cookies[self._name + "-selection"].strip():
-                        raise web.HTTPSeeOther(
-                            location="/" + self._name + "/?s=" + request.cookies[self._name + "-selection"]
-                        )
-                    else:
-                        raise web.HTTPSeeOther(location="/" + self._name + "/?all")
                 if substitutions_have_changed or config.get_bool("dev"):
                     await self._recreate_index_site()
                 response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8",
