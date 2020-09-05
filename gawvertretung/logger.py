@@ -3,6 +3,7 @@ import logging
 import logging.handlers
 import secrets
 import sys
+from typing import Callable, Awaitable
 
 from aiohttp import web
 
@@ -49,17 +50,22 @@ def get_logger():
     return _logger
 
 
-def get_plan_middleware(plan_name: str):
-    @web.middleware
-    async def logging_middleware(request: web.Request, handler):
+def request_wrapper(request_handler):
+    async def wrapper(self, request: web.Request) -> web.Response:
         req_id = secrets.token_hex(4)
         req_token = REQUEST_ID_CONTEXTVAR.set(req_id)
-        pname_token = PLAN_NAME_CONTEXTVAR.set(plan_name)
+        pname_token = PLAN_NAME_CONTEXTVAR.set(self._name)
         try:
-            response = await handler(request)
-            _logger.info(f"{request.method} {request.path} {response.status}")
+            response = await request_handler(self, request)
             return response
         finally:
             REQUEST_ID_CONTEXTVAR.reset(req_token)
             PLAN_NAME_CONTEXTVAR.reset(pname_token)
-    return logging_middleware
+    return wrapper
+
+
+@web.middleware
+async def logging_middleware(request: web.Request, handler):
+    response: web.Response = await handler(request)
+    _logger.info(f"{request.method} {request.path} {response.status}")
+    return response

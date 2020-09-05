@@ -115,7 +115,7 @@ async def app_factory(dev_mode=False):
         raise ValueError("No substitution_plans configured")
     if config.get("default_plan") is None:
         raise ValueError("No default_plan configured")
-    app = web.Application()
+    app = web.Application(middlewares=[logger.logging_middleware, stats_middleware, error_middleware])
     app["substitution_plans"] = {}
     for name, plan_config in config.get("substitution_plans").items():
         loader_name = plan_config["loader"]
@@ -130,8 +130,7 @@ async def app_factory(dev_mode=False):
         await plan.deserialize(os.path.join(DATA_DIR, f"substitutions/{name}.pickle"))
 
         app.add_subapp(f"/{name}/",
-                       plan.create_app(os.path.abspath("assets/static/" + name) if config.get_bool("dev") else None,
-                                       [stats_middleware, error_middleware]))
+                       plan.create_app(os.path.abspath("assets/static/" + name) if config.get_bool("dev") else None))
 
         app["substitution_plans"][name] = plan
 

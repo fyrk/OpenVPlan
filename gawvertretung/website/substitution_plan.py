@@ -91,6 +91,7 @@ class SubstitutionPlan:
     # REQUEST HANDLERS
 
     # /
+    @logger.request_wrapper
     async def _root_handler(self, request: web.Request) -> web.Response:
         _LOGGER.info(f"{request.method} {request.path}")
         # noinspection PyBroadException
@@ -166,6 +167,7 @@ class SubstitutionPlan:
         return response
 
     # /api/wait-for-updates
+    @logger.request_wrapper
     async def _wait_for_updates_handler(self, request: web.Request):
         ws = web.WebSocketResponse()
         if not ws.can_prepare(request):
@@ -204,6 +206,7 @@ class SubstitutionPlan:
         return ws
 
     # /api/subscribe-push
+    @logger.request_wrapper
     async def _subscribe_push_handler(self, request: web.Request):
         # noinspection PyBroadException
         try:
@@ -214,7 +217,7 @@ class SubstitutionPlan:
             return web.json_response({"ok": False}, status=400)
         return web.json_response({"ok": True})
 
-    def create_app(self, static_path: Optional[str] = None, middlewares=None) -> web.Application:
+    def create_app(self, static_path: Optional[str] = None) -> web.Application:
         async def create_background_tasks(app):
             app["background_tasks"] = asyncio.create_task(self._background_tasks())
 
@@ -222,10 +225,7 @@ class SubstitutionPlan:
             app["background_tasks"].cancel()
             await app["background_tasks"]
 
-        mw = [logger.get_plan_middleware(self._name)]
-        if middlewares is not None:
-            mw.extend(middlewares)
-        self._app = web.Application(middlewares=mw)
+        self._app = web.Application()
         self._app.on_startup.append(create_background_tasks)
         self._app.on_cleanup.append(cleanup_background_tasks)
         self._app.add_routes([
