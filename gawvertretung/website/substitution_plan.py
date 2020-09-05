@@ -5,7 +5,7 @@ import logging
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import List, Optional, Dict, MutableSet, Callable
+from typing import List, Optional, Dict, MutableSet
 
 import jinja2
 import pywebpush
@@ -93,7 +93,6 @@ class SubstitutionPlan:
     # /
     @logger.request_wrapper
     async def _root_handler(self, request: web.Request) -> web.Response:
-        _LOGGER.info(f"{request.method} {request.path_qs}")
         # noinspection PyBroadException
         try:
             if "all" not in request.query and "s" not in request.query:
@@ -171,7 +170,6 @@ class SubstitutionPlan:
         ws = web.WebSocketResponse()
         if not ws.can_prepare(request):
             raise web.HTTPNotFound()
-        _LOGGER.info(f"WEBSOCKET {request.path}")
         await ws.prepare(request)
 
         self._websockets.add(ws)

@@ -3,7 +3,7 @@ import logging
 import logging.handlers
 import secrets
 import sys
-from typing import Callable, Awaitable
+import time
 
 from aiohttp import web
 
@@ -41,6 +41,9 @@ def init(filepath):
                 record.msg = f"[{plan_name}] [{req_id}] {record.msg}"
             else:
                 record.msg = f"[{plan_name}] {record.msg}"
+        else:
+            if req_id:
+                record.msg = f"[] [{req_id}] {record.msg}"
         return record
 
     logging.setLogRecordFactory(factory)
@@ -60,6 +63,10 @@ def request_wrapper(request_handler):
 @web.middleware
 async def logging_middleware(request: web.Request, handler):
     REQUEST_ID_CONTEXTVAR.set(secrets.token_hex(4))
+    _logger.info(f"{request.method} {request.path_qs}")
+    t1 = time.perf_counter_ns()
     response: web.Response = await handler(request)
-    _logger.info(f"Finished: {request.method} {request.path_qs} {response.status}")
+    _logger.info(f"Response status={response.status}, "
+                 f"{'length=' + str(response.content_length) + ', ' if response.content_length else ''}"
+                 f"time={time.perf_counter_ns()-t1}ns")
     return response
