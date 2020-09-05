@@ -138,7 +138,7 @@ class SubstitutionPlan:
                             location="/" + self._name + "/?s=" + request.cookies[self._name + "-selection"]
                         )
                     else:
-                        raise web.HTTPSeeOther(location="/" + self._name + "?all")
+                        raise web.HTTPSeeOther(location="/" + self._name + "/?all")
                 if substitutions_have_changed or config.get_bool("dev"):
                     await self._recreate_index_site()
                 response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8",
