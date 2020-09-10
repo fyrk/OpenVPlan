@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+from functools import partial
 
 import jinja2
 from aiohttp import client, http, hdrs, web
@@ -124,7 +125,7 @@ async def app_factory(dev_mode=False):
         template500_name = plan_config["template500"]
         loader = {"StudentSubstitutionLoader": StudentSubstitutionLoader,
                   "TeacherSubstitutionLoader": TeacherSubstitutionLoader}[loader_name](url)
-        loader.on_status_changed = lambda *a: stats.add_last_site(name, *a)
+        loader.on_status_changed = partial(stats.add_last_site, name)
         plan = SubstitutionPlan(name, loader, env.get_template(template_name), env.get_template(template500_name))
 
         await plan.deserialize(os.path.join(DATA_DIR, f"substitutions/{name}.pickle"))
