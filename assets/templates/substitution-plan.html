@@ -94,7 +94,9 @@
 <div class="box">
     <h2>{% block select_heading %}{% endblock %}</h2>
     <form class="form" type="get">
-        <label for="selectionInput">{% block select_text %}{% endblock %}</label>
+        {%- if not selection -%}
+            <label for="selectionInput">{% block select_text %}{% endblock %}</label>
+        {%- endif -%}
         <div class="form-row">
             <div class="col-9 col-sm-6 col-md-4 col-xl-3">
                 <input type="text" class="form-control" id="selectionInput" name="s" required
