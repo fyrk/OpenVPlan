@@ -131,7 +131,7 @@ class SubstitutionPlan:
                 if not config.get_bool("dev"):
                     cookie["secure"] = True
                 cookie["httponly"] = True
-                cookie["samesite"] = "Strict"
+                cookie["samesite"] = "Lax"
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
@@ -150,7 +150,7 @@ class SubstitutionPlan:
                 if not config.get_bool("dev"):
                     cookie["secure"] = True
                 cookie["httponly"] = True
-                cookie["samesite"] = "Strict"
+                cookie["samesite"] = "Lax"
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
