@@ -98,6 +98,7 @@ body, html {
     .box {
         box-shadow: none;
         border-radius: 0;
+        padding: 1rem 1rem;
     }
 
     .box:not(:last-child) {
@@ -393,5 +394,9 @@ $shake-duration: 10%;
         text-transform: uppercase;
         min-width: 50px;
         max-width: 80px;
+    }
+    th:first-child {
+        padding-left: 0;
+        text-align: right;
     }
 }

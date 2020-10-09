@@ -48,7 +48,7 @@ gulp.task("build-sass", () => {
             autoprefixer()
         ]))
         .pipe(sourcemaps.write("/"))
-        .pipe(gulp.dest(destPath));
+        .pipe(gulp.dest("."));
 });
 
 
