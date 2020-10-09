@@ -464,6 +464,8 @@ try {
                         // noinspection JSUnresolvedVariable
                         setRelevant(e.target);
                         // noinspection JSUnresolvedVariable
+                        e.target.dataset.oldvalue = e.target.value;
+                        // noinspection JSUnresolvedVariable
                         timetables[e.target.dataset.selection]
                             [parseInt(e.target.dataset.weekday)]
                             [parseInt(e.target.dataset.lesson)-1] = e.target.value.toUpperCase();
