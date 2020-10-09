@@ -8,11 +8,11 @@ def create_date_timestamp(date: datetime.datetime):
     return int(time.mktime(date.date().timetuple()))
 
 
-REGEX_CLASS = re.compile(r"(?:\D|\A)(\d*)([A-Za-z]*)(?:\D|\Z)")
+REGEX_CLASS = re.compile(r"(\d+)([A-Za-z]*)")
 
 
 def split_class_name(class_name: str) -> Tuple[str, str]:
-    matches = REGEX_CLASS.search(class_name)
+    matches = REGEX_CLASS.fullmatch(class_name)
     if matches:
         return matches.group(1), matches.group(2)
     return "", class_name
