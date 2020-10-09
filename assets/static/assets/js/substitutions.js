@@ -455,6 +455,7 @@ try {
                     input.id = s + "-" + weekday + "-" + lessonNum;
                     const weekdayName = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"][weekday];
                     input.setAttribute("type", "text");
+                    input.setAttribute("autocapitalize", "characters");
                     input.setAttribute("maxlength", "3");
                     input.setAttribute("aria-label", `${lessonNum}. Stunde ${weekdayName}`);
                     input.addEventListener("focus", e => e.target.select());
