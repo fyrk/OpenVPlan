@@ -333,10 +333,10 @@ try {
                     let match = groupName.match(/^(\d+)([A-Za-z]*)$/);
                     if (match != null) {
                         groupNumberPart = match[1];
-                        groupLetterPart = match[2];
+                        groupLetterPart = match[2].toUpperCase();
                     } else {
                         groupNumberPart = "";
-                        groupLetterPart = groupName;
+                        groupLetterPart = groupName.toUpperCase();
                     }
                     if (groupNumberPart !== "") {
                         if (groupLetterPart !== "") {
@@ -351,6 +351,7 @@ try {
                     }
                     let matchingSelections = [];
                     for (let s of selection.split(", ")) {
+                        s = s.toUpperCase();
                         for (let g of affectedGroups) {
                             if (g.includes(s)) {
                                 matchingSelections.push(s);
@@ -427,7 +428,8 @@ try {
             }
         }
         for (let s of selection.split(", ")) {
-            if (!(s in timetables)) {
+            let sUpper = s.toUpperCase();
+            if (!(sUpper in timetables)) {
                 timetables[s] = [
                     [null, null, null, null, null, null, null, null, null, null],
                     [null, null, null, null, null, null, null, null, null, null],
@@ -452,7 +454,7 @@ try {
                     const input = document.createElement("input");
                     cell.appendChild(input);
                     input.classList.add("form-control", "form-control-sm");
-                    input.id = s + "-" + weekday + "-" + lessonNum;
+                    input.id = sUpper + "-" + weekday + "-" + lessonNum;
                     const weekdayName = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"][weekday];
                     input.setAttribute("type", "text");
                     input.setAttribute("autocapitalize", "characters");
@@ -472,11 +474,11 @@ try {
                             [parseInt(e.target.dataset.lesson)-1] = e.target.value.toUpperCase();
                         window.localStorage.setItem(substitutionPlanType + "-timetables", JSON.stringify(timetables));
                     });
-                    input.dataset.selection = s;
+                    input.dataset.selection = sUpper;
                     input.dataset.weekday = weekday;
                     input.dataset.weekdayName = weekdayName;
                     input.dataset.lesson = lessonNum;
-                    let teacher = timetables[s][weekday][lessonNum-1];
+                    let teacher = timetables[sUpper][weekday][lessonNum-1];
                     if (teacher != null) {
                         input.value = teacher;
                         input.dataset.oldvalue = teacher;
