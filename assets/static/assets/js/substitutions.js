@@ -430,7 +430,7 @@ try {
         for (let s of selection.split(", ")) {
             let sUpper = s.toUpperCase();
             if (!(sUpper in timetables)) {
-                timetables[s] = [
+                timetables[sUpper] = [
                     [null, null, null, null, null, null, null, null, null, null],
                     [null, null, null, null, null, null, null, null, null, null],
                     [null, null, null, null, null, null, null, null, null, null],
