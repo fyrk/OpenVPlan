@@ -35,7 +35,8 @@ gulp.task("build-sass", () => {
     return gulp.src(srcPath)
         .pipe(sourcemaps.init())
         .pipe(sass({
-            outputStyle: "compressed"
+            outputStyle: "compressed",
+            outFile: destPath
         }))
         .pipe(postcss([
             purgecss({
@@ -47,8 +48,8 @@ gulp.task("build-sass", () => {
             }),
             autoprefixer()
         ]))
-        .pipe(sourcemaps.write("/"))
-        .pipe(gulp.dest("."));
+        .pipe(sourcemaps.write(destPath))
+        .pipe(gulp.dest(destPath));
 });
 
 
