@@ -10,7 +10,7 @@
 
 {%- for day in storage.values() -%}
 {%- set day_loop = loop -%}
-<div class="box">
+<div class="box substitutions-box">
     <div class="p-0 mb-3">
         <div class="row">
             <div class="col-md">
@@ -117,7 +117,7 @@
     </form>
 
     <div id="notifications-block">
-        <h2 class="mt-4" id="notifications-heading">{% block push_notifications_heading %}Benachrichtigungen{% endblock %}</h2>
+        <h2 id="notifications-heading">{% block push_notifications_heading %}Benachrichtigungen{% endblock %}</h2>
         Erhalte Push-Benachrichtigungen, wenn es neue Vertretungen gibt.<br>
         <span class="text-danger"></span>
         <div id="notifications-not-available-alert" class="alert alert-danger mt-3">
@@ -135,9 +135,10 @@
             </label>
         </div>
     </div>
+    {% block timetables_block %}{% endblock %}
 </div>
 {%- endblock -%}
 
 {%- block body_end -%}
-    <script src="/assets/js/substitutions.min.js?v=1"></script>
+    <script src="/assets/js/substitutions.min.js?v=2"></script>
 {%- endblock -%}

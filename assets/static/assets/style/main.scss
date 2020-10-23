@@ -98,6 +98,7 @@ body, html {
     .box {
         box-shadow: none;
         border-radius: 0;
+        padding: 1rem 1rem;
     }
 
     .box:not(:last-child) {
@@ -266,6 +267,10 @@ $day-info-heading-font-size: 1.15rem;
             color: $gray-500;
         }
 
+        tr.is-relevant td:not(.group-name) {
+            font-weight: bold;
+        }
+
 
         tr.new-subs td:not(.group-name) {
             background-color: rgba(map_get($theme-colors, "primary"), 0.1);
@@ -332,6 +337,11 @@ a {
     @extend .text-decoration-none
 }
 
+
+#notifications-heading, #timetables-heading {
+    margin-top: 1.75rem;
+}
+
 #notifications-heading::before {
     @extend %icon-primary;
     @include icon(
@@ -360,4 +370,33 @@ $shake-duration: 10%;
     #{50%+5/16*$shake-duration}  {transform: rotate(-10deg)}
     #{50%+7/16*$shake-duration}  {transform: rotate(10deg)}
     #{50%+8/16*$shake-duration}  {transform: rotate(0)}
+}
+
+#timetables-heading::before {
+    @extend %icon-primary;
+    @include icon(
+                    url('data:image/svg+xml,<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-calendar-week-fill" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v1h16V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5zM16 14V5H0v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2zM9.5 7a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1zm3 0a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1zM2 10.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3.5-.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1z"/></svg>'),
+            $position-y: -0.1rem
+    );
+    margin-right: 0.4rem;
+    transform-origin: top;
+}
+
+.timetable-table-wrapper {
+    width: fit-content;
+}
+.timetable-table {
+    th {
+        text-align: center;
+        vertical-align: middle;
+    }
+    input {
+        text-transform: uppercase;
+        min-width: 50px;
+        max-width: 80px;
+    }
+    th:first-child {
+        padding-left: 0;
+        text-align: right;
+    }
 }

@@ -40,7 +40,42 @@
 {%- block selection_help_text %}Mehrere Klassen durch Kommata trennen{% endblock -%}
 {% block selection_all %}Alle Klassen{% endblock %}
 
-{% block notifications_info_all %}Du wirst für alle Klassen benachrichtigt. Wähle Klassen aus, um nur für bestimmte
-    Klassen benachrichtigt zu werden.{% endblock %}
+{% block notifications_info_all %}
+    Du wirst für alle Klassen benachrichtigt. Wähle Klassen aus, um nur für bestimmte Klassen benachrichtigt zu werden.
+{% endblock %}
+
+{% block timetables_block %}
+    <template id="timetables-block-template">
+        <h2 id="timetables-heading">Stundenpläne <span class="badge-pill badge-danger">Beta</span></h2>
+        Für alle ausgewählten Klasse können Lehrer*innenkürzel für jede Stunde eingegeben werden.
+        Vertretungen mit dem eingegebenen Kürzel werden hervorgehoben.
+        Der Stundenplan wird ausschließlich im Browser gespeichert und nicht an den Server gesendet.
+        <div id="timetables-container"></div>
+    </template>
+    <template id="timetable-template">
+        <div>
+            <h3 class="timetable-name mt-2">Stundenplan für <span class="timetable-selection"></span></h3>
+            <div class="table-responsive">
+                <div class="timetable-table-wrapper">
+                    <table class="timetable-table table table-borderless table-sm">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th scope="col">Mo</th>
+                                <th scope="col">Di</th>
+                                <th scope="col">Mi</th>
+                                <th scope="col">Do</th>
+                                <th scope="col">Fr</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+    <div id="timetables-block"></div>
+{% endblock %}
 
 {% block gaw_verden_link %}https://gaw-verden.de/images/vertretung/klassen/subst_001.htm{% endblock %}
