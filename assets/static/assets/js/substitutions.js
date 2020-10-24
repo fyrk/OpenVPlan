@@ -503,8 +503,10 @@ try {
                         lesson = 10;
                     } else if (lesson > 10) {
                         weekday++;
-                        if (weekday >= 5)
+                        if (weekday >= 5) {
+                            currentInput.blur();
                             return false;
+                        }
                         lesson = 1;
                     }
                     document.getElementById("timetable-" + currentInput.dataset.selection + "-" + weekday + "-" + lesson).focus();
