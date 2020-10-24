@@ -454,10 +454,13 @@ try {
                     const input = document.createElement("input");
                     cell.appendChild(input);
                     input.classList.add("form-control", "form-control-sm");
-                    input.id = sUpper + "-" + weekday + "-" + lessonNum;
+                    input.id = "timetable-" + sUpper + "-" + weekday + "-" + lessonNum;
                     const weekdayName = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"][weekday];
                     input.setAttribute("type", "text");
                     input.setAttribute("autocapitalize", "characters");
+                    input.setAttribute("autocomplete", "off");
+                    input.setAttribute("autocorrect", "off");
+                    input.setAttribute("spellcheck", "false");
                     input.setAttribute("maxlength", "3");
                     input.setAttribute("aria-label", `${lessonNum}. Stunde ${weekdayName}`);
                     input.addEventListener("focus", e => e.target.select());
@@ -503,7 +506,7 @@ try {
                             return false;
                         lesson = 1;
                     }
-                    document.getElementById(currentInput.dataset.selection + "-" + weekday + "-" + lesson).focus();
+                    document.getElementById("timetable-" + currentInput.dataset.selection + "-" + weekday + "-" + lesson).focus();
                     return true;
                 }
 
@@ -512,7 +515,7 @@ try {
                     let lesson = parseInt(currentInput.dataset.lesson);
                     weekday += direction;
                     if (0 <= weekday && weekday <= 4) {
-                        document.getElementById(currentInput.dataset.selection + "-" + weekday + "-" + lesson).focus();
+                        document.getElementById("timetable-" + currentInput.dataset.selection + "-" + weekday + "-" + lesson).focus();
                         return true;
                     }
                     return false;
