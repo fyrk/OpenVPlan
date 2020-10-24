@@ -461,6 +461,7 @@ try {
                     input.setAttribute("autocomplete", "off");
                     input.setAttribute("autocorrect", "off");
                     input.setAttribute("spellcheck", "false");
+                    input.setAttribute("enterkeyhint", weekday === 4 && lessonNum === 10 ? "done" : "next");
                     input.setAttribute("maxlength", "3");
                     input.setAttribute("aria-label", `${lessonNum}. Stunde ${weekdayName}`);
                     input.addEventListener("focus", e => e.target.select());
@@ -524,6 +525,7 @@ try {
                 tbody.addEventListener("keydown", e => {
                     switch (e.key) {
                         case "Tab":
+                        case "Enter":
                             if (focusNextLesson(e.target, e.shiftKey ? -1 : 1))
                                 e.preventDefault();
                             break;
