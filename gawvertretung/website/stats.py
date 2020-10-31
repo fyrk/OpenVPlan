@@ -4,7 +4,7 @@ import hashlib
 import logging
 import os.path
 
-from aiohttp import web, hdrs
+from aiohttp import hdrs, web
 
 from .. import config
 
@@ -25,6 +25,8 @@ class Stats:
         self._status = csv.writer(self._status_file)
         self._requests_file = open(os.path.join(directory, "requests.csv"), "a", newline="", buffering=1)
         self._requests = csv.writer(self._requests_file)
+        self._js_errors_file = open(os.path.join(directory, "js_errors.csv"), "a", newline="", buffering=1)
+        self._js_errors = csv.writer(self._js_errors_file)
 
     def __del__(self, exc_type, exc_val, exc_tb):
         self._status_file.close()
@@ -48,3 +50,6 @@ class Stats:
                                  response.status, response.reason, request.method,
                                  request.path_qs, time, response.body_length,
                                  request.headers.get(hdrs.USER_AGENT), request.headers.get(hdrs.REFERER), remote))
+
+    async def new_js_error(self, message: str, filename: str, lineno: str, colno: str, error: str):
+        self._js_errors.writerow((message, filename, lineno, colno, error))

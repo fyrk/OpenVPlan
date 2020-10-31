@@ -46,6 +46,7 @@ self.addEventListener("push", event => {
         timestamp: timestamp,
         vibrate: [300, 100, 400],
         data: {
+            plan_type: data["plan_type"],
             url: new URL("/" + data["plan_type"] + "/", self.location.origin).href
         }
     };
@@ -53,6 +54,15 @@ self.addEventListener("push", event => {
     event.waitUntil(
         self.registration.showNotification(title, options)
     );
+});
+
+self.addEventListener("error", e => {
+    const error = {type: Object.getPrototypeOf(e.error).name};
+    Object.getOwnPropertyNames(e.error).forEach(p => error[p] = e.error[p]);
+    fetch("/api/report-error", {
+        method: "post",
+        body: JSON.stringify({message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno, error: error})
+    });
 });
 
 self.addEventListener("notificationclick", event => {
@@ -63,7 +73,9 @@ self.addEventListener("notificationclick", event => {
         type: "window"
     }).then(function (clientList) {
         for (let client of clientList) {
-            if (client.url.split("?")[0] === event.notification.data.url && "focus" in client)
+            const url = new URL(client.url);
+            console.log(event.notification.data.url, url.origin+url.pathname);
+            if (url.origin+url.pathname === event.notification.data.url && "focus" in client)
                 return client.focus();
         }
         if (self.clients.openWindow)
@@ -72,6 +84,9 @@ self.addEventListener("notificationclick", event => {
 
     // close all notifications
     self.registration.getNotifications().then(notifications => {
-        notifications.forEach(n => n.close());
+        notifications.forEach(n => {
+            if (event.notification.plan_type === n.data.plan_type)
+                n.close()
+        });
     });
 });

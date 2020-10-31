@@ -6,21 +6,38 @@ const rename = require("gulp-rename");
 
 const closureCompiler = require("google-closure-compiler").gulp();
 
+const SUBSTITUTIONS_BUNDLE_FILES = [
+    "substitutions-base.js",
+    "grey-substitutions.js",
+    "push-notifications.js",
+    "updates.js"
+];
+
 gulp.task("build-js", () => {
-    const srcPath = argv.src;
-    const outputFile = argv.output_file;
-    const destPath = argv.dest;
-    return gulp.src(srcPath, {base: './'})
+    const srcFile = argv.srcFile;
+    let destFile = argv.destFile;
+    const path = argv.path || "assets/static/assets/js/";
+    let s;
+    if (SUBSTITUTIONS_BUNDLE_FILES.includes(srcFile)) {
+        let paths = [];
+        for (let filename of SUBSTITUTIONS_BUNDLE_FILES) paths.push(path + filename);
+        s = gulp.src(paths);
+        destFile = "substitutions.min.js";
+    } else {
+        s = gulp.src(path + srcFile);
+    }
+    return s
         .pipe(sourcemaps.init())
         .pipe(closureCompiler({
-            js_output_file: outputFile,
+            js_output_file: destFile,
             assume_function_wrapper: true,
+            isolation_mode: "IIFE",
             source_map_format: "V3",
             language_in: "ECMASCRIPT_2019",
             language_out: "ECMASCRIPT_2019",
         }))
         .pipe(sourcemaps.write("/"))
-        .pipe(gulp.dest(destPath));
+        .pipe(gulp.dest(path));
 })
 
 
@@ -30,13 +47,13 @@ const autoprefixer = require("autoprefixer");
 const purgecss = require("postcss-purgecss");
 
 gulp.task("build-sass", () => {
-    const srcPath = argv.src;
-    const destPath = argv.dest;
-    return gulp.src(srcPath)
+    const srcFile = argv.srcFile;
+    const path = argv.path || "assets/static/assets/style/";
+    return gulp.src(path + srcFile)
         .pipe(sourcemaps.init())
         .pipe(sass({
             outputStyle: "compressed",
-            outFile: destPath
+            outFile: path
         }))
         .pipe(postcss([
             purgecss({
@@ -44,23 +61,23 @@ gulp.task("build-sass", () => {
                     "assets/templates/*.min.html",
                     "assets/static/assets/js/substitutions.min.js"
                 ],
-                css: [srcPath]
+                css: [path + srcFile]
             }),
             autoprefixer()
         ]))
         .pipe(sourcemaps.write("/"))
-        .pipe(gulp.dest(destPath));
+        .pipe(gulp.dest(path));
 });
 
 
 const htmlmin = require("gulp-html-minifier");
 
-gulp.task("build-html", () => {
-    const srcPath = argv.src;
-    const destPath = argv.dest;
-    const destName = argv.dest_name;
-    return gulp.src(srcPath)
+gulp.task("minify-xml", () => {
+    const srcFile = argv.srcFile;
+    const destFile = argv.destFile;
+    const path = argv.path || "assets/templates/";
+    return gulp.src(path + srcFile)
         .pipe(htmlmin({collapseWhitespace: true, conservativeCollapse: true, removeComments: true}))
-        .pipe(rename(destName))
-        .pipe(gulp.dest(destPath));
+        .pipe(rename(destFile))
+        .pipe(gulp.dest(path));
 });

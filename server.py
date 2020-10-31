@@ -4,16 +4,15 @@ import time
 from functools import partial
 
 import jinja2
-from aiohttp import client, http, hdrs, web
+from aiohttp import client, hdrs, http, web
 from aiohttp.web_fileresponse import FileResponse
 
-from gawvertretung import logger
 from gawvertretung import config
+from gawvertretung import logger
 from gawvertretung.db.db import SubstitutionPlanDBStorage
 from gawvertretung.substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
 from gawvertretung.website.stats import Stats
-from gawvertretung.website.substitution_plan import SubstitutionPlan, RESPONSE_HEADERS
-
+from gawvertretung.website.substitution_plan import RESPONSE_HEADERS, SubstitutionPlan
 
 __version__ = "3.0"
 
@@ -93,6 +92,18 @@ def template_handler(template: jinja2.Template):
     return handler
 
 
+async def report_js_error_handler(request: web.Request):
+    if request.content_length < 10000:
+        try:
+            data = await request.post()
+            if data.keys() == {"message", "filename", "lineno", "colno", "error"}:
+                await stats.new_js_error(data["message"], data["filename"], data["lineno"], data["colno"], data["error"])
+                return web.Response()
+        except Exception:
+            pass
+    raise web.HTTPBadRequest
+
+
 async def client_session_context(app: web.Application):
     _LOGGER.debug("Create ClientSession")
     session = client.ClientSession(headers=REQUEST_HEADERS)
@@ -144,7 +155,8 @@ async def app_factory(dev_mode=False):
     app.add_routes([
         web.get("/", root_handler),
         web.get("/privacy", template_handler(TEMPLATE_PRIVACY)),
-        web.get("/about", template_handler(TEMPLATE_ABOUT))
+        web.get("/about", template_handler(TEMPLATE_ABOUT)),
+        web.post("/api/report-error", report_js_error_handler)
     ])
 
     if dev_mode:
