@@ -1,7 +1,15 @@
 {% extends "_base.min.html" %}
 {% block manifest_link %}
     <!--suppress HtmlUnknownTarget -->
-    <link rel="manifest" href="manifest.json">{% endblock %}
+    <link rel="manifest" href="manifest.json">
+{% endblock %}
+{% block stylesheets %}
+    <link href="/assets/style/substitutions.css" rel="stylesheet">
+{% endblock %}
+{%- block scripts -%}
+    <script src="/assets/js/substitutions.min.js?v=2"></script>
+{%- endblock -%}
+
 {%- block content -%}
 <div class="box status-box clearfix">
     <span>Stand: <span id="status">{{ storage.status }}</span></span>
@@ -137,8 +145,4 @@
     </div>
     {% block timetables_block %}{% endblock %}
 </div>
-{%- endblock -%}
-
-{%- block body_end -%}
-    <script src="/assets/js/substitutions.min.js?v=2"></script>
 {%- endblock -%}

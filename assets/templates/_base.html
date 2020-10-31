@@ -29,40 +29,41 @@
     <meta property="og:image:type" content="image/png">
 
     <link href="/assets/style/main.css?v=2" rel="stylesheet">
+    {% block stylesheets %}{% endblock %}
 </head>
 <body class="d-flex flex-column">
-<a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
-<div id="content" class="container-xl">
-    <header class="main-container">
-        <div class="box title-box">
-            {% block title_bar %}
-                {% if selection %}<span class="selection">{{ selection_str|e }}</span> - {% endif %}
-                <span class="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
-                <span class="title-middle">GaW Vertretungsplan</span>
-                <span class="title-small">GaW VPlan</span>
-            {% endblock %}
-            {% block title_end %}{% endblock %}
-        </div>
-    </header>
-    <main role="main" id="main">
-        {% block content %}{% endblock %}
-    </main>
-</div>
-<footer class="text-center bg-dark text-white p-3 mt-4">
-    <p>
-        Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
-        <a href="{% block gaw_verden_link %}{% endblock %}" rel="noopener" target="_blank" class="external text-nowrap">gaw-verden.de</a>.<br>
-        Alle Angaben ohne Gewähr.
-    </p>
-    <p>
-        Programmiert von Florian Rädiker.
-    </p>
-    <p>
-        <!--suppress HtmlUnknownTarget -->
-        <a href="/about">Impressum</a> | <!--suppress HtmlUnknownTarget --><a href="/privacy">Datenschutzerklärung</a>
-    </p>
-    <object data="/assets/img/python-powered.svg">python powered</object>
-</footer>
-{% block body_end %}{% endblock %}
+    <a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
+    <div id="content" class="container-xl">
+        <header class="main-container">
+            <div class="box title-box">
+                {% block title_bar %}
+                    {% if selection %}<span class="selection">{{ selection_str|e }}</span> - {% endif %}
+                    <span class="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
+                    <span class="title-middle">GaW Vertretungsplan</span>
+                    <span class="title-small">GaW VPlan</span>
+                {% endblock %}
+                {% block title_end %}{% endblock %}
+            </div>
+        </header>
+        <main role="main" id="main">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    <footer class="text-center bg-dark text-white p-3 mt-4">
+        <p>
+            Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
+            <a href="{% block gaw_verden_link %}{% endblock %}" rel="noopener" target="_blank" class="external text-nowrap">gaw-verden.de</a>.<br>
+            Alle Angaben ohne Gewähr.
+        </p>
+        <p>
+            Programmiert von Florian Rädiker.
+        </p>
+        <p>
+            <!--suppress HtmlUnknownTarget -->
+            <a href="/about">Impressum</a> | <!--suppress HtmlUnknownTarget --><a href="/privacy">Datenschutzerklärung</a>
+        </p>
+        <object data="/assets/img/python-powered.min.svg">python powered</object>
+    </footer>
+    {% block scripts %}{% endblock scripts %}
 </body>
 </html>
