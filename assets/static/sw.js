@@ -61,8 +61,8 @@ self.addEventListener("error", e => {
     Object.getOwnPropertyNames(e.error).forEach(p => error[p] = e.error[p]);
     fetch("/api/report-error", {
         method: "post",
-        body: JSON.stringify({message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno, error: error})
-    });
+        body: new URLSearchParams({message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno, error: JSON.stringify(error)})
+    })
 });
 
 self.addEventListener("notificationclick", event => {
