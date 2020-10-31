@@ -31,6 +31,7 @@ class Stats:
     def __del__(self, exc_type, exc_val, exc_tb):
         self._status_file.close()
         self._requests_file.close()
+        self._js_errors_file.close()
 
     async def add_last_site(self, plan_name: str, status: str, last_site: int):
         self._status.writerow((plan_name, status, last_site))
