@@ -48,7 +48,10 @@ $day-info-heading-font-size: 1.15rem;
             height: $day-info-heading-font-size*1.5;
 
             br {
-                display: none;
+                content: '';
+            }
+            br::after {
+                content: '\00a0\00a0\00a0';
             }
         }
 
