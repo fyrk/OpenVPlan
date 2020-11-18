@@ -50,8 +50,8 @@ $day-info-heading-font-size: 1.15rem;
             br {
                 content: '';
             }
-            br:last-child::after {
-                content: '\00a0\00a0\00a0';
+            br::after {
+                content: '\00a0/\00a0';
             }
         }
 
@@ -92,8 +92,6 @@ $day-info-heading-font-size: 1.15rem;
 // ========================
 // SUBSTITUTIONS TABLE
 
-// .substitutions-table is actually used in substitution-plan.html, but it is followed by "{", so code analysis doesn't
-// detect it
 /*! purgecss start ignore */  // for .grey and .new-subs
 .substitutions-table {
     white-space: nowrap;
@@ -127,12 +125,10 @@ $day-info-heading-font-size: 1.15rem;
         }
     }
 
-    // see comment for .substitutions-table
     &:not(.has-selection) .group-name:not(.selectable) {
         padding-left: $table-cell-padding-sm + 1.2rem;
     }
 
-    // see comment for .substitutions-table
     .group-name.selectable {
         position: relative;
     }
@@ -266,5 +262,3 @@ $shake-duration: 10%;
     );
     vertical-align: bottom;
 }
-
-
