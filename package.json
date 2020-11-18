@@ -13,23 +13,22 @@
     "gymnasium-am-wall-verden"
   ],
   "author": "Florian Rädiker",
-  "dependencies": {
-    "node-sass": "^4.14.1"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@fullhuman/postcss-purgecss": "^3.0.0",
     "autoprefixer": "^9.8.6",
     "bootstrap": "^4.5.3",
     "bootstrap-icons": "^1.1.0",
-    "google-closure-compiler": "^20200719.0.0",
+    "google-closure-compiler": "^20201102.0.1",
     "gulp": "^4.0.2",
     "gulp-html-minifier": "^0.1.8",
-    "gulp-postcss": "^8.0.0",
+    "gulp-postcss": "^9.0.0",
     "gulp-rename": "^2.0.0",
     "gulp-sass": "^4.1.0",
-    "gulp-sourcemaps": "^2.6.5",
+    "gulp-sourcemaps": "^3.0.0",
     "html-minifier": "^4.0.0",
+    "node-sass": "^5.0.0",
     "postcss-purgecss": "^2.0.3",
-    "web-push": "^3.4.4",
-    "yargs": "^15.4.1"
+    "yargs": "^16.1.1"
   }
 }
