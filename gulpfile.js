@@ -44,7 +44,7 @@ gulp.task("build-js", () => {
 const sass = require("gulp-sass");
 const postcss = require("gulp-postcss");
 const autoprefixer = require("autoprefixer");
-const purgecss = require("postcss-purgecss");
+const purgecss = require("@fullhuman/postcss-purgecss");
 
 gulp.task("build-sass", () => {
     const srcFile = argv.srcFile;
@@ -59,7 +59,7 @@ gulp.task("build-sass", () => {
             purgecss({
                 content: [
                     "assets/templates/*.min.html",
-                    "assets/static/assets/js/substitutions.min.js"
+                    "assets/static/assets/js/*.min.js"
                 ],
                 css: [path + srcFile]
             }),
