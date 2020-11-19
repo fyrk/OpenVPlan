@@ -71,8 +71,8 @@ $day-info-heading-font-size: 1.15rem;
             }
         }
 
-        &~ .day-info-label .day-info-heading {
-            margin-right: 100%;  // make content start at next line
+        &~ .day-info-label .day-info-content {
+            display: block;  // make content start at next line
         }
     }
 }
