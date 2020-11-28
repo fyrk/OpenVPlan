@@ -1,0 +1,29 @@
+@import "node_modules/bootstrap/scss/functions";
+
+
+$body-bg: #201F1F;
+$body-color: white;
+
+$primary: #fc8600;
+$secondary: #f7d45e;
+
+$box-bg: #292828;
+
+$yiq-text-dark:             white !default;
+$yiq-text-light:            #212529 !default;
+
+$white:    #000 !default;
+$gray-100: #212529 !default;
+$gray-200: #343a40 !default;
+$gray-300: #495057 !default;
+$gray-400: #6c757d !default;
+$gray-500: #adb5bd !default;
+$gray-600: #ced4da !default;
+$gray-700: #dee2e6 !default;
+$gray-800: #e9ecef !default;
+$gray-900: #f8f9fa !default;
+$black:    #fff !default;
+
+$input-bg: #292828;
+
+@import "main";

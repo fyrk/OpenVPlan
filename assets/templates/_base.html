@@ -27,8 +27,9 @@
     <meta property="og:image:type" content="image/svg+xml">
     <meta property="og:image" content="/favicon-192.png">
     <meta property="og:image:type" content="image/png">
-
-    <link href="/assets/style/main.css?v=3" rel="stylesheet">
+    <meta name="color-scheme" content="light dark">
+    <link href="/assets/style/main-light.css" rel="stylesheet" media="(prefers-color-scheme: no-preference), (prefers-color-scheme: light)">
+    <link href="/assets/style/main-dark.css" rel="stylesheet" media="(prefers-color-scheme: dark)">
     {% block stylesheets %}{% endblock %}
 </head>
 <body class="d-flex flex-column">
