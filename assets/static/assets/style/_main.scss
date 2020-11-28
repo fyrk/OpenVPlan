@@ -6,9 +6,9 @@
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  */
 
-
 @import "node_modules/bootstrap/scss/functions";
-@import "variables";
+@import "node_modules/bootstrap/scss/variables";
+
 @import "node_modules/bootstrap/scss/mixins/breakpoints";
 @import "node_modules/bootstrap/scss/mixins/text-truncate";
 @import "node_modules/bootstrap/scss/mixins/hover";
