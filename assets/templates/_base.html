@@ -28,7 +28,7 @@
     <meta property="og:image" content="/favicon-192.png">
     <meta property="og:image:type" content="image/png">
     <meta name="color-scheme" content="light dark">
-    <link href="/assets/style/main-light.css" rel="stylesheet" media="(prefers-color-scheme: no-preference), (prefers-color-scheme: light)">
+    <link href="/assets/style/main.css" rel="stylesheet">
     <link href="/assets/style/main-dark.css" rel="stylesheet" media="(prefers-color-scheme: dark)">
     {% block stylesheets %}{% endblock %}
 </head>
@@ -50,7 +50,7 @@
             {% block content %}{% endblock %}
         </main>
     </div>
-    <footer class="text-center bg-dark text-white p-3 mt-4">
+    <footer class="text-center text-white p-3 mt-4">
         <p>
             Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
             <a href="{% block gaw_verden_link %}{% endblock %}" rel="noopener" target="_blank" class="external text-nowrap">gaw-verden.de</a>.<br>
