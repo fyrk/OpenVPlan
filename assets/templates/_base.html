@@ -29,8 +29,9 @@
     <meta property="og:image:type" content="image/png">
     <meta name="color-scheme" content="light dark">
     <link href="/assets/style/main.css" rel="stylesheet">
-    <link href="/assets/style/main-dark.css" rel="stylesheet" media="(prefers-color-scheme: dark)">
+    <link href="/assets/style/main-dark.css" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
     {% block stylesheets %}{% endblock %}
+    <script>switch(localStorage.getItem("dark-theme")){case "light":for(let s of document.getElementsByClassName("dark-stylesheet"))s.setAttribute("media","none");document.querySelector('meta[name="color-scheme"]').setAttribute("content","light");break;case "dark":for(let s of document.getElementsByClassName("dark-stylesheet"))s.setAttribute("media",null);document.querySelector('meta[name="color-scheme"]').setAttribute("content","dark")}</script>
 </head>
 <body class="d-flex flex-column">
     <a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
@@ -66,5 +67,6 @@
         <object data="/assets/img/python-powered.min.svg">python powered</object>
     </footer>
     {% block scripts %}{% endblock scripts %}
+    <script src="/assets/js/dark-theme.min.js"></script>
 </body>
 </html>

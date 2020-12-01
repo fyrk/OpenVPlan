@@ -45,14 +45,16 @@
 @import "node_modules/bootstrap/scss/vendor/rfs";
 
 @import "node_modules/bootstrap/scss/reboot";
-@import "node_modules/bootstrap/scss/grid";
-@import "node_modules/bootstrap/scss/tables";
-@import "node_modules/bootstrap/scss/nav";
-@import "node_modules/bootstrap/scss/forms";
-@import "node_modules/bootstrap/scss/custom-forms";
-@import "node_modules/bootstrap/scss/buttons";
-@import "node_modules/bootstrap/scss/badge";
+
 @import "node_modules/bootstrap/scss/alert";
+@import "node_modules/bootstrap/scss/badge";
+@import "node_modules/bootstrap/scss/buttons";
+@import "node_modules/bootstrap/scss/close";
+@import "node_modules/bootstrap/scss/custom-forms";
+@import "node_modules/bootstrap/scss/forms";
+@import "node_modules/bootstrap/scss/grid";
+@import "node_modules/bootstrap/scss/nav";
+@import "node_modules/bootstrap/scss/tables";
 
 @import "icons";
 
@@ -178,4 +180,13 @@ footer {
             $height: 1rem,
     );
     margin-left: 0.1rem;
+}
+
+
+// ========================
+// SMOOTH TRANSITIONS FOR DARK THEME
+
+body, .text-muted, .form-control, .form-control:focus, .custom-control-input:not(:checked) ~ .custom-control-label::before,
+.nav-pills .nav-link.active, .btn, .btn:hover, .box, .title-box, footer {
+    transition: color .2s, background-color .2s;
 }
