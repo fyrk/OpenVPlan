@@ -5,11 +5,11 @@ import logging
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import List, Optional, Dict, MutableSet
+from typing import Dict, List, MutableSet, Optional
 
 import jinja2
 import pywebpush
-from aiohttp import web, WSMessage, WSMsgType, ClientSession
+from aiohttp import ClientSession, web, WSMessage, WSMsgType
 from cryptography.hazmat.primitives import serialization
 from py_vapid.jwt import sign
 from py_vapid.utils import b64urlencode
@@ -31,6 +31,7 @@ DELETE_COOKIE_EXPIRE = formatdate(0)
 
 RESPONSE_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; "
+                               "script-src-elem 'self' 'sha256-l2h6bLQWX9C8tLEINfO+loK3K/jPEQRB05YAe9ehO1o='; "
                                "connect-src 'self' " + ("ws:" if config.get_bool("dev") else "wss:"),
     "Strict-Transport-Security": "max-age=63072000",
     "Referrer-Policy": "same-origin",

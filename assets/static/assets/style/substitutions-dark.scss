@@ -1,0 +1,32 @@
+@import "variables-dark";
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+
+
+// BOOTSTRAP STYLES
+
+.table {
+    color: $table-color;
+
+    th, td { border-top-color: $table-border-color; }
+
+    thead th { border-bottom-color: $table-border-color; }
+
+    tbody + tbody { border-top-color: $table-border-color; }
+}
+
+
+// STYLES FROM substitutions.scss
+
+.day-info-checkbox  ~ .day-info-label::before { background-color: white; }
+
+.substitutions-table {
+    tbody {
+        tr.first-of-group td { border-top-color: $table-border-color; }
+
+        tr.grey td:not(.group-name) { color: $table-border-color; }
+
+        tr.new-subs td:not(.group-name) { background-color: rgba(map_get($theme-colors, "primary"), 0.1); }
+    }
+}
