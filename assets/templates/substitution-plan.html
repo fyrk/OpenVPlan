@@ -5,13 +5,23 @@
 {% endblock %}
 {% block stylesheets %}
     <link href="/assets/style/substitutions.css" rel="stylesheet">
-    <link href="/assets/style/substitutions-dark.css" rel="stylesheet" media="(prefers-color-scheme: dark)">
+    <link href="/assets/style/substitutions-dark.css" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
 {% endblock %}
 {%- block scripts -%}
     <script src="/assets/js/substitutions.min.js?v=3"></script>
 {%- endblock -%}
 
 {%- block content -%}
+<template id="template-news-dark-theme">
+    <div class="box" aria-hidden="true" id="news-dark-theme">
+        <button type="button" class="close" id="news-dark-theme-close" aria-label="Schließen">
+            <span >&times;</span>
+        </button>
+        Die Webseite kann jetzt in einem hellen und einem dunklen Design dargestellt werden. Das Design kann <a href="#dark-theme-heading">in den Einstellungen am Ende der Seite</a> geändert werden.
+    </div>
+</template>
+
+
 <div class="box status-box clearfix">
     <span>Stand: <span id="status">{{ storage.status }}</span></span>
     <span class="float-right" id="online-status"></span>
@@ -101,7 +111,8 @@
 {%- endfor -%}
 
 <div class="box">
-    <h2>{% block select_heading %}{% endblock %}</h2>
+    <h1>Einstellungen</h1>
+    <h2 id="select-heading">{% block select_heading %}{% endblock %}</h2>
     <form class="form" type="get">
         {%- if not selection -%}
             <label for="selectionInput">{% block select_text %}{% endblock %}</label>
@@ -145,5 +156,21 @@
         </div>
     </div>
     {% block timetables_block %}{% endblock %}
+    <template id="dark-theme-block-template">
+        <h2 id="dark-theme-heading">Design</h2>
+        <div class="custom-control custom-radio">
+            <input type="radio" id="dark-theme-system-default" name="dark-theme" class="custom-control-input" checked>
+            <label class="custom-control-label" for="dark-theme-system-default">System</label>
+        </div>
+        <div class="custom-control custom-radio">
+            <input type="radio" id="dark-theme-light" name="dark-theme" class="custom-control-input">
+            <label class="custom-control-label" for="dark-theme-light">Hell</label>
+        </div>
+        <div class="custom-control custom-radio">
+            <input type="radio" id="dark-theme-dark" name="dark-theme" class="custom-control-input">
+            <label class="custom-control-label" for="dark-theme-dark">Dunkel</label>
+        </div>
+    </template>
+    <div id="dark-theme-block" aria-hidden="true"></div>
 </div>
 {%- endblock -%}
