@@ -31,7 +31,7 @@ DELETE_COOKIE_EXPIRE = formatdate(0)
 
 RESPONSE_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; "
-                               "script-src-elem 'self' 'sha256-Rn05miOR4sI8OxFu9H46X31LzrYohKIkUCoRcexpDzM='; "
+                               "script-src-elem 'self' 'sha256-l2h6bLQWX9C8tLEINfO+loK3K/jPEQRB05YAe9ehO1o='; "
                                "connect-src 'self' " + ("ws:" if config.get_bool("dev") else "wss:"),
     "Strict-Transport-Security": "max-age=63072000",
     "Referrer-Policy": "same-origin",
