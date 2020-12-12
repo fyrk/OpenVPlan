@@ -33,8 +33,8 @@ gulp.task("build-js", () => {
             assume_function_wrapper: true,
             isolation_mode: "IIFE",
             source_map_format: "V3",
-            language_in: "ECMASCRIPT_2019",
-            language_out: "ECMASCRIPT_2019",
+            language_in: "ECMASCRIPT_NEXT_IN",
+            language_out: "ECMASCRIPT_NEXT",
         }))
         .pipe(sourcemaps.write("/"))
         .pipe(gulp.dest(path));
