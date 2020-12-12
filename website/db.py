@@ -1,11 +1,11 @@
+import hashlib
 import json
 import logging
-import time
 import sqlite3
-import hashlib
+import time
 import urllib
 import urllib.parse
-from typing import Generator, Tuple, List, Dict
+from typing import Dict, Generator, List, Tuple, Union
 
 _LOGGER = logging.getLogger("gawvertretung")
 
@@ -23,8 +23,7 @@ class SubstitutionPlanDBStorage:
         self._cursor = self._connection.cursor()
         self._cursor.execute("CREATE TABLE IF NOT EXISTS push_subscriptions "
                              "(subscription JSON, endpoint TEXT PRIMARY KEY UNIQUE, endpoint_hash TEXT, "
-                             "endpoint_origin TEXT, expiration_time TIMESTAMP,  selection SELECTION, "
-                             "is_active BOOLEAN)")
+                             "endpoint_origin TEXT, expiration_time TIMESTAMP, selection SELECTION, is_active BOOLEAN)")
         self._connection.commit()
 
     def close(self):
@@ -46,10 +45,10 @@ class SubstitutionPlanDBStorage:
         self._connection.commit()
         _LOGGER.debug(f"Add push subscription {endpoint_hash} ({endpoint_origin}) (is_active={is_active})")
 
-    def iter_active_push_subscriptions(self, affected_groups: Dict[str, List[str]]) -> \
-            Generator[Tuple[dict, Dict[str, List[str]]], None, None]:
-        self._cursor.execute("SELECT * FROM push_subscriptions")
+    def iter_active_push_subscriptions(self, affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]) -> \
+            Generator[Tuple[dict, Dict[int, Dict[str, Union[str, List[str]]]]], None, None]:
         current_time = time.time()
+        self._cursor.execute("SELECT * FROM push_subscriptions")
         for subscription_entry in self._cursor:
             expiration_time = subscription_entry["expiration_time"]
             if expiration_time is not None and expiration_time >= current_time:
@@ -62,10 +61,11 @@ class SubstitutionPlanDBStorage:
                     yield subscription_entry, affected_groups
                 else:
                     intersection = {}
-                    for day_name, groups in affected_groups.items():
-                        common_groups = [s for s in selection if s in groups]
+                    for expiry_time, day in affected_groups.items():
+                        groups = day["groups"]
+                        common_groups = [s for s in selection if any(s in g for g in groups)]
                         if common_groups:
-                            intersection[day_name] = common_groups
+                            intersection[expiry_time] = {"name": day["name"], "groups": common_groups}
                     if intersection:
                         yield subscription_entry, intersection
 

@@ -19,6 +19,7 @@
     <meta name="theme-color" content="#e67b10">
     <meta name="keywords"
           content="Gymnasium am Wall, GaW Verden, Vertretung, Vertretungsplan, Schule{% block keywords %}{% endblock %}">
+    {% block meta %}{% endblock %}
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://gawvertretung.florian-raediker.de">
     <meta property="og:title" content="{% block og_title %}{% endblock %} - Vertretungsplan GaW Verden">
@@ -54,7 +55,7 @@
     <footer class="text-center text-white p-3 mt-4">
         <p>
             Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
-            <a href="{% block gaw_verden_link %}{% endblock %}" rel="noopener" target="_blank" class="external text-nowrap">gaw-verden.de</a>.<br>
+            <a href="{% block original_data_link %}{% endblock %}" rel="noopener" target="_blank" class="external text-nowrap">gaw-verden.de</a>.<br>
             Alle Angaben ohne Gewähr.
         </p>
         <p>

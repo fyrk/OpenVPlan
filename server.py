@@ -7,14 +7,13 @@ import jinja2
 from aiohttp import client, hdrs, http, web
 from aiohttp.web_fileresponse import FileResponse
 
-from gawvertretung import config
-from gawvertretung import logger
-from gawvertretung.db.db import SubstitutionPlanDBStorage
-from gawvertretung.substitution_plan.loader import StudentSubstitutionLoader, TeacherSubstitutionLoader
-from gawvertretung.website.stats import Stats
-from gawvertretung.website.substitution_plan import RESPONSE_HEADERS, SubstitutionPlan
+import subs_crawler
+from website import config, logger
+from website.db import SubstitutionPlanDBStorage
+from website.stats import Stats
+from website.substitution_plan import RESPONSE_HEADERS, SubstitutionPlan
 
-__version__ = "3.0"
+__version__ = "4.0"
 
 config.load()
 
@@ -96,16 +95,20 @@ async def report_js_error_handler(request: web.Request):
     if request.content_length < 10000:
         try:
             data = await request.post()
-            if data.keys() == {"message", "filename", "lineno", "colno", "error"}:
-                await stats.new_js_error(data["message"], data["filename"], data["lineno"], data["colno"], data["error"])
-                return web.Response()
+            if data.keys() == {"name", "message", "description", "number", "filename", "lineno", "colno", "stack",
+                               "user_agent"}:
+                await stats.new_js_error(**data)
+            else:
+                _LOGGER.warn(f"JS error report body has wrong params: {data.keys()}")
         except Exception:
-            pass
-    raise web.HTTPBadRequest
+            _LOGGER.exception("Exception while handling JS error report")
+    else:
+        _LOGGER.warn(f"JS error report body too long ({request.content_length})")
+    return web.Response()
 
 
 async def client_session_context(app: web.Application):
-    _LOGGER.debug("Create ClientSession")
+    _LOGGER.debug(f"Create ClientSession (headers: {REQUEST_HEADERS})")
     session = client.ClientSession(headers=REQUEST_HEADERS)
     for substitution_plan in app["substitution_plans"].values():
         substitution_plan.client_session = session
@@ -130,14 +133,24 @@ async def app_factory(dev_mode=False):
     app = web.Application(middlewares=[logger.logging_middleware, stats_middleware, error_middleware])
     app["substitution_plans"] = {}
     for name, plan_config in config.get("substitution_plans").items():
-        loader_name = plan_config["loader"]
-        url = plan_config["url"]
-        template_name = plan_config["template"]
-        template500_name = plan_config["template500"]
-        loader = {"StudentSubstitutionLoader": StudentSubstitutionLoader,
-                  "TeacherSubstitutionLoader": TeacherSubstitutionLoader}[loader_name](url)
-        loader.on_status_changed = partial(stats.add_last_site, name)
-        plan = SubstitutionPlan(name, loader, env.get_template(template_name), env.get_template(template500_name))
+        try:
+            crawler_class = subs_crawler.CRAWLERS[plan_config["crawler"]]
+        except KeyError:
+            raise ValueError(f"Invalid crawler id '{plan_config['crawler']}")
+        try:
+            parser_class = subs_crawler.PARSERS[plan_config["parser"]]
+        except KeyError:
+            raise ValueError(f"Invalid parser id '{plan_config['parser']}'")
+        crawler_options = plan_config.get("crawler_options", {})
+        parser_options = plan_config.get("parser_options", {})
+        template_options = plan_config.get("template_options", {})
+        crawler = crawler_class(parser_class, parser_options, **crawler_options)
+        crawler.on_status_changed = partial(stats.add_last_site, name)
+        plan = SubstitutionPlan(name, crawler, env.get_template("substitution-plan.html" if config.get_bool("dev")
+                                                                else "substitution-plan.min.html"),
+                                env.get_template("error-500-substitution-plan.html" if config.get_bool("dev")
+                                                 else "error-500-substitution-plan.min.html"),
+                                template_options)
 
         await plan.deserialize(os.path.join(DATA_DIR, f"substitutions/{name}.pickle"))
 

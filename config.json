@@ -1,18 +1,2 @@
 {
-    "default_plan": "students",
-
-    "substitution_plans": {
-        "students": {
-            "loader": "StudentSubstitutionLoader",
-            "url": "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm",
-            "template": "substitution-plan-students.min.html",
-            "template500": "error-500-students.min.html"
-        },
-        "teachers": {
-            "loader": "TeacherSubstitutionLoader",
-            "url": "https://gaw-verden.de/images/vertretung/lehrer/subst_{:03}.htm",
-            "template": "substitution-plan-teachers.min.html",
-            "template500": "error-500-teachers.min.html"
-        }
-    }
 }

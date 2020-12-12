@@ -55,7 +55,7 @@ def get_logger():
 
 def request_wrapper(request_handler):
     async def wrapper(self, request: web.Request) -> web.Response:
-        PLAN_NAME_CONTEXTVAR.set(self._name)
+        PLAN_NAME_CONTEXTVAR.set(self._plan_id)
         return await request_handler(self, request)
     return wrapper
 
