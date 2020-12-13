@@ -38,8 +38,8 @@ class BaseSubstitutionCrawler(ABC):
         except Exception:
             _LOGGER.warning(f"Could not deserialize substitutions from '{filepath}'")
         else:
-            if self.storage is not None:
-                _LOGGER.debug(f"Loaded substitutions from '{filepath}' with status '{self._storage._status}'")
+            if self._storage is not None:
+                _LOGGER.debug(f"Loaded substitutions from '{filepath}' with status '{self._storage.status}'")
 
     @abstractmethod
     async def update(self, session: aiohttp.ClientSession) \

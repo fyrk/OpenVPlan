@@ -2,7 +2,7 @@ import dataclasses
 import datetime
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
-from sortedcontainers import SortedDict, SortedList
+from sortedcontainers import SortedDict, SortedKeysView, SortedList
 
 from subs_crawler.utils import split_class_name
 
@@ -12,7 +12,7 @@ class SubstitutionStorage:
         self._last_updated = datetime.datetime.now()
         self._status = status
         self._status_datetime = status_datetime
-        self._days: Dict[int, "SubstitutionDay"] = SortedDict()
+        self._days: SortedDict = SortedDict()
 
     def add_day(self, day: "SubstitutionDay"):
         assert day.expiry_time not in self._days
@@ -62,7 +62,8 @@ class SubstitutionStorage:
     def remove_old_days(self) -> bool:
         self._last_updated = datetime.datetime.now()
         current_timestamp = self._last_updated.timestamp()
-        expiry_times = self._days.keys()
+        # noinspection PyTypeChecker
+        expiry_times: SortedKeysView = self._days.keys()
         changed = False
         while expiry_times and expiry_times[0] <= current_timestamp:
             del expiry_times[0]

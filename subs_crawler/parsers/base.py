@@ -28,6 +28,7 @@ class BaseSubstitutionParser(ABC):
         """ Return the status of the data in original format and in parsed format (datetime). """
         ...
 
+    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(self, storage: SubstitutionStorage, current_timestamp: int, stream: Stream, **kwargs):
         ...
@@ -46,6 +47,7 @@ class BaseMultiPageSubstitutionParser(BaseSubstitutionParser):
 
     An instance of a subclass of this class is always used to parse a single site only.
     """
+    # noinspection PyMissingConstructor
     @abstractmethod
     def __init__(self, storage: SubstitutionStorage, current_timestamp: int, stream: Stream, site_num: int, **kwargs):
         ...

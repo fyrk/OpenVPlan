@@ -2,7 +2,7 @@ import datetime
 import logging
 import re
 from html.parser import HTMLParser
-from typing import AsyncGenerator, Optional, Tuple, Union
+from typing import Optional, Tuple
 
 from subs_crawler.parsers.base import BaseMultiPageSubstitutionParser, Stream
 from subs_crawler.storage import Substitution, SubstitutionDay, SubstitutionGroup, SubstitutionStorage
@@ -63,6 +63,7 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
 
     async def parse(self):
         _LOGGER.debug(f"{self._site_num} Parsing")
+        # noinspection PyBroadException
         try:
             while True:
                 r = (await self._stream.readany()).decode(self._encoding)
