@@ -16,6 +16,10 @@
     tbody + tbody { border-top-color: $table-border-color; }
 }
 
+.form-control:disabled, .form-control[readonly] {
+    background-color: inherit;
+}
+
 
 // STYLES FROM substitutions.scss
 
@@ -29,4 +33,8 @@
 
         tr.new-subs td:not(.group-name) { background-color: rgba(map_get($theme-colors, "primary"), 0.1); }
     }
+}
+
+.copy-timetable-link::before {
+    background-color: white;
 }
