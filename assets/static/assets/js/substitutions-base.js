@@ -71,8 +71,8 @@ if (window.location.hash.startsWith("#timetable:")) {
                 if (confirm(text)) {
                     timetables[group] = timetable;
                     window.localStorage.setItem(substitutionPlanType + "-timetables", JSON.stringify(timetables));
-                    window.location.hash = "";
                 }
+                window.location.hash = "";
             }
         }
     } catch {
