@@ -6,7 +6,7 @@ try {
     timetables = JSON.parse(window.localStorage.getItem(substitutionPlanType + "-timetables"));
     if (!timetables)
         timetables = {};
-} catch (SyntaxError) {
+} catch {
     timetables = {};
 }
 
@@ -133,7 +133,33 @@ if (selection) {
         }
         const timetable = timetableTemplate.content.firstElementChild.cloneNode(true);
         timetablesContainer.appendChild(timetable);
-        timetable.querySelector(".timetable-selection").innerText = s;
+        timetable.querySelectorAll(".timetable-selection").forEach(e => e.innerText = s);
+        timetable.querySelector(".share-timetable-button").addEventListener("click", e => {
+            const shareTimetableBlock = timetable.querySelector(".share-timetable-block");
+            if (shareTimetableBlock.hidden) {
+                const linkInput = shareTimetableBlock.querySelector(".timetable-link-input");
+                const copyButton = shareTimetableBlock.querySelector(".copy-timetable-link");
+                linkInput.value = new URL("/" + substitutionPlanType + "/#timetable:" + sUpper + ":" + btoa(JSON.stringify(timetables[sUpper])), window.location.origin).href;
+                linkInput.addEventListener("click", e => e.target.select());
+                let copyTimeout = null;
+                copyButton.addEventListener("click", () => {
+                    navigator.clipboard.writeText(linkInput.value).then(() => {
+                        copyButton.classList.add("copied");
+                        copyButton.title = "Kopiert!";
+                        if (copyTimeout != null)
+                            clearTimeout(copyTimeout);
+                        copyTimeout = setTimeout(() => {
+                            copyButton.classList.remove("copied");
+                            copyButton.title = "Kopieren";
+                            copyTimeout = null;
+                        }, 2000);
+                    });
+                });
+                shareTimetableBlock.hidden = false;
+            } else {
+                shareTimetableBlock.hidden = true;
+            }
+        });
         const tbody = timetable.querySelector("tbody");
         for (let lessonNum = 1; lessonNum < 11; lessonNum++) {
             const row = document.createElement("tr");

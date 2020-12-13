@@ -195,7 +195,19 @@
             </template>
             <template id="timetable-template">
                 <div>
-                    <h3 class="timetable-name mt-2">Stundenplan für <span class="timetable-selection"></span></h3>
+                    <h3 class="timetable-name mt-2">
+                        Stundenplan für <span class="timetable-selection"></span><a class="share-timetable-button"></a>
+                    </h3>
+                    <div class="share-timetable-block" hidden>
+                        Stundenplan teilen: Beim Aufrufen des folgenden Links wird der Stundenplan für
+                        <span class="timetable-selection"></span> automatisch so ausgefüllt wie der Stundenplan unten.
+                        <div class="input-group">
+                            <input type="text" class="form-control timetable-link-input" readonly>
+                            <div class="input-group-append">
+                                <button class="btn copy-timetable-link input-group-text" type="button" aria-label="Link kopieren" title="Kopieren"></button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="table-responsive">
                         <div class="timetable-table-wrapper">
                             <table class="timetable-table table table-borderless table-sm">

@@ -26,3 +26,56 @@ window.addEventListener("unhandledrejection", e => {
 
 const substitutionPlanType = window.location.pathname.split("/", 2)[1];
 const selection = document.getElementById("selectionInput").value;
+
+// GET TIMETABLE FROM URL
+// The following is not in timetables.js so that it works even with no selection
+if (window.location.hash.startsWith("#timetable:")) {
+    try {
+        let [_, group, timetable] = window.location.hash.split(":");
+        timetable = JSON.parse(atob(timetable));
+        if (timetable.length === 5 && group) {
+            let valid = true;
+            for (let column of timetable) {
+                if (column.length !== 10) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (valid) {
+                let timetables;
+                try {
+                    timetables = JSON.parse(window.localStorage.getItem(substitutionPlanType + "-timetables"));
+                    if (!timetables)
+                        timetables = {};
+                } catch {
+                    timetables = {};
+                }
+                group = group.toUpperCase();
+                let text = (group in timetables) ?
+                    ("Die aufgerufenen URL enthält einen Stundenplan für " + group + ". Soll der aktuell gesetzte Stundenplan für " + group + " durch diesen ersetzt werden?")
+                    : ("Die aufgerufene URL enthält einen Stundenplan für " + group + ". Diesen Stundenplan setzen?");
+                if (!selection) {
+                    text += " Achtung: Der Stundenplan wird erst angewendet, wenn Vertretungen ausgewählt sind.";
+                } else {
+                    let isSelected = false;
+                    for (let s of selection.split(", ")) {
+                        if (s.toUpperCase() === group) {
+                            isSelected = true;
+                            break;
+                        }
+                    }
+                    if (!isSelected) {
+                        text += " Achtung: Der Stundenplan wird erst angewendet, wenn " + group + " auch ausgewählt ist.";
+                    }
+                }
+                if (confirm(text)) {
+                    timetables[group] = timetable;
+                    window.localStorage.setItem(substitutionPlanType + "-timetables", JSON.stringify(timetables));
+                    window.location.hash = "";
+                }
+            }
+        }
+    } catch {
+
+    }
+}
