@@ -1,7 +1,6 @@
 import dataclasses
 import datetime
-import itertools
-from typing import List, Tuple, Optional, Iterable, Dict, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 from sortedcontainers import SortedDict, SortedList
 
@@ -60,10 +59,15 @@ class SubstitutionStorage:
                     affected_groups[day.expiry_time] = {"name": day.name, "groups": g}
         return affected_groups
 
-    def remove_old_days(self, current_timestamp: int):
+    def remove_old_days(self) -> bool:
+        self._last_updated = datetime.datetime.now()
+        current_timestamp = self._last_updated.timestamp()
         expiry_times = self._days.keys()
+        changed = False
         while expiry_times and expiry_times[0] <= current_timestamp:
             del expiry_times[0]
+            changed = True
+        return changed
 
     def to_data(self, selection=None):
         return {"last_updated": self._last_updated, "status": self.status,

@@ -50,7 +50,6 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
         new_status_string, new_status_datetime = await self._parser_class.get_status(first_site)
         old_status = self._storage.status if self._storage is not None else None
         _LOGGER.debug(f"Got answer in {t2 - t1}ns, status is {repr(new_status_string)} (old: {repr(old_status)})")
-        changed_substitutions = False
         affected_groups = None
         if new_status_string != old_status:
             # status changed, load new data
@@ -65,12 +64,7 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                 await self.on_status_changed(new_status_string, last_site_num)
             _LOGGER.debug(f"Loaded data in {t2 - t1}ns")
         else:
-            today = datetime.datetime.now()
-            today_date = today.date()
-            if today_date > self._storage.last_updated.date():
-                _LOGGER.debug(f"Date changed, removing old substitutions")
-                changed_substitutions = True
-                self._storage.remove_old_days(create_date_timestamp(today))
+            changed_substitutions = self._storage.remove_old_days()
         return changed_substitutions, affected_groups
 
     async def _load_data(self, session: aiohttp.ClientSession, status: str, status_datetime: datetime.datetime,

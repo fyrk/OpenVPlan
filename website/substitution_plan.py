@@ -2,10 +2,11 @@ import asyncio
 import datetime
 import json
 import logging
+import sqlite3
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import Dict, List, MutableSet, Optional, Union
+from typing import Dict, Iterable, List, MutableSet, Optional, Union
 
 import jinja2
 import pywebpush
@@ -244,7 +245,7 @@ class SubstitutionPlan:
                 await self.serialize(self._serialization_filepath)
 
                 # WEBSOCKETS
-                _LOGGER.debug("Sending update event via WebSockets")
+                _LOGGER.debug(f"Sending update event via WebSocket connection to {len(self._websockets)} clients")
                 for ws in self._websockets:
                     await ws.send_json({"type": "new_substitutions"})
 
@@ -252,8 +253,9 @@ class SubstitutionPlan:
                 if affected_groups:
                     _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
 
-                    async def send_push_notification(subscription_entry,
-                                                     common_affected_groups: Dict[str, Union[str, List[str]]]):
+                    async def send_push_notification(
+                            subscription_entry, common_affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]
+                    ) -> Optional[sqlite3.Row]:
                         endpoint_hash = subscription_entry["endpoint_hash"]
                         endpoint_origin = subscription_entry["endpoint_origin"]
                         _LOGGER.debug("Sending push notification to " + endpoint_hash)
@@ -304,7 +306,7 @@ class SubstitutionPlan:
                                               f"{subscription_entry['endpoint_hash']} ({endpoint_origin})")
                         return None
 
-                    subscription_entries_to_delete = await asyncio.gather(
+                    subscription_entries_to_delete: Iterable[sqlite3.Row] = await asyncio.gather(
                         *(send_push_notification(subscription, common_affected_groups)
                           for subscription, common_affected_groups in
                           self.storage.iter_active_push_subscriptions(affected_groups)))
