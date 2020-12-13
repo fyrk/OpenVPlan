@@ -148,18 +148,19 @@ if (selection) {
                             clearTimeout(copyTimeout);
                         copyTimeout = setTimeout(() => {
                             copyButton.classList.remove("copied");
+                            copyButton.classList.remove("copying-failed");
                             copyButton.title = "Kopieren";
                             copyTimeout = null;
                         }, 2000);
                     }
 
                     navigator.clipboard.writeText(linkInput.value).then(() => {
-                        copyButton.classList.add("copying-failed");
-                        copyButton.title = "Kopieren fehlgeschlagen";
-                        resetButton();
-                    }).catch(() => {
                         copyButton.classList.add("copied");
                         copyButton.title = "Kopiert!";
+                        resetButton();
+                    }).catch(() => {
+                        copyButton.classList.add("copying-failed");
+                        copyButton.title = "Kopieren fehlgeschlagen";
                         resetButton();
                     });
                 });
