@@ -143,9 +143,7 @@ if (selection) {
                 linkInput.addEventListener("click", e => e.target.select());
                 let copyTimeout = null;
                 copyButton.addEventListener("click", () => {
-                    navigator.clipboard.writeText(linkInput.value).then(() => {
-                        copyButton.classList.add("copied");
-                        copyButton.title = "Kopiert!";
+                    function resetButton() {
                         if (copyTimeout != null)
                             clearTimeout(copyTimeout);
                         copyTimeout = setTimeout(() => {
@@ -153,6 +151,16 @@ if (selection) {
                             copyButton.title = "Kopieren";
                             copyTimeout = null;
                         }, 2000);
+                    }
+
+                    navigator.clipboard.writeText(linkInput.value).then(() => {
+                        copyButton.classList.add("copying-failed");
+                        copyButton.title = "Kopieren fehlgeschlagen";
+                        resetButton();
+                    }).catch(() => {
+                        copyButton.classList.add("copied");
+                        copyButton.title = "Kopiert!";
+                        resetButton();
                     });
                 });
                 shareTimetableBlock.hidden = false;
