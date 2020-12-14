@@ -88,10 +88,9 @@ class SubstitutionDay:
     _id2group: Dict[Tuple[str, bool], "SubstitutionGroup"] = dataclasses.field(init=False, default_factory=dict)
 
     def add_group(self, group: "SubstitutionGroup"):
-        group_id = (group.name, group.striked)
-        assert group_id not in self._id2group
+        assert group.id not in self._id2group
         self._groups.add(group)
-        self._id2group[group_id] = group
+        self._id2group[group.id] = group
 
     def get_group(self, group_id: Tuple[str, bool], default=None):
         return self._id2group.get(group_id, default)
@@ -117,7 +116,7 @@ class SubstitutionDay:
                         res.append(affected_group)
             return res
         for g in self._groups:
-            if g.has_new_substitutions(old_day.get_group(g.name)):
+            if g.has_new_substitutions(old_day.get_group(g.id)):
                 for affected_group in g.affected_groups:
                     if affected_group not in res:
                         res.append(affected_group)
@@ -141,9 +140,11 @@ class SubstitutionGroup:
     _split_name: Tuple[int, str, bool] = dataclasses.field(init=False, compare=False)
     striked: bool
     substitutions: List["Substitution"] = dataclasses.field(default_factory=list)
+    id: Tuple[str, bool] = dataclasses.field(init=False, compare=False)
     affected_groups: Optional[List[str]] = dataclasses.field(init=False, compare=False, default_factory=list)
 
     def __post_init__(self):
+        object.__setattr__(self, "id", (self.name, self.striked))
         number_part, letters_part = split_class_name(self.name)
         object.__setattr__(self, "_split_name", (int(number_part) if number_part else 0, letters_part, self.striked))
         letters_upper = letters_part.upper()
