@@ -30,12 +30,8 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
     def __init__(self, storage: SubstitutionStorage, current_timestamp: int, stream: Stream, site_num: int,
                  encoding: str = "utf-8",
                  group_name_column: int = 0, lesson_column: int = None, class_column: int = None):
-        super().__init__()
-        self._storage = storage
-        self._current_timestamp = current_timestamp
-        self._stream = stream
-        assert site_num is not None
-        self._site_num = site_num
+        HTMLParser.__init__(self)
+        BaseMultiPageSubstitutionParser.__init__(self, storage, current_timestamp, stream, site_num)
         self._encoding = encoding
         self._group_name_column = group_name_column
         self._lesson_column = lesson_column
@@ -62,7 +58,6 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
                 return line[49:52]
 
     async def parse(self):
-        _LOGGER.debug(f"{self._site_num} Parsing")
         # noinspection PyBroadException
         try:
             while True:
@@ -77,7 +72,6 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
         except Exception:
             _LOGGER.exception(f"{self._site_num} Exception while parsing")
         finally:
-            _LOGGER.info(f"{self._site_num} Finished parsing")
             self.close()
 
     def on_new_substitution_start(self):

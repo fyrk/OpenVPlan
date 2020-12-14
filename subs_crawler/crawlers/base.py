@@ -1,10 +1,11 @@
 import logging
 import pickle
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
 
+from subs_crawler.parsers.base import BaseSubstitutionParser
 from subs_crawler.storage import SubstitutionStorage
 
 _LOGGER = logging.getLogger("gawvertretung")
@@ -15,6 +16,16 @@ class BaseSubstitutionCrawler(ABC):
 
     _storage: "SubstitutionStorage"
     storage: "SubstitutionStorage"
+
+    def __init__(self, parser_class: Type[BaseSubstitutionParser], parser_options: Dict[str, Any]):
+        self._parser_class = parser_class
+        self._parser_options = parser_options
+
+        self._storage: Optional[SubstitutionStorage] = None
+
+    @property
+    def storage(self):
+        return self._storage
 
     def serialize(self, filepath: str):
         # noinspection PyBroadException
