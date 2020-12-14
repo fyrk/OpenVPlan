@@ -9,6 +9,7 @@ const closureCompiler = require("google-closure-compiler").gulp();
 const SUBSTITUTIONS_BUNDLE_FILES = [
     "substitutions-base.js",
     "grey-substitutions.js",
+    "highlight-new-substitutions.js",
     "push-notifications.js",
     "updates.js"
 ];

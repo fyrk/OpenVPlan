@@ -35,8 +35,7 @@ function subscribePush(isActive, registration) {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: isActive})
-            })
-                .then(response => response.json())
+            }).then(response => response.json())
                 .then(data => {
                     if (data.ok) {
                         console.log("Push subscription successful");
