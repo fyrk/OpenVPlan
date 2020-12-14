@@ -40,7 +40,8 @@ env = jinja2.Environment(
     bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(DATA_DIR, "template_cache/")),
     enable_async=True,
     trim_blocks=True,
-    lstrip_blocks=True)
+    lstrip_blocks=True
+)
 TEMPLATE_PRIVACY = env.get_template("privacy.min.html")
 TEMPLATE_ABOUT = env.get_template("about.min.html")
 TEMPLATE_ERROR404 = env.get_template(config.get_str("template404"))
@@ -146,11 +147,8 @@ async def app_factory(dev_mode=False):
         template_options = plan_config.get("template_options", {})
         crawler = crawler_class(parser_class, parser_options, **crawler_options)
         crawler.on_status_changed = partial(stats.add_last_site, name)
-        plan = SubstitutionPlan(name, crawler, env.get_template("substitution-plan.html" if config.get_bool("dev")
-                                                                else "substitution-plan.min.html"),
-                                env.get_template("error-500-substitution-plan.html" if config.get_bool("dev")
-                                                 else "error-500-substitution-plan.min.html"),
-                                template_options)
+        plan = SubstitutionPlan(name, crawler, env.get_template("substitution-plan.min.html"),
+                                env.get_template("error-500-substitution-plan.min.html"), template_options)
 
         await plan.deserialize(os.path.join(DATA_DIR, f"substitutions/{name}.pickle"))
 

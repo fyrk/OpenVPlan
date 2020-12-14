@@ -78,7 +78,7 @@ gulp.task("minify-xml", () => {
     const destFile = argv.destFile;
     const path = argv.path || "assets/templates/";
     return gulp.src(path + srcFile)
-        .pipe(htmlmin({collapseWhitespace: true, conservativeCollapse: true, removeComments: true}))
+        .pipe(htmlmin({collapseWhitespace: true, removeComments: true}))
         .pipe(rename(destFile))
         .pipe(gulp.dest(path));
 });
