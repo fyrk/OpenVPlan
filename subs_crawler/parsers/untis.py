@@ -58,7 +58,6 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
                 return line[49:52]
 
     async def parse(self):
-        # noinspection PyBroadException
         try:
             while True:
                 r = (await self._stream.readany()).decode(self._encoding)
@@ -69,10 +68,9 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
                 except SubstitutionsTooOldException:
                     _LOGGER.debug(f"{self._site_num} is outdated, skipping")
                     return
-        except Exception:
-            _LOGGER.exception(f"{self._site_num} Exception while parsing")
-        finally:
-            self.close()
+        except Exception as e:
+            _LOGGER.error(f"{self._site_num} Exception while parsing")
+            raise e
 
     def on_new_substitution_start(self):
         self._current_substitution = []
@@ -113,6 +111,8 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
                 striked = self._current_strikes[0]
                 self._current_substitution = None
                 self._current_strikes = None
+                if len(subs_data) == 1 and subs_data[0] == "Keine Vertretungen":
+                    return
                 group_id = (subs_data[self._group_name_column].strip(), striked)
                 if self._class_column is not None:
                     class_name = subs_data[self._class_column]

@@ -136,13 +136,16 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                              for num in range(current_site, next_site)]
                 _LOGGER.debug(f"[multipage-crawler] Loading pages {current_site} to {next_site - 1}")
                 try:
-                    await asyncio.wait_for(asyncio.wait(loads, return_when=asyncio.FIRST_EXCEPTION), timeout=1.0)
+                    done, pending = await asyncio.wait_for(asyncio.wait(loads, return_when=asyncio.FIRST_EXCEPTION), timeout=1.0)
                 except Exception as e:
                     _LOGGER.error("[multipage-crawler] Got exception")
                     for l in loads:
                         l.cancel()
                     raise e
-                _LOGGER.info("[multipage-crawler] Finished gather")
+                _LOGGER.info("[multipage-crawler] Finished waiting")
+                for d in done:
+                    if d.exception():
+                        raise d.exception()
                 for r in results:
                     if r is not None:
                         r[1].close()
