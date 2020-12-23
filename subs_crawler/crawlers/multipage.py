@@ -142,13 +142,12 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                     for l in loads:
                         l.cancel()
                     raise e
-                _LOGGER.info("[multipage-crawler] Finished waiting")
-                for d in done:
-                    if d.exception():
-                        raise d.exception()
                 for r in results:
                     if r is not None:
                         r[1].close()
+                for d in done:
+                    if not d.cancelled() and d.exception():
+                        raise d.exception()
                 if last_site_num is not None:
                     new_affected_groups = storage.get_new_affected_groups(self._storage)
                     self._storage = storage

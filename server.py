@@ -1,8 +1,8 @@
-import argparse
 import os
 import time
 from functools import partial
 
+import argparse
 import jinja2
 from aiohttp import client, hdrs, http, web
 from aiohttp.web_fileresponse import FileResponse
@@ -81,6 +81,9 @@ async def error_middleware(request: web.Request, handler):
         raise e from None
     except Exception:
         _LOGGER.exception(f"{request.method} {request.path} Exception while handling request")
+    except BaseException as e:
+        _LOGGER.exception(f"{request.method} {request.path} BaseException while handling request")
+        raise e
     return web.Response(text=await TEMPLATE_ERROR500.render_async(), status=500, content_type="text/html",
                         charset="utf-8", headers=RESPONSE_HEADERS)
 
