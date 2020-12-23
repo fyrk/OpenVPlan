@@ -1,0 +1,41 @@
+$theme: "light" !default;
+
+$primary: #fc8600;
+$secondary: #f7d45e;
+
+$body-bg: #fc8600;
+$body-color: null;  // null gets replaced with value from Bootstrap's _variables.scss
+
+$text-muted: null;
+
+$box-bg: white;
+$box-bg-xs: null;
+$title-box-bg: $secondary;
+$box-border-color: grey;
+
+$input-border-color: null;
+$input-bg: null;
+
+@if ($theme == "dark") {
+    $primary: #c07217;
+    $secondary: #f7d45e;
+
+    $body-bg: #050505;
+    $body-color: white;
+
+    $text-muted: #ced4da;  //$gray-400 instead of $gray-600
+
+    $box-bg: #1d1d1d;
+    $box-bg-xs: #151515;
+    $title-box-bg: #2d2d2d;
+    $box-border-color: #818181;
+
+    $yiq-text-dark:             white;
+    $yiq-text-light:            #212529;
+
+    $input-border-color: #6c757d;  // $gray-600 instead of $gray-400
+    $input-bg: #292828;
+}
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";

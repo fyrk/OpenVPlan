@@ -6,9 +6,22 @@
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  */
 
-@import "node_modules/bootstrap/scss/functions";
+$theme: "light";
+@import "main-theme";
 
-@import "variables";
+@import "node_modules/bootstrap/scss/mixins";
+
+@import "node_modules/bootstrap/scss/alert";
+@import "node_modules/bootstrap/scss/badge";
+@import "node_modules/bootstrap/scss/buttons";
+@import "node_modules/bootstrap/scss/close";
+@import "node_modules/bootstrap/scss/custom-forms";
+@import "node_modules/bootstrap/scss/forms";
+@import "node_modules/bootstrap/scss/grid";
+@import "node_modules/bootstrap/scss/input-group";
+@import "node_modules/bootstrap/scss/nav";
+@import "node_modules/bootstrap/scss/reboot";
+@import "node_modules/bootstrap/scss/tables";
 
 @import "node_modules/bootstrap/scss/mixins/breakpoints";
 @import "node_modules/bootstrap/scss/mixins/text-truncate";
@@ -43,19 +56,6 @@
 @import "node_modules/bootstrap/scss/utilities/interactions";
 
 @import "node_modules/bootstrap/scss/vendor/rfs";
-
-@import "node_modules/bootstrap/scss/reboot";
-
-@import "node_modules/bootstrap/scss/alert";
-@import "node_modules/bootstrap/scss/badge";
-@import "node_modules/bootstrap/scss/buttons";
-@import "node_modules/bootstrap/scss/close";
-@import "node_modules/bootstrap/scss/custom-forms";
-@import "node_modules/bootstrap/scss/forms";
-@import "node_modules/bootstrap/scss/grid";
-@import "node_modules/bootstrap/scss/input-group";
-@import "node_modules/bootstrap/scss/nav";
-@import "node_modules/bootstrap/scss/tables";
 
 @import "icons";
 
@@ -92,7 +92,6 @@ body, html {
 
 .box {
     @extend .my-sm-3;
-    background-color: $box-bg;
     padding: 1rem 1.5rem;
     box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
     border-radius: $border-radius-sm;
@@ -106,7 +105,7 @@ body, html {
     }
 
     .box:not(:last-child) {
-        border-bottom: 1px solid grey;
+        border-bottom: 1px solid;
     }
 
     .box:last-child:not(.title-box) {
@@ -121,7 +120,6 @@ body, html {
 .title-box {
     @extend .user-select-none;
     text-align: center;
-    background-color: theme-color("secondary");
     padding: $spacer * .8;
     font-size: $font-size-base * 1.65;
 
