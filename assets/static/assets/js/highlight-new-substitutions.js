@@ -30,7 +30,7 @@ for (let substitutionsBox of document.getElementsByClassName("substitutions-box"
     const tableBody = substitutionsBox.querySelector(".substitutions-table tbody");
     if (tableBody) {
         const date = substitutionsBox.querySelector(".date").textContent.trim();
-        let [, dd, mm, yyyy] = date.match(/(\d\d).(\d\d).(\d\d\d\d)/);
+        let [, dd, mm, yyyy] = date.match(/(\d\d?).(\d\d?).(\d\d\d\d)/);
         const date_timestamp = Date.UTC(yyyy, mm-1, dd+1);
         if (!(date_timestamp in seenSubstitutions["seenSubstitutions"]))
             seenSubstitutions["seenSubstitutions"][date_timestamp] = [];
