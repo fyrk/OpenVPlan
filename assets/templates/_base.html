@@ -29,8 +29,8 @@
     <meta property="og:image" content="/favicon-192.png">
     <meta property="og:image:type" content="image/png">
     <meta name="color-scheme" content="light dark">
-    <link href="/assets/style/main.css" rel="stylesheet">
-    <link href="/assets/style/main-dark.css" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
+    <link href="/assets/style/main.css?v=1" rel="stylesheet">
+    <link href="/assets/style/main-dark.css?v=1" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
     {% block stylesheets %}{% endblock %}
     <script>switch(localStorage.getItem("dark-theme")){case "light":for(let s of document.getElementsByClassName("dark-stylesheet"))s.setAttribute("media","none");document.querySelector('meta[name="color-scheme"]').setAttribute("content","light");break;case "dark":for(let s of document.getElementsByClassName("dark-stylesheet"))s.removeAttribute("media");document.querySelector('meta[name="color-scheme"]').setAttribute("content","dark")}</script>
 </head>
