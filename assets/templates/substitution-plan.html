@@ -37,9 +37,7 @@
 {% block content %}
 <template id="template-news-dark-theme">
     <div class="box" aria-hidden="true" id="news-dark-theme">
-        <button type="button" class="close" id="news-dark-theme-close" aria-label="Schließen">
-            <span >&times;</span>
-        </button>
+        <button type="button" class="btn-close" id="news-dark-theme-close" aria-label="Schließen"></button>
         Die Webseite kann jetzt in einem hellen und einem dunklen Design dargestellt werden. Das Design kann
         <a href="#dark-theme-heading">in den Einstellungen am Ende der Seite</a> geändert werden.
     </div>
@@ -48,7 +46,7 @@
 
 <div class="box status-box clearfix">
     <span>Stand: <span id="status">{{ storage.status }}</span></span>
-    <span class="float-right" id="online-status"></span>
+    <span class="float-end" id="online-status"></span>
 </div>
 
 {% for day in storage.iter_days() %}
@@ -58,7 +56,7 @@
         <div class="row">
             <div class="col-md">
                 <div class="day-heading">
-                    <span class="day-name pr-1">{{ day.name }}</span>
+                    <span class="day-name pe-1">{{ day.name }}</span>
                     <span class="text-muted date">{{ day.date }}</span>
                 </div>
                 Woche {{ day.week }}
@@ -147,7 +145,7 @@
         {% if not selection %}
             <label for="selectionInput">{{ options["texts"]["select_text"] }}</label>
         {% endif %}
-        <div class="form-row">
+        <div class="row">
             <div class="col-9 col-sm-6 col-md-4 col-xl-3">
                 <input type="text" class="form-control" id="selectionInput" name="s" required
                        value="{% if selection %}{{ selection_str|e }}{% endif %}" aria-describedby="selectionHelp">
@@ -160,7 +158,7 @@
             </div>
         </div>
         {% if selection %}
-            <div class="form-row mt-3 ml-2">
+            <div class="mt-3 ms-2">
                 <a class="btn btn-primary" href="?all">{{ options["texts"]["selection_all"] }}</a>
             </div>
         {% endif %}
@@ -175,9 +173,9 @@
             verwenden. Benachrichtigungen werden von Safari und allen Browsern unter iOS grundsätzlich nicht
             unterstützt.
         </div>
-        <div class="custom-control custom-switch mt-3" id="toggle-notifications-wrapper" hidden>
-            <input type="checkbox" class="custom-control-input" id="toggle-notifications">
-            <label class="custom-control-label user-select-none" for="toggle-notifications">
+        <div class="form-check form-switch mt-3" id="toggle-notifications-wrapper" hidden>
+            <input class="form-check-input" type="checkbox" id="toggle-notifications">
+            <label class="form-check-label user-select-none" for="toggle-notifications">
                 <template id="notifications-info-none">Benachrichtigungen sind deaktiviert</template>
                 <template id="notifications-info-all">{{ options["texts"]["notifications_info_all"] }}</template>
                 <template id="notifications-info-selection">
@@ -243,7 +241,7 @@
             </template>
         {% endif %}
         <div id="timetables-block">
-            <h2 id="timetables-heading">Stundenpläne <span class="badge-pill badge-danger">Beta</span></h2>
+            <h2 id="timetables-heading">Stundenpläne <span class="badge bg-danger rounded-pill">Beta</span></h2>
             {% if not selection %}
                 Wähle Klassen aus, um Stundenpläne für die ausgewählten Klassen eingeben zu können.<br>
                 Vertretungen, die dem Stundenplan entsprechen, werden dann hervorgehoben.
@@ -253,17 +251,17 @@
 
     <template id="dark-theme-block-template">
         <h2 id="dark-theme-heading">Design</h2>
-        <div class="custom-control custom-radio">
-            <input type="radio" id="dark-theme-system-default" name="dark-theme" class="custom-control-input" checked>
-            <label class="custom-control-label" for="dark-theme-system-default">System</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" id="dark-theme-system-default" name="dark-theme" checked>
+            <label class="form-check-label" for="dark-theme-system-default">System</label>
         </div>
-        <div class="custom-control custom-radio">
-            <input type="radio" id="dark-theme-light" name="dark-theme" class="custom-control-input">
-            <label class="custom-control-label" for="dark-theme-light">Hell</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" id="dark-theme-light" name="dark-theme">
+            <label class="form-check-label" for="dark-theme-light">Hell</label>
         </div>
-        <div class="custom-control custom-radio">
-            <input type="radio" id="dark-theme-dark" name="dark-theme" class="custom-control-input">
-            <label class="custom-control-label" for="dark-theme-dark">Dunkel</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" id="dark-theme-dark" name="dark-theme">
+            <label class="form-check-label" for="dark-theme-dark">Dunkel</label>
         </div>
     </template>
     <div id="dark-theme-block" aria-hidden="true"></div>

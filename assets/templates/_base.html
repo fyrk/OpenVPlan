@@ -2,7 +2,7 @@
 <html lang="de" prefix="og: https://ogp.me/ns#">
 <head>
     <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{% endblock %} - Vertretungsplan GaW Verden</title>
     {% block breadcrumb_list %}{% endblock %}
     <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">
@@ -35,9 +35,9 @@
     <script>switch(localStorage.getItem("dark-theme")){case "light":for(let s of document.getElementsByClassName("dark-stylesheet"))s.setAttribute("media","none");document.querySelector('meta[name="color-scheme"]').setAttribute("content","light");break;case "dark":for(let s of document.getElementsByClassName("dark-stylesheet"))s.removeAttribute("media");document.querySelector('meta[name="color-scheme"]').setAttribute("content","dark")}</script>
 </head>
 <body class="d-flex flex-column">
-    <a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
-    <div id="content" class="container-xl">
-        <header class="main-container">
+    <a class="visually-hidden visually-hidden-focusable" href="#main">Zum Inhalt</a>
+    <div id="content" class="container-fluid">
+        <header>
             <div class="box title-box">
                 {% block title_bar %}
                     {% if selection %}<span class="selection">{{ selection_str|e }}</span> - {% endif %}

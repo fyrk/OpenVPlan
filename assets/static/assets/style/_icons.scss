@@ -6,7 +6,7 @@
 }
 
 %icon-primary {
-    background-color: theme-color("primary");
+    background-color: $primary;
 }
 
 @mixin icon($path, $width: 1.2rem, $height: 1.2rem, $position-x: null, $position-y: null) {

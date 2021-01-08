@@ -17,7 +17,7 @@
     background-color: $title-box-bg;
 }
 
-@include media-breakpoint-down(xs) {
+@include media-breakpoint-down(sm) {
     .box:not(:last-child) {
         border-bottom-color: $box-border-color;
     }
@@ -35,48 +35,45 @@ footer { background-color: #242424; }
 @if ($theme == "dark") {
     // With a light theme, these styles are the default and don't need to be changed.
     // With a dark theme, change them to appropriate colors:
-    body {
+
+
+    // ================
+    // The following repeats styles from Bootstrap that need to be changed by the dark theme
+    .btn:hover {
         color: $body-color;
-        background-color: $body-bg;
+        background-color: darken($primary, 7.5%);
+        border-color: darken($primary, 7.5%);
+    }
+
+    .form-check-input:checked[type="radio"] {
+        background-image: escape-svg($form-check-radio-checked-bg-image);
+    }
+
+    .form-control, .form-control:focus, .form-check-input {
+        color: $input-color;
+        background-color: $input-bg;
+        border-color: $input-border-color;
     }
 
     .text-muted {
         color: $text-muted !important;
     }
 
-    .form-control, .form-control:focus {
-        color: $body-color;
-        background-color: $box-bg;
-        border-color: $input-border-color;
-    }
-
-    .custom-control-input:not(:checked) ~ .custom-control-label::before {
-        background-color: $box-bg !important;
-    }
-
-
-    .custom-radio .custom-control-input:checked ~ .custom-control-label::after {
-        background-image: escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='-4 -4 8 8'><circle r='3' fill='#{$box-bg}'/></svg>"));
-    }
-
-    .close, .close:hover {
-        color: white;
-        text-shadow: none;
-        opacity: 0.75;
-    }
-
-    .close:not(:disabled):not(.disabled):hover, .close:not(:disabled):not(.disabled):focus {
-        opacity: 0.5;
-    }
-
-    .btn:hover {
-        background-color: darken($primary, 7.5%);
-        border-color: darken($primary, 7.5%);
-    }
-
-    @include media-breakpoint-down(xs) {
-        .box:not(.title-box), .form-control, .form-control:focus {
+    @include media-breakpoint-down(sm) {
+        .box:not(.title-box), .form-control, .form-control:focus, .form-check-input {
             background-color: $box-bg-xs;
         }
+    }
+
+
+    // ================
+    // The following are custom (non-Bootstrap) styles
+    body {
+        color: $body-color;
+        background-color: $body-bg;
+    }
+
+    .btn-close {
+        filter: $btn-close-white-filter;  // copied from Bootstrap's _close.scss
     }
 }
