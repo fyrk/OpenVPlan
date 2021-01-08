@@ -139,7 +139,22 @@ if (selection) {
             if (shareTimetableBlock.hidden) {
                 const linkInput = shareTimetableBlock.querySelector(".timetable-link-input");
                 const copyButton = shareTimetableBlock.querySelector(".copy-timetable-link");
-                linkInput.value = new URL("/" + substitutionPlanType + "/#timetable:" + sUpper + ":" + btoa(JSON.stringify(timetables[sUpper])), window.location.origin).href;
+                let timetableStr = "";
+                for (let day=0; day<5; day++) {
+                    for (let lesson=0; lesson<10; lesson++) {
+                        let teacher = timetables[sUpper][day][lesson];
+                        if (teacher == null) {
+                            timetableStr += "   ";
+                        } else {
+                            if (teacher.length > 3) {
+                                // shouldn't usually happen
+                                teacher = teacher.substr(0, 3);
+                            }
+                            timetableStr += teacher + " ".repeat(3 - teacher.length);  // make it 3 characters long
+                        }
+                    }
+                }
+                linkInput.value = new URL("/" + substitutionPlanType + "/#timetable:" + sUpper + ":" + btoa(timetableStr), window.location.origin).href;
                 linkInput.addEventListener("click", e => e.target.select());
                 let copyTimeout = null;
                 copyButton.addEventListener("click", () => {
