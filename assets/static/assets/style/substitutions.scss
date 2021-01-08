@@ -3,7 +3,7 @@ $theme: "light";
 @import "icons";
 
 @import "node_modules/bootstrap/scss/functions";
-
+@import "node_modules/bootstrap/scss/vendor/rfs";
 
 // ========================
 // DAY INFO
@@ -13,7 +13,7 @@ $theme: "light";
     line-height: 1;
 
     .day-name {
-        font-size: $font-size-base * 2;
+        font-size: $h1-font-size;
         font-weight: 600;
     }
 
@@ -109,7 +109,7 @@ $day-info-heading-font-size: 1.15rem;
 
     tbody {
         tr.first-of-group td {
-            border-top: $table-border-width solid $gray-500;
+            border-top: $table-border-width solid;
         }
 
         tr.grey td:not(.group-name) {
@@ -127,7 +127,7 @@ $day-info-heading-font-size: 1.15rem;
     }
 
     &:not(.has-selection) .group-name:not(.selectable) {
-        padding-left: $table-cell-padding-sm + 1.2rem;
+        padding-left: $table-cell-padding-x-sm + 1.2rem;
     }
 
     .group-name.selectable {

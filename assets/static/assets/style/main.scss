@@ -9,56 +9,64 @@
 $theme: "light";
 @import "main-theme";
 
-@import "node_modules/bootstrap/scss/mixins";
+@import "node_modules/bootstrap/scss/mixins/alert";
+@import "node_modules/bootstrap/scss/mixins/buttons";
+@import "node_modules/bootstrap/scss/mixins/border-radius";
+@import "node_modules/bootstrap/scss/mixins/box-shadow";
+@import "node_modules/bootstrap/scss/mixins/clearfix";
+@import "node_modules/bootstrap/scss/mixins/container";
+@import "node_modules/bootstrap/scss/mixins/forms";
+@import "node_modules/bootstrap/scss/mixins/gradients";
+@import "node_modules/bootstrap/scss/mixins/grid";
+@import "node_modules/bootstrap/scss/mixins/table-variants";
+@import "node_modules/bootstrap/scss/mixins/transition";
+@import "node_modules/bootstrap/scss/mixins/utilities";
+@import "node_modules/bootstrap/scss/mixins/visually-hidden";
+@import "node_modules/bootstrap/scss/vendor/rfs";
 
 @import "node_modules/bootstrap/scss/alert";
 @import "node_modules/bootstrap/scss/badge";
 @import "node_modules/bootstrap/scss/buttons";
 @import "node_modules/bootstrap/scss/close";
-@import "node_modules/bootstrap/scss/custom-forms";
+@import "node_modules/bootstrap/scss/containers";
 @import "node_modules/bootstrap/scss/forms";
 @import "node_modules/bootstrap/scss/grid";
-@import "node_modules/bootstrap/scss/input-group";
 @import "node_modules/bootstrap/scss/nav";
 @import "node_modules/bootstrap/scss/reboot";
 @import "node_modules/bootstrap/scss/tables";
 
-@import "node_modules/bootstrap/scss/mixins/breakpoints";
-@import "node_modules/bootstrap/scss/mixins/text-truncate";
-@import "node_modules/bootstrap/scss/mixins/hover";
-@import "node_modules/bootstrap/scss/mixins/deprecate";
-@import "node_modules/bootstrap/scss/mixins/text-emphasis";
-@import "node_modules/bootstrap/scss/mixins/text-hide";
-@import "node_modules/bootstrap/scss/mixins/border-radius";
-@import "node_modules/bootstrap/scss/mixins/grid";
-@import "node_modules/bootstrap/scss/mixins/grid-framework";
-@import "node_modules/bootstrap/scss/mixins/background-variant";
-@import "node_modules/bootstrap/scss/mixins/table-row";
-@import "node_modules/bootstrap/scss/mixins/screen-reader";
-@import "node_modules/bootstrap/scss/mixins/box-shadow";
-@import "node_modules/bootstrap/scss/mixins/transition";
-@import "node_modules/bootstrap/scss/mixins/forms";
-@import "node_modules/bootstrap/scss/mixins/gradients";
-@import "node_modules/bootstrap/scss/mixins/buttons";
-@import "node_modules/bootstrap/scss/mixins/clearfix";
-@import "node_modules/bootstrap/scss/mixins/badge";
-@import "node_modules/bootstrap/scss/mixins/alert";
+@import "node_modules/bootstrap/scss/utilities";
+@import "node_modules/bootstrap/scss/utilities/api";
 
-@import "node_modules/bootstrap/scss/utilities/text";
-@import "node_modules/bootstrap/scss/utilities/flex";
-@import "node_modules/bootstrap/scss/utilities/background";
-@import "node_modules/bootstrap/scss/utilities/spacing";
-@import "node_modules/bootstrap/scss/utilities/screenreaders";
-@import "node_modules/bootstrap/scss/utilities/stretched-link";
-@import "node_modules/bootstrap/scss/utilities/position";
-@import "node_modules/bootstrap/scss/utilities/float";
-@import "node_modules/bootstrap/scss/utilities/text";
-@import "node_modules/bootstrap/scss/utilities/interactions";
-
-@import "node_modules/bootstrap/scss/vendor/rfs";
+@import "node_modules/bootstrap/scss/helpers/visually-hidden";
 
 @import "icons";
 
+
+// Bootstrap overrides: Don't use RFS for headings
+h1 {
+    font-size: $h1-font-size;
+}
+
+h2 {
+    font-size: $h2-font-size;
+}
+
+h3 {
+    font-size: $h3-font-size;
+}
+
+h4 {
+    font-size: $h4-font-size;
+}
+
+h5 {
+    font-size: $h5-font-size;
+}
+
+h6 {
+    font-size: $h6-font-size;
+}
 
 body {
     display: flex;
@@ -80,10 +88,15 @@ body, html {
 #content {
     @extend .p-0, .px-sm-3;
     flex: 1 0 auto;
+    max-width: 1140px;
 }
 
 .footer {
     flex-shrink: 0;
+}
+
+.btn-close {
+    float: right;
 }
 
 
@@ -97,7 +110,7 @@ body, html {
     border-radius: $border-radius-sm;
 }
 
-@include media-breakpoint-down(xs) {
+@include media-breakpoint-down(sm) {
     .box {
         box-shadow: none;
         border-radius: 0;
@@ -124,7 +137,7 @@ body, html {
     font-size: $font-size-base * 1.65;
 
     .selection {
-        color: theme-color("primary");
+        color: $primary;
     }
 }
 

@@ -71,7 +71,7 @@ gulp.task("build-sass", () => {
 });
 
 
-const htmlmin = require("gulp-html-minifier");
+const htmlmin = require("gulp-html-minifier-terser");
 
 gulp.task("minify-xml", () => {
     const srcFile = argv.srcFile;
