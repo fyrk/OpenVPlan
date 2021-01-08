@@ -64,5 +64,7 @@ $table-first-of-group-border-color: #adb5bd;
     $table-first-of-group-border-color: #8593a5;
 }
 
+$form-switch-color: $input-border-color;
+
 @import "node_modules/bootstrap/scss/functions";
 @import "node_modules/bootstrap/scss/variables";

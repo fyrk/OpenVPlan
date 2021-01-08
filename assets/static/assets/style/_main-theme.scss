@@ -45,14 +45,18 @@ footer { background-color: #242424; }
         border-color: darken($primary, 7.5%);
     }
 
-    .form-check-input:checked[type="radio"] {
-        background-image: escape-svg($form-check-radio-checked-bg-image);
-    }
-
     .form-control, .form-control:focus, .form-check-input {
         color: $input-color;
         background-color: $input-bg;
         border-color: $input-border-color;
+    }
+
+    .form-check-input:checked[type="radio"] {
+        background-image: escape-svg($form-check-radio-checked-bg-image);
+    }
+
+    .form-switch .form-check-input {
+        background-image: escape-svg($form-switch-bg-image);
     }
 
     .text-muted {
