@@ -46,7 +46,10 @@ class Stats:
                 type_ = "BOT"
             else:
                 type_ = "ALL"
-                remote = hashlib.blake2b(remote.encode("utf-8"), digest_size=3).hexdigest()
+                if config.get_bool("log_ip_address"):
+                    remote = hashlib.blake2b(remote[1:-2].encode("utf-8"), digest_size=3).hexdigest()
+                else:
+                    remote = ""
         self._requests.writerow((type_, datetime.datetime.now().strftime("%Y-%m-%d %X"),
                                  response.status, response.reason, request.method,
                                  request.path_qs, time, response.body_length,
