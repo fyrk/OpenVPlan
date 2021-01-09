@@ -27,3 +27,4 @@ jobs:
           key: ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
           script: ${{ secrets.REMOTE_RESTART_PRODUCTION_CMD }}
           command_timeout: 30s
+      continue-on-error: true
