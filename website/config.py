@@ -49,19 +49,19 @@ def get(key: str, default=None):
 def get_str(key: str, default=""):
     try:
         return str(_CONFIG[key])
-    except ValueError:
+    except KeyError:
         return default
 
 
 def get_bool(key: str, default=False):
     try:
         return bool(_CONFIG[key])
-    except ValueError:
+    except KeyError:
         return default
 
 
 def get_int(key: str, default=0):
     try:
         return int(_CONFIG[key])
-    except ValueError:
+    except KeyError:
         return default
