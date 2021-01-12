@@ -11,7 +11,7 @@
 
         tr.grey td:not(.group-name) { color: $table-border-color; }
 
-        tr.new-subs td:not(.group-name) { background-color: rgba(map_get($theme-colors, "primary"), 0.1); }
+        tr.new-subs td:not(.group-name) { background-color: rgba(map_get($theme-colors, "primary"), 0.2); }
     }
 
     &>:not(caption)>*>* {

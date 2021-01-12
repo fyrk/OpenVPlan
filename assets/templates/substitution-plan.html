@@ -143,7 +143,7 @@
     <h2 id="select-heading">{{ options["texts"]["select_heading"] }}</h2>
     <form class="form" type="get">
         {% if not selection %}
-            <label for="selectionInput">{{ options["texts"]["select_text"] }}</label>
+            <label for="selectionInput" class="form-label">{{ options["texts"]["select_text"] }}</label>
         {% endif %}
         <div class="row">
             <div class="col-9 col-sm-6 col-md-4 col-xl-3">
@@ -210,12 +210,9 @@
                         <span class="timetable-selection"></span> auf diese zu übertragen.
                         <div class="row">
                             <div class="input-group copy-timetable-link-group col col-md-9 col-lg-7 col-xl-6">
-                                <!--suppress HtmlFormInputWithoutLabel -->
-                                <input type="text" class="form-control timetable-link-input" readonly>
-                                <div class="input-group-append">
-                                    <button class="btn copy-timetable-link input-group-text" type="button"
-                                            aria-label="Link kopieren" title="Kopieren"></button>
-                                </div>
+                                <input type="text" class="form-control user-select-all timetable-link-input" readonly>
+                                <button class="btn btn-primary copy-timetable-link" type="button"
+                                        aria-label="Link kopieren" title="Kopieren"></button>
                             </div>
                         </div>
                     </div>
