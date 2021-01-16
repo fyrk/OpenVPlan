@@ -9,60 +9,105 @@
     });
 })*/
 
-self.addEventListener("fetch", () => {});
-
-self.addEventListener("push", event => {
-    const data = event.data.json();
-
-    // convert status ("dd.mm.yyyy hh:MM") to milliseconds
-    let timestamp;
-    try {
-        let [, dd, mm, yyyy, hh, MM] = data.status.match(/(\d\d).(\d\d).(\d\d\d\d) (\d\d):(\d\d)/);
-        timestamp = Date.UTC(yyyy, mm, dd, hh, MM);
-    } catch (e) {
-        console.error(e);
-        timestamp = null;
-    }
-
-    let title;
-    let body;
-    if (Object.keys(data["affected_groups_by_day"]).length === 1) {
-        // there is only one day with new substitutions
-        title = Object.keys(data["affected_groups_by_day"])[0] + ": Neue Vertretungen";
-        body = Object.values(data["affected_groups_by_day"])[0].join(", ");
-    } else {
-        title = "Neue Vertretungen";
-        body = "";
-        for (let [dayName, groups] of Object.entries(data["affected_groups_by_day"])) {
-            body += dayName + ": " + groups.join(", ") + "\n";
-        }
-    }
-
-    const options = {
-        body: body,
-        icon: "favicon.ico",
-        badge: "favicon-96-monochrome.png",
-        lang: "de",
-        timestamp: timestamp,
-        vibrate: [300, 100, 400],
-        data: {
-            plan_type: data["plan_type"],
-            url: new URL("/" + data["plan_type"] + "/", self.location.origin).href
-        }
-    };
-
-    event.waitUntil(
-        self.registration.showNotification(title, options)
-    );
-});
-
-self.addEventListener("error", e => {
-    const error = {type: Object.getPrototypeOf(e.error).name};
-    Object.getOwnPropertyNames(e.error).forEach(p => error[p] = e.error[p]);
+function reportError(error, event=null) {
     fetch("/api/report-error", {
         method: "post",
-        body: new URLSearchParams({message: e.message, filename: e.filename, lineno: e.lineno, colno: e.colno, error: JSON.stringify(error)})
+        body: new URLSearchParams({
+            name: error.name,
+            message: (event == null ? undefined : event.message) || error.message,
+            description: error.description,  // non-standard Microsoft property
+            number: error.number, // non-standard Microsoft property
+            filename: (event == null ? undefined : event.filename) || error.fileName,  // error.fileName is non-standard Mozilla property
+            lineno: (event == null ? undefined : event.lineno) || error.lineNumber,  // error.lineNumber is non-standard Mozilla property
+            colno: (event == null ? undefined : event.colno) || error.columnNumber,  // error.columnNumber is non-standard Mozilla property
+            stack: (event == null ? undefined : event.stack) || error.stack,  // error.stack is non-standard Mozilla property
+            user_agent: navigator.userAgent
+        })
     })
+}
+
+self.addEventListener("error", e => {
+    reportError(e.error, e);  // e.error is experimental, according to MDN
+});
+
+self.addEventListener("unhandledrejection", e => {
+    console.log("unhandledrejection", e);
+    reportError(e.reason);
+});
+
+self.addEventListener("fetch", () => {});
+
+self.addEventListener("push", async (event) => {
+    const data = event.data.json();
+
+    let timestamp = data["timestamp"];
+    let plan_id = data["plan_id"];
+
+    // merge all affected groups of previous notifications with the same plan id that are still open
+    let affectedGroups = data["affected_groups_by_day"];
+    console.log("affectedGroups", affectedGroups);
+    for (let day of Object.values(affectedGroups)) {
+        day["groups"] = new Set(day["groups"]);
+    }
+    let currentTimestamp = Date.now()/1000;  // current UTC timestamp in seconds
+    event.waitUntil(
+        self.registration.getNotifications().then(notifications => {
+            for (let n of notifications) {
+                if (n.data.plan_id === plan_id) {
+                    for (let [expiryTime, day] of Object.entries(n.data.affected_groups_by_day)) {
+                        console.log("expiryTime, currentTimestamp:", expiryTime, currentTimestamp);
+                        if (expiryTime > currentTimestamp) {
+                            console.log("add", day["groups"]);
+                            if (expiryTime in affectedGroups) {
+                                console.log("already in affectedGroups");
+                                day["groups"].forEach(g => affectedGroups[expiryTime]["groups"].add(g));
+                            }
+                            else {
+                                console.log("new day", day);
+                                affectedGroups[expiryTime] = day;
+                            }
+                        }
+                    }
+                    n.close();
+                }
+            }
+            for (let day of Object.values(affectedGroups)) {
+                day["groups"] = Array.from(day["groups"]);
+            }
+
+            let title;
+            let body;
+
+            if (Object.keys(affectedGroups).length === 1) {
+                // there is only one day with new substitutions
+                let day = Object.values(affectedGroups)[0];
+                title = day["name"] + ": Neue Vertretungen";
+                body = day["groups"].join(", ");
+            } else {
+                title = "Neue Vertretungen";
+                body = "";
+                for (let day of Object.values(affectedGroups)) {
+                    body += day["name"] + ": " + day["groups"].join(", ") + "\n";
+                }
+            }
+
+            const options = {
+                body: body,
+                icon: "favicon.ico",
+                badge: "favicon-96-monochrome.png",
+                lang: "de",
+                timestamp: timestamp,
+                vibrate: [300, 100, 400],
+                data: {
+                    plan_id: plan_id,
+                    url: new URL("/" + plan_id + "/", self.location.origin).href,
+                    affected_groups_by_day: affectedGroups
+                }
+            };
+
+            self.registration.showNotification(title, options)
+        })
+    );
 });
 
 self.addEventListener("notificationclick", event => {
@@ -85,7 +130,7 @@ self.addEventListener("notificationclick", event => {
     // close all notifications
     self.registration.getNotifications().then(notifications => {
         notifications.forEach(n => {
-            if (event.notification.plan_type === n.data.plan_type)
+            if (event.notification.data.plan_id === n.data.plan_id)
                 n.close()
         });
     });

@@ -6,7 +6,7 @@ try {
     timetables = JSON.parse(window.localStorage.getItem(substitutionPlanType + "-timetables"));
     if (!timetables)
         timetables = {};
-} catch (SyntaxError) {
+} catch {
     timetables = {};
 }
 
@@ -133,7 +133,57 @@ if (selection) {
         }
         const timetable = timetableTemplate.content.firstElementChild.cloneNode(true);
         timetablesContainer.appendChild(timetable);
-        timetable.querySelector(".timetable-selection").innerText = s;
+        timetable.querySelectorAll(".timetable-selection").forEach(e => e.innerText = s);
+        timetable.querySelector(".share-timetable-button").addEventListener("click", e => {
+            const shareTimetableBlock = timetable.querySelector(".share-timetable-block");
+            if (shareTimetableBlock.hidden) {
+                const linkInput = shareTimetableBlock.querySelector(".timetable-link-input");
+                const copyButton = shareTimetableBlock.querySelector(".copy-timetable-link");
+                let timetableStr = "";
+                for (let day=0; day<5; day++) {
+                    for (let lesson=0; lesson<10; lesson++) {
+                        let teacher = timetables[sUpper][day][lesson];
+                        if (teacher == null) {
+                            timetableStr += "   ";
+                        } else {
+                            if (teacher.length > 3) {
+                                // shouldn't usually happen
+                                teacher = teacher.substr(0, 3);
+                            }
+                            timetableStr += teacher + " ".repeat(3 - teacher.length);  // make it 3 characters long
+                        }
+                    }
+                }
+                linkInput.value = new URL("/" + substitutionPlanType + "/#timetable:" + sUpper + ":" + btoa(timetableStr), window.location.origin).href;
+                linkInput.addEventListener("click", e => e.target.select());
+                let copyTimeout = null;
+                copyButton.addEventListener("click", () => {
+                    function resetButton() {
+                        if (copyTimeout != null)
+                            clearTimeout(copyTimeout);
+                        copyTimeout = setTimeout(() => {
+                            copyButton.classList.remove("copied");
+                            copyButton.classList.remove("copying-failed");
+                            copyButton.title = "Kopieren";
+                            copyTimeout = null;
+                        }, 2000);
+                    }
+
+                    navigator.clipboard.writeText(linkInput.value).then(() => {
+                        copyButton.classList.add("copied");
+                        copyButton.title = "Kopiert!";
+                        resetButton();
+                    }).catch(() => {
+                        copyButton.classList.add("copying-failed");
+                        copyButton.title = "Kopieren fehlgeschlagen";
+                        resetButton();
+                    });
+                });
+                shareTimetableBlock.hidden = false;
+            } else {
+                shareTimetableBlock.hidden = true;
+            }
+        });
         const tbody = timetable.querySelector("tbody");
         for (let lessonNum = 1; lessonNum < 11; lessonNum++) {
             const row = document.createElement("tr");

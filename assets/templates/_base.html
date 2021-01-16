@@ -2,7 +2,7 @@
 <html lang="de" prefix="og: https://ogp.me/ns#">
 <head>
     <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{% endblock %} - Vertretungsplan GaW Verden</title>
     {% block breadcrumb_list %}{% endblock %}
     <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">
@@ -19,6 +19,7 @@
     <meta name="theme-color" content="#e67b10">
     <meta name="keywords"
           content="Gymnasium am Wall, GaW Verden, Vertretung, Vertretungsplan, Schule{% block keywords %}{% endblock %}">
+    {% block meta %}{% endblock %}
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://gawvertretung.florian-raediker.de">
     <meta property="og:title" content="{% block og_title %}{% endblock %} - Vertretungsplan GaW Verden">
@@ -28,15 +29,15 @@
     <meta property="og:image" content="/favicon-192.png">
     <meta property="og:image:type" content="image/png">
     <meta name="color-scheme" content="light dark">
-    <link href="/assets/style/main.css" rel="stylesheet">
-    <link href="/assets/style/main-dark.css" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
+    <link href="/assets/style/main.css?v=1" rel="stylesheet">
+    <link href="/assets/style/main-dark.css?v=1" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
     {% block stylesheets %}{% endblock %}
     <script>switch(localStorage.getItem("dark-theme")){case "light":for(let s of document.getElementsByClassName("dark-stylesheet"))s.setAttribute("media","none");document.querySelector('meta[name="color-scheme"]').setAttribute("content","light");break;case "dark":for(let s of document.getElementsByClassName("dark-stylesheet"))s.removeAttribute("media");document.querySelector('meta[name="color-scheme"]').setAttribute("content","dark")}</script>
 </head>
 <body class="d-flex flex-column">
-    <a class="sr-only sr-only-focusable" href="#main">Zum Inhalt</a>
-    <div id="content" class="container-xl">
-        <header class="main-container">
+    <a class="visually-hidden visually-hidden-focusable" href="#main">Zum Inhalt</a>
+    <div id="content" class="container-fluid">
+        <header>
             <div class="box title-box">
                 {% block title_bar %}
                     {% if selection %}<span class="selection">{{ selection_str|e }}</span> - {% endif %}
@@ -54,7 +55,7 @@
     <footer class="text-center text-white p-3 mt-4">
         <p>
             Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
-            <a href="{% block gaw_verden_link %}{% endblock %}" rel="noopener" target="_blank" class="external text-nowrap">gaw-verden.de</a>.<br>
+            <a href="{% block original_data_link %}{% endblock %}" rel="noopener" target="_blank" class="external text-nowrap">gaw-verden.de</a>.<br>
             Alle Angaben ohne Gewähr.
         </p>
         <p>

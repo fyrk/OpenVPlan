@@ -5,13 +5,13 @@ on:
     branches: [ dev ]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Deploy
+    - name: Copy Files
       uses: burnett01/rsync-deployments@4.1
       with:
           switches: "-rtv"
@@ -19,7 +19,7 @@ jobs:
           remote_user: ${{ secrets.REMOTE_USER }}
           remote_key:  ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
           remote_path: ${{ secrets.REMOTE_DEV_TARGET }}
-    - name: Restart server
+    - name: Restart Server
       uses: appleboy/ssh-action@master
       with:
           host: ${{ secrets.REMOTE_HOST }}
@@ -27,3 +27,4 @@ jobs:
           key: ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
           script: ${{ secrets.REMOTE_RESTART_DEV_CMD }}
           command_timeout: 30s
+      continue-on-error: true

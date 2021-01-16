@@ -2,10 +2,11 @@ import asyncio
 import datetime
 import json
 import logging
+import sqlite3
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import Dict, List, MutableSet, Optional
+from typing import Dict, Iterable, List, MutableSet, Optional, Union
 
 import jinja2
 import pywebpush
@@ -14,10 +15,10 @@ from cryptography.hazmat.primitives import serialization
 from py_vapid.jwt import sign
 from py_vapid.utils import b64urlencode
 
-from .. import config, logger
-from ..db.db import SubstitutionPlanDBStorage
-from ..substitution_plan.loader import BaseSubstitutionLoader
-from ..substitution_plan.utils import split_selection
+from subs_crawler.crawlers.base import BaseSubstitutionCrawler
+from subs_crawler.utils import split_selection
+from website import config, logger
+from website.db import SubstitutionPlanDBStorage
 
 _LOGGER = logging.getLogger("gawvertretung")
 
@@ -31,7 +32,7 @@ DELETE_COOKIE_EXPIRE = formatdate(0)
 
 RESPONSE_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; "
-                               "script-src-elem 'self' 'sha256-l2h6bLQWX9C8tLEINfO+loK3K/jPEQRB05YAe9ehO1o='; "
+                               "script-src 'self' 'sha256-l2h6bLQWX9C8tLEINfO+loK3K/jPEQRB05YAe9ehO1o='; "
                                "connect-src 'self' " + ("ws:" if config.get_bool("dev") else "wss:"),
     "Strict-Transport-Security": "max-age=63072000",
     "Referrer-Policy": "same-origin",
@@ -48,12 +49,14 @@ RESPONSE_HEADERS_SELECTION = {
 
 
 class SubstitutionPlan:
-    def __init__(self, name: str, substitution_loader: BaseSubstitutionLoader, template: jinja2.Template,
-                 error500_template: jinja2.Template):
-        self._name = name
-        self._substitution_loader = substitution_loader
+    def __init__(self, plan_id: str, crawler: BaseSubstitutionCrawler, template: jinja2.Template,
+                 error500_template: jinja2.Template, template_options: dict):
+        self._plan_id = plan_id
+        self._crawler = crawler
         self._template = template
         self._error500_template = error500_template
+        self._template_options = template_options
+        self._template_options["id"] = self._plan_id
         self._event_new_substitutions = asyncio.Event()
 
         self._index_site = None
@@ -62,31 +65,33 @@ class SubstitutionPlan:
         self.client_session: Optional[ClientSession] = None
         self._app: Optional[web.Application] = None
         self._websockets: MutableSet[web.WebSocketResponse] = WeakSet()
-        self._affected_groups = None  # affected groups are passed from self._root_handler to self._background_tasks
+        # affected groups are passed from self._root_handler to self._background_tasks:
+        self._affected_groups: Optional[Dict[int, Dict[str, Union[str, List[str]]]]] = None
 
     @property
     def name(self):
-        return self._name
+        return self._plan_id
 
     @property
     def app(self):
         return self._app
 
     async def serialize(self, filepath: str):
-        self._substitution_loader.serialize(filepath)
+        self._crawler.serialize(filepath)
         self._serialization_filepath = filepath
 
     async def deserialize(self, filepath: str):
-        self._substitution_loader.deserialize(filepath)
+        self._crawler.deserialize(filepath)
         self._serialization_filepath = filepath
-        if self._substitution_loader.storage is not None:
+        if self._crawler.storage is not None:
             await self._recreate_index_site()
 
     def _prettify_selection(self, selection: List[str]) -> str:
         return ", ".join(selection)
 
     async def _recreate_index_site(self):
-        self._index_site = await self._template.render_async(storage=self._substitution_loader.storage)
+        self._index_site = await self._template.render_async(storage=self._crawler.storage,
+                                                             options=self._template_options)
 
     # ===================
     # REQUEST HANDLERS
@@ -97,14 +102,14 @@ class SubstitutionPlan:
         # noinspection PyBroadException
         try:
             if "all" not in request.query and "s" not in request.query:
-                if self._name + "-selection" in request.cookies and \
-                        request.cookies[self._name + "-selection"].strip():
+                if self._plan_id + "-selection" in request.cookies and \
+                        request.cookies[self._plan_id + "-selection"].strip():
                     raise web.HTTPSeeOther(
-                        location="/" + self._name + "/?s=" + request.cookies[self._name + "-selection"]
+                        location="/" + self._plan_id + "/?s=" + request.cookies[self._plan_id + "-selection"]
                     )
                 else:
-                    raise web.HTTPSeeOther(location="/" + self._name + "/?all")
-            substitutions_have_changed, affected_groups = await self._substitution_loader.update(self.client_session)
+                    raise web.HTTPSeeOther(location="/" + self._plan_id + "/?all")
+            substitutions_have_changed, affected_groups = await self._crawler.update(self.client_session)
             if affected_groups:
                 self._affected_groups = affected_groups
             if "event" in request.query and config.get_bool("dev"):
@@ -118,21 +123,15 @@ class SubstitutionPlan:
                 # noinspection PyUnboundLocalVariable
                 selection_str = self._prettify_selection(selection)
                 selection = [s.upper() for s in selection]
-                response = web.Response(text=await self._template.render_async(
-                    storage=self._substitution_loader.storage, selection=selection, selection_str=selection_str),
-                                        content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS_SELECTION)
-                # unfortunately, "same_site" parameter is not in a release yet (see
-                # https://github.com/aio-libs/aiohttp/pull/4224), so access SimpleCookie directly
-                # response.set_cookie(self._name + "-selection", selection_qs, expires=SELECTION_COOKIE_EXPIRE)
+                response = web.Response(
+                    text=await self._template.render_async(storage=self._crawler.storage, selection=selection,
+                                                           selection_str=selection_str, options=self._template_options),
+                    content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS_SELECTION)
                 # noinspection PyUnboundLocalVariable
-                response.cookies[self._name + "-selection"] = selection_qs
-                cookie = response.cookies[self._name + "-selection"]
-                cookie["expires"] = SELECTION_COOKIE_EXPIRE
-                cookie["path"] = "/" + self._name + "/"
-                if not config.get_bool("dev"):
-                    cookie["secure"] = True
-                cookie["httponly"] = True
-                cookie["samesite"] = "Lax"
+                response.set_cookie(self._plan_id + "-selection", selection_qs,
+                                    expires=SELECTION_COOKIE_EXPIRE, path="/"+self._plan_id+"/",
+                                    secure=not config.get_bool("dev"),  # secure in non-development mode
+                                    httponly=True, samesite="Lax")
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
@@ -143,15 +142,11 @@ class SubstitutionPlan:
                     await self._recreate_index_site()
                 response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8",
                                         headers=RESPONSE_HEADERS)
-                # response.del_cookie(self._name + "-selection")
-                response.cookies[self._name + "-selection"] = ""
-                cookie = response.cookies[self._name + "-selection"]
-                cookie["expires"] = DELETE_COOKIE_EXPIRE
-                cookie["path"] = "/" + self._name + "/"
-                if not config.get_bool("dev"):
-                    cookie["secure"] = True
-                cookie["httponly"] = True
-                cookie["samesite"] = "Lax"
+                # delete cookie by setting value to "":
+                response.set_cookie(self._plan_id + "-selection", "",
+                                    expires=SELECTION_COOKIE_EXPIRE, path="/"+self._plan_id+"/",
+                                    secure=not config.get_bool("dev"),  # secure in non-development mode
+                                    httponly=True, samesite="Lax")
                 if substitutions_have_changed:
                     await response.prepare(request)
                     await response.write_eof()
@@ -161,8 +156,8 @@ class SubstitutionPlan:
             raise e from None
         except Exception:
             _LOGGER.exception("Exception occurred while handling request")
-            response = web.Response(text=await self._error500_template.render_async(), status=500,
-                                    content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
+            response = web.Response(text=await self._error500_template.render_async(options=self._template_options),
+                                    status=500, content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
         return response
 
     # /api/wait-for-updates
@@ -190,10 +185,10 @@ class SubstitutionPlan:
                             if data["type"] == "check_status":
                                 if "status" in data:
                                     substitutions_have_changed, affected_groups = \
-                                        await self._substitution_loader.update(self.client_session)
+                                        await self._crawler.update(self.client_session)
                                     if affected_groups:
                                         self._affected_groups = affected_groups
-                                    if self._substitution_loader.storage.status != data["status"]:
+                                    if self._crawler.storage.status != data["status"]:
                                         # inform client that substitutions are not up-to-date
                                         await ws.send_json({"type": "new_substitutions"})
                                     if substitutions_have_changed:
@@ -236,20 +231,21 @@ class SubstitutionPlan:
         return self._app
 
     async def _background_tasks(self):
-        token = logger.PLAN_NAME_CONTEXTVAR.set(self._name)
+        token = logger.PLAN_NAME_CONTEXTVAR.set(self._plan_id)
         try:
             while True:
                 _LOGGER.debug("Waiting for new substitutions event...")
                 await self._event_new_substitutions.wait()
                 self._event_new_substitutions.clear()
-                affected_groups = self._affected_groups
+                # noinspection PyTypeChecker
+                affected_groups: Dict[int, Dict[str, Union[str, List[str]]]] = self._affected_groups
                 self._affected_groups = None
 
                 # SERIALIZE
                 await self.serialize(self._serialization_filepath)
 
                 # WEBSOCKETS
-                _LOGGER.debug("Sending update event via WebSockets")
+                _LOGGER.debug(f"Sending update event via WebSocket connection to {len(self._websockets)} clients")
                 for ws in self._websockets:
                     await ws.send_json({"type": "new_substitutions"})
 
@@ -257,15 +253,20 @@ class SubstitutionPlan:
                 if affected_groups:
                     _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
 
-                    async def send_push_notification(subscription_entry, common_affected_groups: Dict[str, List[str]]):
+                    async def send_push_notification(
+                            subscription_entry, common_affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]
+                    ) -> Optional[sqlite3.Row]:
                         endpoint_hash = subscription_entry["endpoint_hash"]
                         endpoint_origin = subscription_entry["endpoint_origin"]
                         _LOGGER.debug("Sending push notification to " + endpoint_hash)
                         # noinspection PyBroadException
                         try:
                             data = json.dumps({"affected_groups_by_day": common_affected_groups,
-                                               "plan_type": self._name,
-                                               "status": self._substitution_loader.storage.status})
+                                               "plan_id": self._plan_id,
+                                               # status_datetime.timestamp() correctly assumes that datetime is local
+                                               # time (status_datetime has no tzinfo) and returns the correct UTC
+                                               # timestamp
+                                               "timestamp": self._crawler.storage.status_datetime.timestamp()})
                             encoded = \
                                 pywebpush.WebPusher(subscription_info=subscription_entry["subscription"]).encode(data)
                             headers = {"content-encoding": "aes128gcm"}
@@ -305,7 +306,7 @@ class SubstitutionPlan:
                                               f"{subscription_entry['endpoint_hash']} ({endpoint_origin})")
                         return None
 
-                    subscription_entries_to_delete = await asyncio.gather(
+                    subscription_entries_to_delete: Iterable[sqlite3.Row] = await asyncio.gather(
                         *(send_push_notification(subscription, common_affected_groups)
                           for subscription, common_affected_groups in
                           self.storage.iter_active_push_subscriptions(affected_groups)))

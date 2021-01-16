@@ -1,0 +1,46 @@
+@import "theme-variables";
+
+
+.day-info-checkbox  ~ .day-info-label::before { background-color: white; }
+
+.substitutions-table {
+    margin-bottom: 0;
+
+    tbody {
+        tr.first-of-group td { border-top-color: $table-first-of-group-border-color; }
+
+        tr.grey td:not(.group-name) { color: $table-border-color; }
+
+        tr.new-subs td:not(.group-name) { background-color: rgba(map_get($theme-colors, "primary"), 0.2); }
+    }
+
+    &>:not(caption)>*>* {
+        border-bottom-width: 0;
+        border-top-width: 1px;
+    }
+
+    > :not(:last-child) > :last-child > * {
+        border-bottom-width: $table-group-separator-width;  // not a Bootstrap style
+    }
+}
+
+.copy-timetable-link::before {
+    background-color: white;
+}
+
+@if ($theme == "dark") {
+    // With a light theme, these styles are the default and don't need to be changed.
+    // With a dark theme, change them to appropriate colors:
+    .table {
+        color: $table-color;
+        border-color: $table-border-color;
+
+        > :not(:last-child) > :last-child > * {
+            border-bottom-color: $table-group-separator-color;
+        }
+    }
+
+    .form-control:disabled, .form-control[readonly] {
+        background-color: inherit;
+    }
+}

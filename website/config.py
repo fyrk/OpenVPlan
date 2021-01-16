@@ -1,6 +1,6 @@
 import json
 
-from gawvertretung import logger
+from . import logger
 
 _LOGGER = logger.get_logger()
 
@@ -13,7 +13,7 @@ _CONFIG = {
     "data_dir": "data/",
     "user_agent": "GaWVertretungBot/{version} (+https://gawvertretung.florian-raediker.de) {server_software}",
     "template404": "error-404.min.html",
-    "template500": "error-500-students.min.html",
+    "template500": "error-500-all.min.html",
 
     "include_outdated_substitutions": False,
     "dev": False,
@@ -27,7 +27,7 @@ def load(filepath="config.json", filepath_secret="secret_config.json"):
     for fp in (filepath, filepath_secret):
         # noinspection PyBroadException
         try:
-            with open(fp, "r") as f:
+            with open(fp, "r", encoding="utf-8") as f:
                 try:
                     config = json.load(f)
                     if type(config) != dict:
@@ -49,19 +49,19 @@ def get(key: str, default=None):
 def get_str(key: str, default=""):
     try:
         return str(_CONFIG[key])
-    except ValueError:
+    except KeyError:
         return default
 
 
 def get_bool(key: str, default=False):
     try:
         return bool(_CONFIG[key])
-    except ValueError:
+    except KeyError:
         return default
 
 
 def get_int(key: str, default=0):
     try:
         return int(_CONFIG[key])
-    except ValueError:
+    except KeyError:
         return default

@@ -1,5 +1,5 @@
-aiohttp~=3.6.2
-jinja2~=2.11.2
-sortedcontainers~=2.2.2
-pywebpush~=1.11.0
-cryptography~=2.9.2
+aiohttp
+jinja2
+sortedcontainers
+pywebpush
+cryptography

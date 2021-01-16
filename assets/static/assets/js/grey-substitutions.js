@@ -31,3 +31,5 @@ function greySubstitutions() {
 }
 
 greySubstitutions();
+
+window.addEventListener("focus", () => greySubstitutions());

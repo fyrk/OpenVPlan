@@ -9,6 +9,7 @@ const closureCompiler = require("google-closure-compiler").gulp();
 const SUBSTITUTIONS_BUNDLE_FILES = [
     "substitutions-base.js",
     "grey-substitutions.js",
+    "highlight-new-substitutions.js",
     "push-notifications.js",
     "updates.js"
 ];
@@ -33,8 +34,8 @@ gulp.task("build-js", () => {
             assume_function_wrapper: true,
             isolation_mode: "IIFE",
             source_map_format: "V3",
-            language_in: "ECMASCRIPT_2019",
-            language_out: "ECMASCRIPT_2019",
+            language_in: "ECMASCRIPT_NEXT_IN",
+            language_out: "ECMASCRIPT_NEXT",
         }))
         .pipe(sourcemaps.write("/"))
         .pipe(gulp.dest(path));
@@ -70,14 +71,14 @@ gulp.task("build-sass", () => {
 });
 
 
-const htmlmin = require("gulp-html-minifier");
+const htmlmin = require("gulp-html-minifier-terser");
 
 gulp.task("minify-xml", () => {
     const srcFile = argv.srcFile;
     const destFile = argv.destFile;
     const path = argv.path || "assets/templates/";
     return gulp.src(path + srcFile)
-        .pipe(htmlmin({collapseWhitespace: true, conservativeCollapse: true, removeComments: true}))
+        .pipe(htmlmin({collapseWhitespace: true, removeComments: true}))
         .pipe(rename(destFile))
         .pipe(gulp.dest(path));
 });
