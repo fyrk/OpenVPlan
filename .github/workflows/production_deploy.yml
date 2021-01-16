@@ -1,8 +1,8 @@
-name: Production Deploy (main branch)
+name: "Production Deploy (production branch 'production')"
 
 on:
   push:
-    branches: [ main ]
+    branches: [ production ]
 
 jobs:
   deploy:
