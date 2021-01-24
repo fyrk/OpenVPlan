@@ -2,7 +2,7 @@
 {% block title %}{% if not selection %}{{ options["title"] }}{% else %}{{ selection_str|e }}{% endif %}{% endblock %}
 {% block og_title %}{% if options["title"] %}{{ options["title"] }}{% else %}{{ options["og_title"] }}{% endif %}{% endblock %}
 {% block breadcrumb_list %}
-    <script type="application/ld+json">{"@context": "https://schema.org","@type": "BreadcrumbList","itemListElement": [{"@type": "ListItem","position": 1,"name": "gawvertretung.florian-raediker.de","item": "https://gawvertretung.florian-raediker.de"},{"@type": "ListItem","position": 2,"name": {{ options["title"] }},"item": "https://gawvertretung.florian-raediker.de/{{ options["id"] }}/"}]}</script>
+    <script type="application/ld+json">{"@context": "https://schema.org","@type": "BreadcrumbList","itemListElement": [{"@type": "ListItem","position": 1,"name": "gawvertretung.florian-raediker.de","item": "https://gawvertretung.florian-raediker.de"},{"@type": "ListItem","position": 2,"name": "{{ options["title"] }}","item": "https://gawvertretung.florian-raediker.de/{{ options["id"] }}/"}]}</script>
 {% endblock %}
 
 {% block manifest_link %}
