@@ -12,9 +12,19 @@ _LOGGER = logging.getLogger("gawvertretung")
 
 _REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
 _REGEX_TITLE = re.compile(r"(\d+.\d+.\d\d\d\d) (\w+), Woche (\w+)")
+_REGEX_NEXT_SITE = re.compile(r"\d+; URL=subst_(\d\d\d)\.htm")
 
 
 class SubstitutionsTooOldException(Exception):
+    pass
+
+
+class FoundNextSite(Exception):
+    def __init__(self, next_site):
+        self.next_site = next_site
+
+
+class DidNotFindNextSiteException(Exception):
     pass
 
 
@@ -32,6 +42,7 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
                  group_name_column: int = 0, lesson_column: int = None, class_column: int = None):
         HTMLParser.__init__(self)
         BaseMultiPageSubstitutionParser.__init__(self, storage, current_timestamp, stream, site_num)
+        self._is_parsing_until_next_site = False
         self._encoding = encoding
         self._group_name_column = group_name_column
         self._lesson_column = lesson_column
@@ -49,15 +60,29 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
         self._current_news_format_tag = None
         self._current_day_info = None
 
-    async def parse_next_site(self) -> bytes:
-        while True:
-            line = await self._stream.readline()
-            if not line:
-                raise ValueError("Did not find next site")
-            if line.startswith(b'<meta http-equiv="refresh" content="8; URL=subst_'):
-                return line[49:52]
+    async def parse_next_site(self) -> str:
+        self._is_parsing_until_next_site = True
+        try:
+            while True:
+                r = (await self._stream.readany()).decode(self._encoding)
+                if not r:
+                    raise DidNotFindNextSiteException()
+                try:
+                    self.feed(r)
+                except FoundNextSite as e:
+                    next_site: str = e.next_site
+                    if len(next_site) != 3 or not next_site.isdigit():
+                        raise DidNotFindNextSiteException(next_site)
+                    return next_site
+        except Exception as e:
+            _LOGGER.error(f"{self._site_num} Exception while parsing")
+            raise e
 
     async def parse(self):
+        self._is_parsing_until_next_site = False
+        # parse anything that is buffered because parse_next_site exits without parsing further than
+        # <meta http-equiv="refresh" ...>:
+        self.goahead(False)
         try:
             while True:
                 r = (await self._stream.readany()).decode(self._encoding)
@@ -77,6 +102,12 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
         self._current_strikes = []
 
     def handle_starttag(self, tag, attrs):
+        if self._is_parsing_until_next_site and \
+                tag == "meta" and attrs[0] == ("http-equiv", "refresh") and attrs[1][0] == "content":
+            match = _REGEX_NEXT_SITE.fullmatch(attrs[1][1])
+            if match is None:
+                raise DidNotFindNextSiteException(attrs[1][1])
+            raise FoundNextSite(match.group(1))
         if tag == "td":
             self._is_in_td = True
             if self._current_section == "info-table" and \
@@ -105,6 +136,8 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
         self._is_in_tag = True
 
     def handle_endtag(self, tag):
+        if self._is_parsing_until_next_site and tag == "head":
+            raise DidNotFindNextSiteException()
         if self._current_section == "substitution-table":
             if tag == "tr" and self._current_substitution:
                 subs_data = self._current_substitution

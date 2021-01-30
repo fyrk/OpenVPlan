@@ -2,7 +2,7 @@ import asyncio
 import datetime
 import logging
 import time
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
 
@@ -73,8 +73,8 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
             parser = self._parser_class(storage, current_timestamp, stream, num, **self._parser_options)
             # ignore PyTypeChecker because parser.parse is an async generator, not a coroutine
             # noinspection PyTypeChecker
-            next_site: AsyncGenerator = await parser.parse_next_site()
-            if b"001" == next_site:
+            next_site = await parser.parse_next_site()
+            if next_site == "001":
                 _LOGGER.debug(f"[multipage-crawler] {num} is last site")
                 last_site_num = num
                 for l in loads[num-current_site+1:]:
