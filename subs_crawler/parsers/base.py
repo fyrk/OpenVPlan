@@ -54,5 +54,5 @@ class BaseMultiPageSubstitutionParser(BaseSubstitutionParser):
         self._site_num = site_num
 
     @abstractmethod
-    async def parse_next_site(self) -> bytes:
+    async def parse_next_site(self) -> str:
         ...
