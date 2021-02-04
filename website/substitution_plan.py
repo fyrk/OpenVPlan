@@ -31,9 +31,11 @@ SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(
 DELETE_COOKIE_EXPIRE = formatdate(0)
 
 RESPONSE_HEADERS = {
-    "Content-Security-Policy": "default-src 'self'; img-src 'self' data:; "
+    "Content-Security-Policy": "default-src 'self'; "
+                               "img-src 'self' data:; "
                                "script-src 'self' 'sha256-l2h6bLQWX9C8tLEINfO+loK3K/jPEQRB05YAe9ehO1o='; "
-                               "connect-src 'self' " + ("ws:" if config.get_bool("dev") else "wss:"),
+                               "connect-src 'self' " + ("ws:" if config.get_bool("dev") else "wss:") + "; "
+                               "frame-src 'self' mailto:",
     "Strict-Transport-Security": "max-age=63072000",
     "Referrer-Policy": "same-origin",
     "X-Content-Type-Options": "nosniff",
