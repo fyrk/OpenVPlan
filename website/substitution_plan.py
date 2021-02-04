@@ -194,8 +194,11 @@ class SubstitutionPlan:
                                     if substitutions_have_changed:
                                         await self._recreate_index_site()
                                         self._event_new_substitutions.set()
+        except (asyncio.CancelledError, asyncio.TimeoutError):
+            pass
         finally:
             self._websockets.remove(ws)
+            _LOGGER.info(f"WebSocket connection closed: {ws.close_code}")
         return ws
 
     # /api/subscribe-push
