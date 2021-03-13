@@ -124,7 +124,7 @@ self.addEventListener("notificationclick", event => {
                 return client.focus();
         }
         if (self.clients.openWindow)
-            return self.clients.openWindow(event.notification.data.url).then(windowClient => windowClient.focus());
+            return self.clients.openWindow(event.notification.data.url);
     }));
 
     // close all notifications
