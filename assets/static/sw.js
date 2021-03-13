@@ -130,7 +130,7 @@ self.addEventListener("notificationclick", event => {
     // close all notifications
     self.registration.getNotifications().then(notifications => {
         notifications.forEach(n => {
-            if (event.notification.data.plan_id === n.data.plan_id)
+            if (n.data != null && event.notification.data.plan_id === n.data.plan_id)
                 n.close()
         });
     });
