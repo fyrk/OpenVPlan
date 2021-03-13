@@ -1,8 +1,8 @@
+import argparse
 import os
 import time
 from functools import partial
 
-import argparse
 import jinja2
 from aiohttp import client, hdrs, http, web
 from aiohttp.web_fileresponse import FileResponse
@@ -31,9 +31,10 @@ REQUEST_HEADERS = {hdrs.USER_AGENT: REQUEST_USER_AGENT}
 
 STATIC_PATH = os.path.join(WORKING_DIR, "assets/static/")
 STATS_PATH = os.path.join(DATA_DIR, "stats/")
+KNOWN_JS_ERRORS_PATH = os.path.join(WORKING_DIR, "known_js_errors.json")
 
 
-stats = Stats(STATS_PATH)
+stats = Stats(STATS_PATH, KNOWN_JS_ERRORS_PATH)
 
 env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.join(WORKING_DIR, "assets/templates")),
