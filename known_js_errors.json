@@ -1,0 +1,39 @@
+{
+    "InvalidStateError": [
+        {
+            "message": "Uncaught InvalidStateError: Failed to execute 'send' on 'WebSocket': Still in CONNECTING state.",
+            "filename*": "/assets/js/substitutions.min.js?v=4",
+            "_issue": "https://github.com/FlorianRaediker/GaW-Vertretungsplan/issues/18",
+            "_comment": "Chrome"
+        },
+        {
+            "message": "InvalidStateError: The object is in an invalid state.",
+            "filename*": "/assets/js/substitutions.min.js?v=4",
+            "_issue": "https://github.com/FlorianRaediker/GaW-Vertretungsplan/issues/18",
+            "_comment": "Safari (iOS)"
+        }
+    ],
+    "SecurityError": {
+        "message": "The operation is insecure.",
+        "stack*": "/assets/js/substitutions.min.js?v=4:17:65\n",
+        "user_agent*": "Firefox",
+        "_comment": "Probably caused by https://stackoverflow.com/questions/49539306/firefox-service-worker-securityerror-domexception-the-operation-is-insecure"
+    },
+
+
+    "__fixed": {
+        "_comment": "these errors are only kept for reference, they should be fixed",
+        "InvalidAccessError": {
+            "message": "Not allowed to focus a window.",
+            "filename": null,
+            "_issue": "https://github.com/FlorianRaediker/GaW-Vertretungsplan/issues/19"
+        },
+        "TypeError": {
+            "message": "Cannot read property 'plan_id' of null",
+            "filename": null,
+            "lineno": null,
+            "colno": null,
+            "stack": "TypeError: Cannot read property 'plan_id' of null\n    at https://gawvertretung.florian-raediker.de/sw.min.js:3:312"
+        }
+    }
+}
