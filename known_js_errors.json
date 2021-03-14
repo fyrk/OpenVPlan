@@ -1,8 +1,4 @@
 {
-    "TypeError": {
-        "message": "Uncaught TypeError: test",
-        "filename*": "/assets/js/substitutions.min.js?v=4"
-    },
     "InvalidStateError": [
         {
             "message": "Uncaught InvalidStateError: Failed to execute 'send' on 'WebSocket': Still in CONNECTING state.",
