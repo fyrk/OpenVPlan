@@ -1,7 +1,6 @@
 import csv
 import datetime
 import hashlib
-import json
 import logging
 import os.path
 
@@ -21,17 +20,13 @@ class Stats:
         "google"  # Google Image Proxy 11
     ]
 
-    def __init__(self, directory, known_js_errors_filepath):
-        with open(known_js_errors_filepath, "r") as f:
-            self.known_js_errors = {k: v if type(v) == list else [v] for k, v in json.load(f).items()}
+    def __init__(self, directory):
         self._status_file = open(os.path.join(directory, "status.csv"), "a", newline="", buffering=1)
         self._status = csv.writer(self._status_file)
         self._requests_file = open(os.path.join(directory, "requests.csv"), "a", newline="", buffering=1)
         self._requests = csv.writer(self._requests_file)
         self._js_errors_file = open(os.path.join(directory, "js_errors.csv"), "a", newline="", buffering=1)
         self._js_errors = csv.writer(self._js_errors_file)
-        self._known_js_errors_file = open(os.path.join(directory, "known_js_errors.csv"), "a", newline="", buffering=1)
-        self._known_js_errors = csv.writer(self._known_js_errors_file)
 
     def __del__(self):
         self._status_file.close()
@@ -61,25 +56,5 @@ class Stats:
                                  request.headers.get(hdrs.USER_AGENT), request.headers.get(hdrs.REFERER), remote))
 
     async def new_js_error(self, name, message, description, number, filename, lineno, colno, stack, user_agent):
-        # find out whether error is new or already known
-        is_known = False
-        if name in self.known_js_errors:
-            reported = dict(name=name, message=message, description=description, number=number, filename=filename,
-                            lineno=lineno, colno=colno, stack=stack, user_agent=user_agent)
-            for error in self.known_js_errors[name]:
-                for key, value in error.items():
-                    if key.endswith("*"):
-                        key = key[:-1]
-                        if not (key in reported and value in reported[key]):
-                            break
-                    else:
-                        if reported[key] != value:
-                            break
-                else:
-                    # loop did not break, reported error matches known error
-                    is_known = True
-                    break
-
-        (self._known_js_errors if is_known else self._js_errors).writerow(
-            (datetime.datetime.now().isoformat(), name, message, description, number,
-             filename, lineno, colno, stack, user_agent))
+        self._js_errors.writerow((datetime.datetime.now().isoformat(), name, message, description, number,
+                                  filename, lineno, colno, stack, user_agent))
