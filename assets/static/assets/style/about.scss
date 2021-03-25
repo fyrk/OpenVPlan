@@ -2,24 +2,18 @@
 body, p {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    background-color: white;
+    padding: 1em;
 }
 
 #view-e {
-    //cursor: pointer;
     text-decoration: none;
-
+    color: #e07d00;
+    cursor: pointer;
+    &::before {
+        content: "\67\61\77\76\65\72\74\72\65\74\75\6e\67\40";
+   }
     &::after {
-        content: "E-Mail-Adresse ansehen";
-        color: #e07d00;
-    }
-    &:hover {
-        &::before {
-            content: "\66\6c\6f\72\69\61\6e\2e\72\61\65\64\69\6b\65\72\2e\64\65\2b\61\62\6f\75\74\40";
-            color: black;
-       }
-        &::after {
-            content: "\67\6d\61\69\6c\2e\63\6f\6d";
-            color: black;
-        }
+        content: "\66\6c\6f\72\69\61\6e\2d\72\61\65\64\69\6b\65\72\2e\64\65";
     }
 }

@@ -39,7 +39,8 @@ env = jinja2.Environment(
     bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(DATA_DIR, "template_cache/")),
     enable_async=True,
     trim_blocks=True,
-    lstrip_blocks=True
+    lstrip_blocks=True,
+    auto_reload=config.get_bool("dev")
 )
 TEMPLATE_PRIVACY = env.get_template("privacy.min.html")
 TEMPLATE_ABOUT = env.get_template("about.min.html")
@@ -98,11 +99,10 @@ async def report_js_error_handler(request: web.Request):
     if request.content_length < 10000:
         try:
             data = await request.post()
-            if data.keys() == {"name", "message", "description", "number", "filename", "lineno", "colno", "stack",
-                               "user_agent"}:
-                await stats.new_js_error(**data)
-            else:
-                _LOGGER.warn(f"JS error report body has wrong params: {data.keys()}")
+            await stats.new_js_error(
+                data.get("name", ""), data.get("message", ""), data.get("description", ""), data.get("number", ""),
+                data.get("filename", ""), data.get("lineno", ""), data.get("colno", ""), data.get("stack", ""),
+                data.get("user_agent", ""))
         except Exception:
             _LOGGER.exception("Exception while handling JS error report")
     else:
