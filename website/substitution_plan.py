@@ -35,7 +35,7 @@ RESPONSE_HEADERS = {
                                "img-src 'self' data:; "
                                "script-src 'self' 'sha256-l2h6bLQWX9C8tLEINfO+loK3K/jPEQRB05YAe9ehO1o='; "
                                "connect-src 'self' " + ("ws:" if config.get_bool("dev") else "wss:") + "; "
-                               "frame-src 'self' mailto:",
+                               "frame-src 'self' mailto:; object-src 'self' mailto:",
     "Strict-Transport-Security": "max-age=63072000",
     "Referrer-Policy": "same-origin",
     "X-Content-Type-Options": "nosniff",
