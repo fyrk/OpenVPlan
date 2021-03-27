@@ -32,7 +32,6 @@ REQUEST_HEADERS = {hdrs.USER_AGENT: REQUEST_USER_AGENT}
 STATIC_PATH = os.path.join(WORKING_DIR, "assets/static/")
 STATS_PATH = os.path.join(DATA_DIR, "stats/")
 
-
 stats = Stats(STATS_PATH)
 
 env = jinja2.Environment(

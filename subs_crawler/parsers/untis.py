@@ -80,19 +80,18 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
 
     async def parse(self):
         self._is_parsing_until_next_site = False
-        # parse anything that is buffered because parse_next_site exits without parsing further than
-        # <meta http-equiv="refresh" ...>:
-        self.goahead(False)
         try:
+            # parse anything that is buffered because parse_next_site exits without parsing further than
+            # <meta http-equiv="refresh" ...>:
+            self.goahead(False)
             while True:
                 r = (await self._stream.readany()).decode(self._encoding)
                 if not r:
                     return
-                try:
-                    self.feed(r)
-                except SubstitutionsTooOldException:
-                    _LOGGER.debug(f"{self._site_num} is outdated, skipping")
-                    return
+                self.feed(r)
+        except SubstitutionsTooOldException:
+            _LOGGER.debug(f"{self._site_num} is outdated, skipping")
+            return
         except Exception as e:
             _LOGGER.error(f"{self._site_num} Exception while parsing")
             raise e

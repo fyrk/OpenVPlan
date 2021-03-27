@@ -53,7 +53,7 @@ self.addEventListener("push", async (event) => {
     event.waitUntil(
         self.registration.getNotifications().then(notifications => {
             for (let n of notifications) {
-                if (n.data.plan_id === plan_id) {
+                if (n.data && n.data.plan_id === plan_id) {
                     for (let [expiryTime, day] of Object.entries(n.data.affected_groups_by_day)) {
                         console.log("expiryTime, currentTimestamp:", expiryTime, currentTimestamp);
                         if (expiryTime > currentTimestamp) {
@@ -124,13 +124,13 @@ self.addEventListener("notificationclick", event => {
                 return client.focus();
         }
         if (self.clients.openWindow)
-            return self.clients.openWindow(event.notification.data.url).then(windowClient => windowClient.focus());
+            return self.clients.openWindow(event.notification.data.url);
     }));
 
     // close all notifications
     self.registration.getNotifications().then(notifications => {
         notifications.forEach(n => {
-            if (event.notification.data.plan_id === n.data.plan_id)
+            if (n.data != null && n.data.plan_id === event.notification.data.plan_id)
                 n.close()
         });
     });

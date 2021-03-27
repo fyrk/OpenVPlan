@@ -56,5 +56,5 @@ class Stats:
                                  request.headers.get(hdrs.USER_AGENT), request.headers.get(hdrs.REFERER), remote))
 
     async def new_js_error(self, name, message, description, number, filename, lineno, colno, stack, user_agent):
-        self._js_errors.writerow((datetime.datetime.now().isoformat(), name, message, description, number, filename,
-                                  lineno, colno, stack, user_agent))
+        self._js_errors.writerow((datetime.datetime.now().isoformat(), name, message, description, number,
+                                  filename, lineno, colno, stack, user_agent))
