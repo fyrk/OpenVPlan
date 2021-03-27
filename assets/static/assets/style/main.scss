@@ -203,3 +203,12 @@ body, .text-muted, .form-control, .form-control:focus, .custom-control-input:not
 .nav-pills .nav-link.active, .btn, .btn:hover, .box, .title-box, footer {
     transition: color .2s, background-color .2s;
 }
+
+
+// ========================
+// MISCELLANEOUS
+
+object {
+    // Chrome adds a white background (instead of transparent) to <object> if (prefers-color-scheme: dark). Fix:
+    color-scheme: light;
+}
