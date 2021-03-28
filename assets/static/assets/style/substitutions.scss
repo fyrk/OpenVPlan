@@ -140,8 +140,7 @@ $day-info-heading-font-size: 1.15rem;
     font-weight: $font-weight-bold;
 }
 
-// .online is added by JavaScript
-#online-status.online::before {
+#online-status.online::before { // .online is added by JS
     background-color: #34ce57;
     width: 0.8em;
     height: 0.8em;
@@ -156,23 +155,18 @@ $day-info-heading-font-size: 1.15rem;
 }
 
 @keyframes blink {
-    0% {
-        opacity: 1;
-    }
-    35% {
-        opacity: 0;
-    }
-    80% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 1;
-    }
+      0% { opacity: 1 }
+     35% { opacity: 0 }
+     80% { opacity: 1 }
+    100% { opacity: 1 }
 }
 
-// .offline is added by JavaScript
-#online-status.offline {
+#online-status.offline { // .offline is added by JS
     color: red;
+}
+
+#online-status.updating { // .updating is added by JS
+
 }
 
 

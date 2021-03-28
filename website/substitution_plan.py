@@ -184,18 +184,15 @@ class SubstitutionPlan:
                         _LOGGER.exception("WebSocket: Received malformed JSON message")
                     else:
                         if "type" in data:
-                            if data["type"] == "check_status":
-                                if "status" in data:
-                                    substitutions_have_changed, affected_groups = \
-                                        await self._crawler.update(self.client_session)
-                                    if affected_groups:
-                                        self._affected_groups = affected_groups
-                                    if self._crawler.storage.status != data["status"]:
-                                        # inform client that substitutions are not up-to-date
-                                        await ws.send_json({"type": "new_substitutions"})
-                                    if substitutions_have_changed:
-                                        await self._recreate_index_site()
-                                        self._event_new_substitutions.set()
+                            if data["type"] == "get_status":
+                                substitutions_have_changed, affected_groups = \
+                                    await self._crawler.update(self.client_session)
+                                if affected_groups:
+                                    self._affected_groups = affected_groups
+                                await ws.send_json({"type": "status", "status": self._crawler.storage.status})
+                                if substitutions_have_changed:
+                                    await self._recreate_index_site()
+                                    self._event_new_substitutions.set()
         except (asyncio.CancelledError, asyncio.TimeoutError):
             pass
         finally:
