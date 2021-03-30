@@ -141,7 +141,7 @@
 <div class="box">
     <h1>Einstellungen</h1>
     <h2 id="select-heading">{{ options["texts"]["select_heading"]|safe }}</h2>
-    <form class="form" type="get">
+    <form class="form" method="get">
         {% if not selection %}
             <label for="selectionInput" class="form-label">{{ options["texts"]["select_text"]|safe }}</label>
         {% endif %}
