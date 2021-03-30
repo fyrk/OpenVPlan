@@ -13,11 +13,11 @@ _LOGGER = logging.getLogger("gawvertretung")
 
 class Stats:
     _BOT_USER_AGENTS = [
-        "bot",    # Google Bots, Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
-        "spider", # Baiduspider, Sogou Spider
-        "crawl",  # ia_archiver (Alexa)
-        "yahoo",  # Slurp (Yahoo)
-        "google"  # Google Image Proxy 11
+        "bot",     # Google Bots, Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
+        "spider",  # Baiduspider, Sogou Spider
+        "crawl",   # ia_archiver (Alexa)
+        "yahoo",   # Slurp (Yahoo)
+        "google"   # Google Image Proxy 11
     ]
 
     def __init__(self, directory):

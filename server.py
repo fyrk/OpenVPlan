@@ -9,7 +9,7 @@ from aiohttp.web_fileresponse import FileResponse
 
 import subs_crawler
 from website import config, logger
-from website.db import SubstitutionPlanDBStorage
+from website.db import SubstitutionPlanDB
 from website.stats import Stats
 from website.substitution_plan import RESPONSE_HEADERS, SubstitutionPlan
 
@@ -38,6 +38,7 @@ env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.join(WORKING_DIR, "assets/templates")),
     bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(DATA_DIR, "template_cache/")),
     enable_async=True,
+    autoescape=True,
     trim_blocks=True,
     lstrip_blocks=True,
     auto_reload=config.get_bool("dev")
@@ -97,6 +98,7 @@ def template_handler(template: jinja2.Template):
 
 async def report_js_error_handler(request: web.Request):
     if request.content_length < 10000:
+        # noinspection PyBroadException
         try:
             data = await request.post()
             await stats.new_js_error(
@@ -120,12 +122,11 @@ async def client_session_context(app: web.Application):
 
 
 async def databases_context(app: web.Application):
+    db = SubstitutionPlanDB(os.path.join(DATA_DIR, "storage/db.sqlite3"))
     for substitution_plan in app["substitution_plans"].values():
-        storage = SubstitutionPlanDBStorage(os.path.join(DATA_DIR, "storage/" + substitution_plan.name + ".sqlite3"))
-        substitution_plan.storage = storage
+        substitution_plan.db = db
     yield
-    for substitution_plan in app["substitution_plans"].values():
-        substitution_plan.storage.close()
+    db.close()
 
 
 async def app_factory(dev_mode=False):
@@ -135,29 +136,32 @@ async def app_factory(dev_mode=False):
         raise ValueError("No default_plan configured")
     app = web.Application(middlewares=[logger.logging_middleware, stats_middleware, error_middleware])
     app["substitution_plans"] = {}
-    for name, plan_config in config.get("substitution_plans").items():
+    for plan_id, plan_config in config.get("substitution_plans").items():
+        crawler_id = plan_config["crawler"]["name"]
         try:
-            crawler_class = subs_crawler.CRAWLERS[plan_config["crawler"]]
+            crawler_class = subs_crawler.CRAWLERS[crawler_id]
         except KeyError:
-            raise ValueError(f"Invalid crawler id '{plan_config['crawler']}")
+            raise ValueError(f"Invalid crawler id '{crawler_id}")
+        parser_id = plan_config["parser"]["name"]
         try:
-            parser_class = subs_crawler.PARSERS[plan_config["parser"]]
+            parser_class = subs_crawler.PARSERS[parser_id]
         except KeyError:
-            raise ValueError(f"Invalid parser id '{plan_config['parser']}'")
-        crawler_options = plan_config.get("crawler_options", {})
-        parser_options = plan_config.get("parser_options", {})
+            raise ValueError(f"Invalid parser id '{parser_id}'")
+        crawler_options = plan_config["crawler"].get("options", {})
+        parser_options = plan_config["parser"].get("options", {})
         template_options = plan_config.get("template_options", {})
         crawler = crawler_class(parser_class, parser_options, **crawler_options)
-        crawler.on_status_changed = partial(stats.add_last_site, name)
-        plan = SubstitutionPlan(name, crawler, env.get_template("substitution-plan.min.html"),
-                                env.get_template("error-500-substitution-plan.min.html"), template_options)
+        crawler.on_status_changed = partial(stats.add_last_site, plan_id)
+        plan = SubstitutionPlan(plan_id, crawler, env.get_template("substitution-plan.min.html"),
+                                env.get_template("error-500-substitution-plan.min.html"), template_options,
+                                plan_config.get("uppercase_selection", False))
 
-        await plan.deserialize(os.path.join(DATA_DIR, f"substitutions/{name}.pickle"))
+        await plan.deserialize(os.path.join(DATA_DIR, f"substitutions/{plan_id}.pickle"))
 
-        app.add_subapp(f"/{name}/",
-                       plan.create_app(os.path.abspath("assets/static/" + name) if config.get_bool("dev") else None))
+        app.add_subapp(f"/{plan_id}/",
+                       plan.create_app(os.path.abspath("assets/static/" + plan_id) if config.get_bool("dev") else None))
 
-        app["substitution_plans"][name] = plan
+        app["substitution_plans"][plan_id] = plan
 
     async def root_handler(request: web.Request):
         location = f"/{config.get('default_plan')}/"

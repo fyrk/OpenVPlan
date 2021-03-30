@@ -2,10 +2,8 @@ import hashlib
 import json
 import logging
 import sqlite3
-import time
-import urllib
 import urllib.parse
-from typing import Dict, Generator, List, Tuple, Union
+from typing import Iterable
 
 _LOGGER = logging.getLogger("gawvertretung")
 
@@ -16,60 +14,40 @@ sqlite3.register_converter("SELECTION", lambda s: [t.strip() for t in s.decode("
 sqlite3.register_adapter(list, lambda selection: ",".join(selection).encode("utf-8"))
 
 
-class SubstitutionPlanDBStorage:
+class SubstitutionPlanDB:
     def __init__(self, filepath, **kwargs):
         self._connection = sqlite3.connect(filepath, detect_types=sqlite3.PARSE_DECLTYPES, **kwargs)
         self._connection.row_factory = sqlite3.Row
         self._cursor = self._connection.cursor()
-        self._cursor.execute("CREATE TABLE IF NOT EXISTS push_subscriptions "
-                             "(subscription JSON, endpoint TEXT PRIMARY KEY UNIQUE, endpoint_hash TEXT, "
-                             "endpoint_origin TEXT, expiration_time TIMESTAMP, selection SELECTION, is_active BOOLEAN)")
+        self._cursor.execute("CREATE TABLE IF NOT EXISTS push_subscriptions2 "
+                             "(plan_id TEXT, subscription JSON, selection SELECTION, is_active BOOLEAN,"
+                             " endpoint_hash TEXT, endpoint_origin TEXT, unique(plan_id, subscription))")
         self._connection.commit()
 
     def close(self):
         self._connection.close()
 
-    def add_push_subscription(self, subscription: dict, selection: str, is_active: bool):
+    def add_push_subscription(self, plan_id: str, subscription: dict, selection: str, is_active: bool):
         selection = selection.upper()
         try:
             endpoint = subscription["endpoint"]
             endpoint_hash = hashlib.blake2b(endpoint.encode("utf-8"), digest_size=3).hexdigest()
             parsed = urllib.parse.urlparse(endpoint)
             endpoint_origin = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
-            expiration_time = subscription.get("expirationTime")
         except Exception:
             raise ValueError("Wrong subscription object '" + str(subscription) + "'")
-        self._cursor.execute("REPLACE INTO push_subscriptions VALUES (?,?,?,?,?,?,?)",
-                             (subscription, endpoint, endpoint_hash, endpoint_origin, expiration_time, selection,
-                              is_active))
+        self._cursor.execute("REPLACE INTO push_subscriptions2 VALUES (?,?,?,?,?,?)",
+                             (plan_id, subscription, selection, is_active, endpoint_hash, endpoint_origin))
         self._connection.commit()
-        _LOGGER.debug(f"Add push subscription {endpoint_hash} ({endpoint_origin}) (is_active={is_active})")
+        _LOGGER.debug(f"Add push subscription {plan_id}-{endpoint_hash} "
+                      f"(is_active={is_active}, origin={endpoint_origin})")
 
-    def iter_active_push_subscriptions(self, affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]) -> \
-            Generator[Tuple[dict, Dict[int, Dict[str, Union[str, List[str]]]]], None, None]:
-        current_time = time.time()
-        self._cursor.execute("SELECT * FROM push_subscriptions")
-        for subscription_entry in self._cursor:
-            expiration_time = subscription_entry["expiration_time"]
-            if expiration_time is not None and expiration_time >= current_time:
-                # TODO remove row
-                continue
-            if subscription_entry["is_active"]:
-                selection = subscription_entry["selection"]
-                if selection is None:
-                    # selection is None when all groups are selected (empty selection)
-                    yield subscription_entry, affected_groups
-                else:
-                    intersection = {}
-                    for expiry_time, day in affected_groups.items():
-                        groups = day["groups"]
-                        common_groups = [s for s in selection if any(s in g for g in groups)]
-                        if common_groups:
-                            intersection[expiry_time] = {"name": day["name"], "groups": common_groups}
-                    if intersection:
-                        yield subscription_entry, intersection
+    def iter_active_push_subscriptions(self, plan_id: str) -> Iterable[sqlite3.Row]:
+        return self._cursor.execute("SELECT * FROM push_subscriptions2 WHERE plan_id=? AND is_active=1", (plan_id,))
 
-    def delete_push_subscription(self, subscription_entry: sqlite3.Row):
-        self._cursor.execute("DELETE FROM push_subscriptions WHERE endpoint=?", (subscription_entry["endpoint"],))
-        _LOGGER.debug(f"Deleted push subscription {subscription_entry['endpoint_hash']} "
-                      f"({subscription_entry['endpoint_origin']})")
+    def delete_push_subscription(self, subscription: sqlite3.Row):
+        plan_id = subscription["plan_id"]
+        self._cursor.execute("DELETE FROM push_subscriptions2 WHERE plan_id=? AND subscription=?",
+                             (plan_id, subscription["subscription"]))
+        _LOGGER.debug(f"Deleted push subscription {plan_id}-{subscription['endpoint_hash']} "
+                      f"(is_active={subscription['is_active']}, origin={subscription['endpoint_origin']})")

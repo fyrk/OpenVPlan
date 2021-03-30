@@ -126,6 +126,7 @@ $day-info-heading-font-size: 1.15rem;
         padding-left: $table-cell-padding-x-sm + 1.2rem;
     }
 
+    //noinspection ALL
     .group-name.selectable {
         position: relative;
     }
@@ -163,10 +164,6 @@ $day-info-heading-font-size: 1.15rem;
 
 #online-status.offline { // .offline is added by JS
     color: red;
-}
-
-#online-status.updating { // .updating is added by JS
-
 }
 
 

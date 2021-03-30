@@ -140,17 +140,17 @@
 
 <div class="box">
     <h1>Einstellungen</h1>
-    <h2 id="select-heading">{{ options["texts"]["select_heading"] }}</h2>
+    <h2 id="select-heading">{{ options["texts"]["select_heading"]|safe }}</h2>
     <form class="form" type="get">
         {% if not selection %}
-            <label for="selectionInput" class="form-label">{{ options["texts"]["select_text"] }}</label>
+            <label for="selectionInput" class="form-label">{{ options["texts"]["select_text"]|safe }}</label>
         {% endif %}
         <div class="row">
             <div class="col-9 col-sm-6 col-md-4 col-xl-3">
                 <input type="text" class="form-control" id="selectionInput" name="s" required
                        value="{% if selection %}{{ selection_str|e }}{% endif %}" aria-describedby="selectionHelp">
                 <small id="selectionHelp" class="form-text text-muted">
-                    {{ options["texts"]["selection_help_text"] }}
+                    {{ options["texts"]["selection_help_text"]|safe }}
                 </small>
             </div>
             <div class="col-3 col-sm-1 col-md-1">
@@ -159,7 +159,7 @@
         </div>
         {% if selection %}
             <div class="mt-3 ms-2">
-                <a class="btn btn-primary" href="?all">{{ options["texts"]["selection_all"] }}</a>
+                <a class="btn btn-primary" href="?all">{{ options["texts"]["selection_all"]|safe }}</a>
             </div>
         {% endif %}
     </form>
@@ -177,7 +177,7 @@
             <input class="form-check-input" type="checkbox" id="toggle-notifications">
             <label class="form-check-label user-select-none" for="toggle-notifications">
                 <template id="notifications-info-none">Benachrichtigungen sind deaktiviert</template>
-                <template id="notifications-info-all">{{ options["texts"]["notifications_info_all"] }}</template>
+                <template id="notifications-info-all">{{ options["texts"]["notifications_info_all"]|safe }}</template>
                 <template id="notifications-info-selection">
                     Du wirst für <i>{{ selection_str|e }}</i> benachrichtigt
                 </template>

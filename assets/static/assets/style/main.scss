@@ -87,13 +87,10 @@ body, html {
 }
 
 #content {
+    //noinspection CssUnusedSymbol
     @extend .p-0, .px-sm-3;
     flex: 1 0 auto;
     max-width: 1140px;
-}
-
-.footer {
-    flex-shrink: 0;
 }
 
 .btn-close {
@@ -104,6 +101,7 @@ body, html {
 // ========================
 // BOXES
 
+//noinspection CssUnusedSymbol
 .box {
     @extend .my-sm-3;
     padding: 1rem 1.5rem;
@@ -132,7 +130,7 @@ body, html {
 // Title
 
 .title-box {
-    @extend .user-select-none;
+    user-select: none;
     text-align: center;
     padding: $spacer * .8;
     font-size: $font-size-base * 1.65;
@@ -199,6 +197,7 @@ footer {
 // ========================
 // SMOOTH TRANSITIONS FOR DARK THEME
 
+//noinspection CssUnusedSymbol
 body, .text-muted, .form-control, .form-control:focus, .custom-control-input:not(:checked) ~ .custom-control-label::before,
 .nav-pills .nav-link.active, .btn, .btn:hover, .box, .title-box, footer {
     transition: color .2s, background-color .2s;

@@ -23,7 +23,7 @@ function reportError(error, event=null) {
             stack: (event == null ? undefined : event.stack) || error.stack,  // error.stack is non-standard Mozilla property
             user_agent: navigator.userAgent
         })
-    })
+    }).catch(reason => console.error("reporting error failed", reason))
 }
 
 self.addEventListener("error", e => {

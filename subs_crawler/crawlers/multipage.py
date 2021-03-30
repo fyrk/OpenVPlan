@@ -39,7 +39,8 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
         t2 = time.perf_counter_ns()
         new_status_string, new_status_datetime = await self._parser_class.get_status(first_site)
         old_status = self._storage.status if self._storage is not None else None
-        _LOGGER.debug(f"[multipage-crawler] Got answer in {t2 - t1}ns, status is {repr(new_status_string)} (old: {repr(old_status)})")
+        _LOGGER.debug(f"[multipage-crawler] Got answer in {t2 - t1}ns, status is {repr(new_status_string)}"
+                      f"(old: {repr(old_status)})")
         affected_groups = None
         if new_status_string != old_status:
             # status changed, load new data
@@ -136,7 +137,8 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                              for num in range(current_site, next_site)]
                 _LOGGER.debug(f"[multipage-crawler] Loading pages {current_site} to {next_site - 1}")
                 try:
-                    done, pending = await asyncio.wait_for(asyncio.wait(loads, return_when=asyncio.FIRST_EXCEPTION), timeout=1.0)
+                    done, pending = await asyncio.wait_for(asyncio.wait(loads, return_when=asyncio.FIRST_EXCEPTION),
+                                                           timeout=1.0)
                 except Exception as e:
                     _LOGGER.error("[multipage-crawler] Got exception")
                     for l in loads:

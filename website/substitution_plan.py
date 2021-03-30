@@ -11,14 +11,11 @@ from typing import Dict, Iterable, List, MutableSet, Optional, Union
 import jinja2
 import pywebpush
 from aiohttp import ClientSession, web, WSMessage, WSMsgType
-from cryptography.hazmat.primitives import serialization
-from py_vapid.jwt import sign
-from py_vapid.utils import b64urlencode
 
 from subs_crawler.crawlers.base import BaseSubstitutionCrawler
 from subs_crawler.utils import split_selection
 from website import config, logger
-from website.db import SubstitutionPlanDBStorage
+from website.db import SubstitutionPlanDB
 
 _LOGGER = logging.getLogger("gawvertretung")
 
@@ -50,20 +47,26 @@ RESPONSE_HEADERS_SELECTION = {
 }
 
 
+# intercept pywebpush.WebPusher.as_curl() call in pywebpush.WebPusher.send() so that request can be made with aiohttp
+# a call to pywebpush.webpush will now return (endpoint, data, headers)
+pywebpush.WebPusher.as_curl = lambda s, e, d, h: (e, d, h)
+
+
 class SubstitutionPlan:
     def __init__(self, plan_id: str, crawler: BaseSubstitutionCrawler, template: jinja2.Template,
-                 error500_template: jinja2.Template, template_options: dict):
+                 error500_template: jinja2.Template, template_options: dict, uppercase_selection: bool):
         self._plan_id = plan_id
         self._crawler = crawler
         self._template = template
         self._error500_template = error500_template
         self._template_options = template_options
         self._template_options["id"] = self._plan_id
-        self._event_new_substitutions = asyncio.Event()
+        self._uppercase_selection = uppercase_selection
+        self._selection_cookie = self._plan_id + "-selection"
 
         self._index_site = None
         self._serialization_filepath = None
-        self.storage: Optional[SubstitutionPlanDBStorage] = None
+        self.db: Optional[SubstitutionPlanDB] = None
         self.client_session: Optional[ClientSession] = None
         self._app: Optional[web.Application] = None
         self._websockets: MutableSet[web.WebSocketResponse] = WeakSet()
@@ -88,9 +91,6 @@ class SubstitutionPlan:
         if self._crawler.storage is not None:
             await self._recreate_index_site()
 
-    def _prettify_selection(self, selection: List[str]) -> str:
-        return ", ".join(selection)
-
     async def _recreate_index_site(self):
         self._index_site = await self._template.render_async(storage=self._crawler.storage,
                                                              options=self._template_options)
@@ -104,56 +104,54 @@ class SubstitutionPlan:
         # noinspection PyBroadException
         try:
             if "all" not in request.query and "s" not in request.query:
-                if self._plan_id + "-selection" in request.cookies and \
-                        request.cookies[self._plan_id + "-selection"].strip():
+                if self._selection_cookie in request.cookies and request.cookies[self._selection_cookie].strip():
                     raise web.HTTPSeeOther(
-                        location="/" + self._plan_id + "/?s=" + request.cookies[self._plan_id + "-selection"]
-                    )
+                        location="/" + self._plan_id + "/?s=" + request.cookies[self._selection_cookie])
                 else:
                     raise web.HTTPSeeOther(location="/" + self._plan_id + "/?all")
+
             substitutions_have_changed, affected_groups = await self._crawler.update(self.client_session)
-            if affected_groups:
-                self._affected_groups = affected_groups
             if "event" in request.query and config.get_bool("dev"):
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
-                self._affected_groups = json.loads(request.query["event"])
+                affected_groups = json.loads(request.query["event"])
             if substitutions_have_changed:
                 _LOGGER.info("SUBSTITUTIONS HAVE CHANGED")
-            if "s" in request.query \
-                    and (selection := split_selection(selection_qs := ",".join(request.query.getall("s")))):
-                # noinspection PyUnboundLocalVariable
-                selection_str = self._prettify_selection(selection)
-                selection = [s.upper() for s in selection]
-                response = web.Response(
-                    text=await self._template.render_async(storage=self._crawler.storage, selection=selection,
-                                                           selection_str=selection_str, options=self._template_options),
-                    content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS_SELECTION)
-                # noinspection PyUnboundLocalVariable
-                response.set_cookie(self._plan_id + "-selection", selection_qs,
-                                    expires=SELECTION_COOKIE_EXPIRE, path="/"+self._plan_id+"/",
-                                    secure=not config.get_bool("dev"),  # secure in non-development mode
-                                    httponly=True, samesite="Lax")
+                self._affected_groups = affected_groups
+
+            selection = ""
+            selection_str = ""
+            selection_qs = ""
+            if "s" in request.query:
+                selection_qs = ",".join(request.query.getall("s"))
+                selection = split_selection(selection_qs)
+                if selection:
+                    selection_str = ", ".join(selection)
+                    if self._uppercase_selection:
+                        selection_str = selection_str.upper()
+                    selection = [s.upper() for s in selection]
+
+            if not selection:
                 if substitutions_have_changed:
-                    await response.prepare(request)
-                    await response.write_eof()
                     await self._recreate_index_site()
-                    self._event_new_substitutions.set()
+                text = self._index_site
             else:
-                if substitutions_have_changed or config.get_bool("dev"):
+                text = await self._template.render_async(storage=self._crawler.storage, selection=selection,
+                                                         selection_str=selection_str, options=self._template_options)
+
+            response = web.Response(text=text, content_type="text/html", charset="utf-8",
+                                    headers=RESPONSE_HEADERS_SELECTION)
+            response.set_cookie(self._selection_cookie, selection_qs,
+                                expires=SELECTION_COOKIE_EXPIRE, path="/" + self._plan_id + "/",
+                                secure=not config.get_bool("dev"),  # secure in non-development mode
+                                httponly=True, samesite="Lax")
+
+            if substitutions_have_changed:
+                await response.prepare(request)
+                await response.write_eof()
+                if selection:
                     await self._recreate_index_site()
-                response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8",
-                                        headers=RESPONSE_HEADERS)
-                # delete cookie by setting value to "":
-                response.set_cookie(self._plan_id + "-selection", "",
-                                    expires=SELECTION_COOKIE_EXPIRE, path="/"+self._plan_id+"/",
-                                    secure=not config.get_bool("dev"),  # secure in non-development mode
-                                    httponly=True, samesite="Lax")
-                if substitutions_have_changed:
-                    await response.prepare(request)
-                    await response.write_eof()
-                    self._event_new_substitutions.set()
-                return response
+                self._app.loop.create_task(self._on_new_substitutions(affected_groups))
         except web.HTTPException as e:
             raise e from None
         except Exception:
@@ -192,7 +190,7 @@ class SubstitutionPlan:
                                 await ws.send_json({"type": "status", "status": self._crawler.storage.status})
                                 if substitutions_have_changed:
                                     await self._recreate_index_site()
-                                    self._event_new_substitutions.set()
+                                    self._app.loop.create_task(self._on_new_substitutions(affected_groups))
         except (asyncio.CancelledError, asyncio.TimeoutError):
             pass
         finally:
@@ -206,22 +204,18 @@ class SubstitutionPlan:
         # noinspection PyBroadException
         try:
             data = await request.json()
-            self.storage.add_push_subscription(data["subscription"], data["selection"], data["is_active"])
+            self.db.add_push_subscription(self._plan_id, data["subscription"], data["selection"], data["is_active"])
         except Exception:
             _LOGGER.exception("Subscribing push service failed")
             return web.json_response({"ok": False}, status=400)
         return web.json_response({"ok": True})
 
     def create_app(self, static_path: Optional[str] = None) -> web.Application:
-        async def create_background_tasks(app):
-            app["background_tasks"] = asyncio.create_task(self._background_tasks())
-
         async def cleanup_background_tasks(app):
             app["background_tasks"].cancel()
             await app["background_tasks"]
 
         self._app = web.Application()
-        self._app.on_startup.append(create_background_tasks)
         self._app.on_cleanup.append(cleanup_background_tasks)
         self._app.add_routes([
             web.get("/", self._root_handler),
@@ -232,93 +226,88 @@ class SubstitutionPlan:
             self._app.router.add_static("/", static_path)
         return self._app
 
-    async def _background_tasks(self):
-        token = logger.PLAN_NAME_CONTEXTVAR.set(self._plan_id)
+    # background task on new substitutions
+    async def _on_new_substitutions(self, affected_groups):
+        logger.REQUEST_ID_CONTEXTVAR.set(None)
+        # noinspection PyBroadException
         try:
-            while True:
-                _LOGGER.debug("Waiting for new substitutions event...")
-                await self._event_new_substitutions.wait()
-                self._event_new_substitutions.clear()
-                # noinspection PyTypeChecker
-                affected_groups: Dict[int, Dict[str, Union[str, List[str]]]] = self._affected_groups
-                self._affected_groups = None
+            # SERIALIZE
+            await self.serialize(self._serialization_filepath)
 
-                # SERIALIZE
-                await self.serialize(self._serialization_filepath)
+            # WEBSOCKETS
+            _LOGGER.debug(f"Sending update event via WebSocket connection to {len(self._websockets)} clients")
+            for ws in self._websockets:
+                await ws.send_json({"type": "new_substitutions"})
 
-                # WEBSOCKETS
-                _LOGGER.debug(f"Sending update event via WebSocket connection to {len(self._websockets)} clients")
-                for ws in self._websockets:
-                    await ws.send_json({"type": "new_substitutions"})
+            # PUSH NOTIFICATIONS
+            if affected_groups:
+                _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
 
-                # PUSH NOTIFICATIONS
-                if affected_groups:
-                    _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
+                async def send_push_notification(
+                        subscription, common_affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]
+                ) -> Optional[sqlite3.Row]:
+                    endpoint_hash = subscription["endpoint_hash"]
+                    endpoint_origin = subscription["endpoint_origin"]
+                    _LOGGER.debug("Sending push notification to " + endpoint_hash)
+                    # noinspection PyBroadException
+                    try:
+                        data = json.dumps({"affected_groups_by_day": common_affected_groups,
+                                           "plan_id": self._plan_id,
+                                           # status_datetime.timestamp() correctly assumes that datetime is local
+                                           # time (status_datetime has no tzinfo) and returns the correct UTC
+                                           # timestamp
+                                           "timestamp": self._crawler.storage.status_datetime.timestamp()})
 
-                    async def send_push_notification(
-                            subscription_entry, common_affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]
-                    ) -> Optional[sqlite3.Row]:
-                        endpoint_hash = subscription_entry["endpoint_hash"]
-                        endpoint_origin = subscription_entry["endpoint_origin"]
-                        _LOGGER.debug("Sending push notification to " + endpoint_hash)
-                        # noinspection PyBroadException
-                        try:
-                            data = json.dumps({"affected_groups_by_day": common_affected_groups,
-                                               "plan_id": self._plan_id,
-                                               # status_datetime.timestamp() correctly assumes that datetime is local
-                                               # time (status_datetime has no tzinfo) and returns the correct UTC
-                                               # timestamp
-                                               "timestamp": self._crawler.storage.status_datetime.timestamp()})
-                            encoded = \
-                                pywebpush.WebPusher(subscription_info=subscription_entry["subscription"]).encode(data)
-                            headers = {"content-encoding": "aes128gcm"}
-                            if "crypto_key" in encoded:
-                                headers["crypto-key"] = "dh=" + encoded["crypto_key"].decode("utf-8")
-                            if "salt" in encoded:
-                                headers["encryption"] = "salt=" + encoded["salt"].decode("utf-8")
-
-                            vv = pywebpush.Vapid.from_string(private_key=config.get_str("private_vapid_key"))
-                            sig = sign({
+                        endpoint, data, headers = pywebpush.webpush(
+                            subscription["subscription"], data,
+                            vapid_private_key=config.get_str("private_vapid_key"),
+                            vapid_claims={
                                 "sub": config.get_str("vapid_sub"),
                                 "aud": endpoint_origin,
-                                # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not be
-                                # longer than 24 hours from the time the request is made)
+                                # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
+                                # be longer than 24 hours from the time the request is made)
                                 "exp": int(time.time()) + 86395
-                            }, vv.private_key)
-                            pkey = vv.public_key.public_bytes(serialization.Encoding.X962,
-                                                              serialization.PublicFormat.UncompressedPoint)
-                            headers["ttl"] = str(86400)
-                            headers["Authorization"] = f"{'vapid'} t={sig},k={b64urlencode(pkey)}"
+                            }, curl=True)  # modifications to make this work: see beginning of this file
+                        async with self.client_session.post(endpoint, data=data, headers=headers) as r:
+                            if r.status >= 400:
+                                _LOGGER.error(f"Could not send push notification to "
+                                              f"{self._plan_id}-{endpoint_hash} ({endpoint_origin}): "
+                                              f"{r.status} {repr(await r.text())}")
+                                # If status code is 404 or 410, the endpoints are unavailable, so delete the
+                                # subscription.
+                                # See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
+                                if r.status in (404, 410):
+                                    return subscription
+                            else:
+                                _LOGGER.debug(
+                                    f"Successfully sent push notification to {self._plan_id}-{endpoint_hash}: "
+                                    f"{r.status} {repr(await r.text())}")
+                    except Exception:
+                        _LOGGER.exception(f"Could not send push notification to "
+                                          f"{self._plan_id}-{endpoint_hash} ({endpoint_origin})")
+                    return None
 
-                            async with self.client_session.post(subscription_entry["endpoint"], data=encoded["body"],
-                                                                headers=headers) as r:
-                                if r.status >= 400:
-                                    _LOGGER.error(
-                                        f"Could not send push notification to {endpoint_hash} ({endpoint_origin}): "
-                                        f"{r.status} {repr(await r.text())}")
-                                    # If status code is 404 or 410, the endpoints are unavailable, so delete the
-                                    # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
-                                    if r.status in (404, 410):
-                                        return subscription_entry
-                                else:
-                                    _LOGGER.debug(f"Successfully sent push notification to {endpoint_hash}: {r.status} "
-                                                  f"{repr(await r.text())}")
-                        except Exception:
-                            _LOGGER.exception(f"Could not send push notification to "
-                                              f"{subscription_entry['endpoint_hash']} ({endpoint_origin})")
-                        return None
+                def iter_relevant_subscriptions():
+                    subscription: sqlite3.Row
+                    for subscription in self.db.iter_active_push_subscriptions(self._plan_id):
+                        selection = subscription["selection"]
+                        if selection is None:
+                            # selection is None when all groups are selected
+                            yield subscription, affected_groups
+                        else:
+                            intersection = {}
+                            for expiry_time, day in affected_groups.items():
+                                groups = day["groups"]
+                                common_groups = [s for s in selection if any(s in g for g in groups)]
+                                if common_groups:
+                                    intersection[expiry_time] = {"name": day["name"], "groups": common_groups}
+                            if intersection:
+                                yield subscription, intersection
 
-                    subscription_entries_to_delete: Iterable[sqlite3.Row] = await asyncio.gather(
-                        *(send_push_notification(subscription, common_affected_groups)
-                          for subscription, common_affected_groups in
-                          self.storage.iter_active_push_subscriptions(affected_groups)))
-                    for subscription_entry in subscription_entries_to_delete:
-                        if subscription_entry is not None:
-                            self.storage.delete_push_subscription(subscription_entry)
-        finally:
-            logger.PLAN_NAME_CONTEXTVAR.reset(token)
-
-
-class SubstitutionPlanUppercaseSelection(SubstitutionPlan):
-    def _prettify_selection(self, selection: List[str]) -> str:
-        return super()._prettify_selection(selection).upper()
+                subscriptions_to_delete: Iterable[sqlite3.Row] = await asyncio.gather(
+                    *(send_push_notification(s, i) for s, i in iter_relevant_subscriptions()))
+                for subscription in subscriptions_to_delete:
+                    if subscription is not None:
+                        self.db.delete_push_subscription(subscription)
+        except Exception:
+            _LOGGER.exception("Exception in on_new_substitutions background task")

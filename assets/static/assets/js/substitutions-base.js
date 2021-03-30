@@ -12,7 +12,7 @@ function reportError(error, event=null) {
             stack: (event == null ? undefined : event.stack) || error.stack,  // error.stack is non-standard Mozilla property
             user_agent: navigator.userAgent
         })
-    })
+    }).catch(reason => console.error("reporting error failed", reason))
 }
 
 window.addEventListener("error", e => {
@@ -31,7 +31,7 @@ const selection = document.getElementById("selectionInput").value;
 // The following is not in timetables.js so that it works even with no selection
 if (window.location.hash.startsWith("#timetable:")) {
     try {
-        let [_, group, timetableStr] = window.location.hash.split(":");
+        let [, group, timetableStr] = window.location.hash.split(":");
         timetableStr = atob(timetableStr);
         let valid = true;
         let timetable;
