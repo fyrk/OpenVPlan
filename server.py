@@ -9,13 +9,13 @@ from aiohttp.web_fileresponse import FileResponse
 
 import subs_crawler
 from website import config, logger
+config.load()
 from website.db import SubstitutionPlanDB
 from website.stats import Stats
 from website.substitution_plan import RESPONSE_HEADERS, SubstitutionPlan
 
 __version__ = "4.0"
 
-config.load()
 
 WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.path.abspath(config.get_str("data_dir"))

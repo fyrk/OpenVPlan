@@ -1,13 +1,33 @@
-/*self.addEventListener("activate", event => {
-    event.waitUntil(() => {
-        self.idb.open("settings", 1, upgradeDB => {
-            const storage = upgradeDB.createObjectStore("settings", {
-                keyPath: "key"
-            });
-            storage.put({key: "hasEnabledPushNotifications", value: false});
+const CACHE = "gawvertretung-cache-v1";
+
+const assetsToCache = [
+    "/students/",
+    "/teachers/",
+    "/assets/style/main.css",
+    "/assets/style/substitutions.css",
+    "/assets/style/main-dark.css",
+    "/assets/style/substitutions-dark.css",
+    "/assets/js/substitutions.min.js",
+    "/assets/js/dark-theme.min.js",
+    "/assets/js/timetables.min.js",
+    //"/assets/img/python-powered.min.svg", // caching <object src="..."> doesn't work: https://stackoverflow.com/questions/56854918/how-to-interact-with-an-svg-asset-in-an-offline-progressive-web-app
+    //"/assets/img/about.min.svg",
+    //"/assets/style/about.css",
+    "/favicon-32x32.png"
+];
+
+self.addEventListener("install", event => {
+    event.waitUntil(
+        caches.open(CACHE).then(cache => {
+            assetsToCache.map(url => {
+                let urlToFetch = url;
+                if (url === "/students/" || url === "/teachers/")
+                    urlToFetch += "?all";  // save response in cache that is not redirected
+                fetch(urlToFetch).then(response => cache.put(url, response))
+            })
         })
-    });
-})*/
+    );
+});
 
 function reportError(error, event=null) {
     fetch("/api/report-error", {
@@ -35,7 +55,47 @@ self.addEventListener("unhandledrejection", e => {
     reportError(e.reason);
 });
 
-self.addEventListener("fetch", () => {});
+// from https://serviceworke.rs/strategy-network-or-cache_service-worker_doc.html (MIT license)
+self.addEventListener("fetch", event => {
+    const url = new URL(event.request.url);
+    console.log("requested", event.request.url, url.pathname);
+    if (url.pathname === "/") {
+        event.respondWith(Response.redirect("/students/"))
+    } else if (assetsToCache.includes(url.pathname)) {
+        event.respondWith(
+            new Promise((fulfill, reject) => {
+                // currently, using a timeout might not display the most recent substitutions
+                // more work is needed, especially with WebSocket connection in updates.js
+                /*const timeout = setTimeout(() => {
+                    console.log("timeout", url.pathname);
+                    reject();
+                }, 1000);*/
+                console.log("fetching", event.request);
+                fetch(event.request).then(response => {
+                    //clearTimeout(timeout);
+                    console.log("fetch successful", event.request.url);
+                    fulfill(response.clone());
+                    if ((url.pathname !== "/students/" && url.pathname !== "/teachers/") || url.search !== "") {
+                        console.log("saving response in cache", event.request.url);
+                        caches.open(CACHE).then(cache => cache.put(new Request(url.pathname), response))
+                    } else {
+                        console.log("not saving in cache", event.request.url);
+                    }
+                }, reject);
+            }).catch(() => caches.open(CACHE)
+                .then(cache => cache.match(event.request, {ignoreSearch: true})
+                    .then(matching => {
+                        if (matching)
+                            return matching
+                        else {
+                            console.log("no match for", event.request);
+                            return Promise.reject("no-match");
+                        }
+                    }))));
+    } else {
+        console.log("not using SW for request");
+    }
+});
 
 self.addEventListener("push", async (event) => {
     const data = event.data.json();

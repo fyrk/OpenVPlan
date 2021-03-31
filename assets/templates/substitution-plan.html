@@ -18,11 +18,11 @@
     <link href="/assets/style/substitutions-dark.css?v=1" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
 {% endblock %}
 {% block scripts %}
-    <script src="/assets/js/substitutions.min.js?v=5"></script>
+    <script defer src="/assets/js/substitutions.min.js?v=5"></script>
     {% if options["supports_timetables"] and selection %}
-        <script src="/assets/js/timetables.min.js?v=4"></script>
+        <script defer src="/assets/js/timetables.min.js?v=4"></script>
     {% endif %}
-    <script src="/assets/js/dark-theme.min.js?v=4"></script>
+    <script defer src="/assets/js/dark-theme.min.js?v=4"></script>
 {% endblock %}
 
 {% block title_end %}
@@ -185,8 +185,11 @@
                     <span class="text-danger">Du hast Benachrichtigungen vom Vertretungsplan blockiert. Erlaube
                         Benachrichtigungen in den Einstellungen deines Browsers.</span>
                 </template>
-                <template id="notifications-info-failed">Das Aktivieren von Benachrichtigungen ist fehlgeschlagen.
-                    Lade die Seite neu oder verwende einen anderen Browser.</template>
+                <template id="notifications-info-failed">
+                    Das Aktivieren von Benachrichtigungen ist fehlgeschlagen.
+                    Lade die Seite neu oder verwende einen anderen Browser.
+                    Um Benachrichtigungen aktivieren zu können, muss eine Internetverbindung bestehen.
+                </template>
                 <span id="notifications-info">Benachrichtigungen sind deaktiviert</span>
             </label>
         </div>

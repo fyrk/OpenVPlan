@@ -29,22 +29,22 @@ function subscribePush(isActive, registration) {
             applicationServerKey: base64UrlToUint8Array("BDu6tTwQHFlGb36-pLCzwMdgumSlyj_vqMR3I1KahllZd3v2se-LM25vhP3Yv_y0qXYx_KPOVOD2EYTaJaibzo8")
         }).then(subscription => {
             console.log("Got push subscription:", subscription, isActive ? "(active)" : "(not active)");
-            fetch(window.location.origin + window.location.pathname + "api/subscribe-push", {
+            return fetch(window.location.origin + window.location.pathname + "api/subscribe-push", {
                 method: "post",
                 "headers": {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: isActive})
-            }).then(response => response.json())
-                .then(data => {
-                    if (data.ok) {
-                        console.log("Push subscription successful");
-                        resolve();
-                    } else {
-                        console.error("Push subscription failed", data);
-                        reject();
-                    }
-                });
+            });
+        }).then(response => response.json()
+        ).then(data => {
+            if (data.ok) {
+                console.log("Push subscription successful");
+                resolve();
+            } else {
+                console.error("Push subscription failed", data);
+                reject();
+            }
         }).catch(reason => {
             console.error("Push subscription failed", reason);
             reject(reason);
