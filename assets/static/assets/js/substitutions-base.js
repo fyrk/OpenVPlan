@@ -14,15 +14,9 @@ function reportError(error, event=null) {
         })
     }).catch(reason => console.error("reporting error failed", reason))
 }
+window.addEventListener("error", e => reportError(e.error, e));  // e.error is experimental, according to MDN
+window.addEventListener("unhandledrejection", e => reportError(e.reason));
 
-window.addEventListener("error", e => {
-    reportError(e.error, e);  // e.error is experimental, according to MDN
-});
-
-window.addEventListener("unhandledrejection", e => {
-    console.log("unhandledrejection", e);
-    reportError(e.reason);
-});
 
 const substitutionPlanType = window.location.pathname.split("/", 2)[1];
 const selection = document.getElementById("selectionInput").value;
