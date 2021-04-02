@@ -1,0 +1,47 @@
+@import "node_modules/bootstrap/scss/variables";
+
+// Bootstrap override: Don't use RFS for headings
+h1 { font-size: $h1-font-size }
+h2 { font-size: $h2-font-size }
+h3 { font-size: $h3-font-size }
+h4 { font-size: $h4-font-size }
+h5 { font-size: $h5-font-size }
+h6 { font-size: $h6-font-size }
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+body, html {
+    height: 100%;
+}
+
+footer {
+    background-color: var(--footer-bg);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+}
+
+a {
+    text-decoration: none !important;
+}
+
+#content {
+    //noinspection CssUnusedSymbol
+    @extend .p-0, .px-sm-3;
+    flex: 1 0 auto;
+    max-width: 1140px;
+}
+
+/*.btn-close {
+    float: right;
+    filter: var(--btn-close-white-filter); // copied from Bootstrap's _close.scss
+}*/  // no longer required since there are currently no news
+
+object {
+    // Chrome adds a white background (instead of transparent) to <object> if (prefers-color-scheme: dark). Fix:
+    color-scheme: light;
+}

@@ -13,16 +13,12 @@
 {% block meta %}
     <meta name="description" content="Vertretungsplan für das Gymnasium am Wall Verden">
 {% endblock %}
-{% block stylesheets %}
-    <link href="/assets/style/substitutions.css?v=1" rel="stylesheet">
-    <link href="/assets/style/substitutions-dark.css?v=1" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
-{% endblock %}
 {% block scripts %}
     <script defer src="/assets/js/substitutions.min.js?v=5"></script>
     {% if options["supports_timetables"] and selection %}
         <script defer src="/assets/js/timetables.min.js?v=4"></script>
     {% endif %}
-    <script defer src="/assets/js/dark-theme.min.js?v=4"></script>
+    <script defer src="/assets/js/themes.min.js?v=4"></script>
 {% endblock %}
 
 {% block title_end %}
@@ -35,15 +31,6 @@
 {% endblock %}
 
 {% block content %}
-<template id="template-news-dark-theme">
-    <div class="box" aria-hidden="true" id="news-dark-theme">
-        <button type="button" class="btn-close" id="news-dark-theme-close" aria-label="Schließen"></button>
-        Die Webseite kann jetzt in einem hellen und einem dunklen Design dargestellt werden. Das Design kann
-        <a href="#dark-theme-heading">in den Einstellungen am Ende der Seite</a> geändert werden.
-    </div>
-</template>
-
-
 <div class="box status-box clearfix">
     <span>Stand: <span id="status">{{ storage.status }}</span></span>
     <span class="float-end" id="online-status"></span>
@@ -139,7 +126,7 @@
 {% endfor %}
 
 <div class="box">
-    <h1>Einstellungen</h1>
+    <h1 id="settings-heading">Einstellungen</h1>
     <h2 id="select-heading">{{ options["texts"]["select_heading"]|safe }}</h2>
     <form class="form" method="get">
         {% if not selection %}
@@ -249,22 +236,22 @@
         </div>
     {% endif %}
 
-    <template id="dark-theme-block-template">
-        <h2 id="dark-theme-heading">Design</h2>
+    <template id="themes-block-template">
+        <h2 id="themes-heading">Design</h2>
         <div class="form-check">
-            <input class="form-check-input" type="radio" id="dark-theme-system-default" name="dark-theme" checked>
-            <label class="form-check-label" for="dark-theme-system-default">System</label>
+            <input class="form-check-input" type="radio" id="themes-system-default" name="theme" checked>
+            <label class="form-check-label" for="themes-system-default">System</label>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="radio" id="dark-theme-light" name="dark-theme">
-            <label class="form-check-label" for="dark-theme-light">Hell</label>
+            <input class="form-check-input" type="radio" id="themes-light" name="theme">
+            <label class="form-check-label" for="themes-light">Hell</label>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="radio" id="dark-theme-dark" name="dark-theme">
-            <label class="form-check-label" for="dark-theme-dark">Dunkel</label>
+            <input class="form-check-input" type="radio" id="themes-dark" name="theme">
+            <label class="form-check-label" for="themes-dark">Dunkel</label>
         </div>
     </template>
-    <div id="dark-theme-block" aria-hidden="true"></div>
+    <div id="themes-block" aria-hidden="true"></div>
 </div>
 {%- endblock -%}
 

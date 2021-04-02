@@ -2,6 +2,7 @@ const gulp = require("gulp");
 const argv = require("yargs").argv;
 const sourcemaps = require("gulp-sourcemaps");
 const rename = require("gulp-rename");
+const fs = require('fs');
 
 
 const closureCompiler = require("google-closure-compiler").gulp();
@@ -46,6 +47,7 @@ const sass = require("gulp-sass");
 const postcss = require("gulp-postcss");
 const autoprefixer = require("autoprefixer");
 const purgecss = require("@fullhuman/postcss-purgecss");
+const replace = require('gulp-replace');
 
 gulp.task("build-sass", () => {
     const srcFile = argv.srcFile;
@@ -67,8 +69,14 @@ gulp.task("build-sass", () => {
             autoprefixer()
         ]))
         .pipe(sourcemaps.write("/"))
+        .pipe(replace(/!bi-([\w-]*)/g, match => getBootstrapIcon(match.substr(4))))
         .pipe(gulp.dest(path));
 });
+function getBootstrapIcon(name) {
+    return fs.readFileSync("node_modules/bootstrap-icons/icons/" + name + ".svg", "utf8")
+        .replace(/>\s*</g, "><")
+        .replace(/"/g, "'");
+}
 
 
 const htmlmin = require("gulp-html-minifier-terser");
@@ -89,7 +97,6 @@ gulp.task("minify-xml", () => {
 // FAVICON GENERATOR
 // the following is copied from the output of https://realfavicongenerator.net
 const realFavicon = require ('gulp-real-favicon');
-const fs = require('fs');
 const del = require("del");
 
 // File where the favicon markups are stored

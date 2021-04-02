@@ -6,10 +6,10 @@
 }
 
 %icon-primary {
-    background-color: $primary;
+    background-color: $primary;  // always use light color (also with dark theme), because it looks better
 }
 
-@mixin icon($path, $width: 1.2rem, $height: 1.2rem, $position-x: null, $position-y: null) {
+@mixin icon($path, $width: 1em, $height: 1em, $position-x: null, $position-y: null) {
     @extend %icon;
     mask: $path no-repeat 0 0/#{$width} $height;
     width: $width;
@@ -19,7 +19,8 @@
         margin-right: -$position-x;
     }
     @if $position-y {
-        margin-top: -$position-y;
-        margin-bottom: $position-y;
+        //margin-top: -$position-y;
+        //margin-bottom: $position-y;
+        vertical-align: $position-y;
     }
 }

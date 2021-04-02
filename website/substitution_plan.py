@@ -30,7 +30,7 @@ DELETE_COOKIE_EXPIRE = formatdate(0)
 RESPONSE_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; "
                                "img-src 'self' data:; "
-                               "script-src 'self' 'sha256-l2h6bLQWX9C8tLEINfO+loK3K/jPEQRB05YAe9ehO1o='; "
+                               "script-src 'self' 'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g='; "
                                "connect-src 'self' " + ("ws:" if config.get_bool("dev") else "wss:") + "; "
                                "frame-src 'self' mailto:; object-src 'self' mailto:",
     "Strict-Transport-Security": "max-age=63072000",
@@ -211,12 +211,7 @@ class SubstitutionPlan:
         return web.json_response({"ok": True})
 
     def create_app(self, static_path: Optional[str] = None) -> web.Application:
-        async def cleanup_background_tasks(app):
-            app["background_tasks"].cancel()
-            await app["background_tasks"]
-
         self._app = web.Application()
-        self._app.on_cleanup.append(cleanup_background_tasks)
         self._app.add_routes([
             web.get("/", self._root_handler),
             web.get("/api/wait-for-updates", self._wait_for_updates_handler),
