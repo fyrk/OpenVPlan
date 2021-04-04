@@ -135,8 +135,8 @@ class Stats:
             action_name=f"API / {plan_name} / {action} Push",
             url=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
             e_c="Push Subscription",
+            e_n=plan_name,
             e_a=action,
-            e_n=plan_name
         )
 
     async def new_js_error(self, request, name, message, description, number, filename, lineno, colno, stack):
@@ -145,6 +145,6 @@ class Stats:
             action_name=f"API / Report JS Error",
             url=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
             e_c="JavaScript Errors",
-            e_a=f"{name} {message}",
-            e_n=f"{stack} {filename}:{lineno}:{colno}, {description}, {number}"
+            e_n=f"{name} {message}",
+            e_a=f"{stack} {filename}:{lineno}:{colno}, {description}, {number}"
         )
