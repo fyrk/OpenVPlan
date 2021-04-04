@@ -1,60 +1,145 @@
 import csv
 import datetime
-import hashlib
 import logging
-import os.path
+from typing import Optional, overload, Union
 
-from aiohttp import hdrs, web
+import yarl
+from aiohttp import hdrs, web, ClientSession
 
+from subs_crawler.utils import split_class_name
 from website import config
+from website.substitution_plan import SubstitutionPlan
 
 _LOGGER = logging.getLogger("gawvertretung")
 
 
 class Stats:
-    _BOT_USER_AGENTS = [
-        "bot",     # Google Bots, Bingbot, DuckDuckBot, YandexBot, Exabot, Facebot
-        "spider",  # Baiduspider, Sogou Spider
-        "crawl",   # ia_archiver (Alexa)
-        "yahoo",   # Slurp (Yahoo)
-        "google"   # Google Image Proxy 11
-    ]
+    def __init__(self, status_filepath, matomo_url, matomo_site_id, matomo_auth_token, respect_dnt, headers=None):
+        self.status_file = open(status_filepath, "a", newline="", buffering=1)
+        self.status = csv.writer(self.status_file)
 
-    def __init__(self, directory):
-        self._status_file = open(os.path.join(directory, "status.csv"), "a", newline="", buffering=1)
-        self._status = csv.writer(self._status_file)
-        self._requests_file = open(os.path.join(directory, "requests.csv"), "a", newline="", buffering=1)
-        self._requests = csv.writer(self._requests_file)
-        self._js_errors_file = open(os.path.join(directory, "js_errors.csv"), "a", newline="", buffering=1)
-        self._js_errors = csv.writer(self._js_errors_file)
+        self.client_session: Optional[ClientSession] = None
+        self.matomo_url = matomo_url
+        self.matomo_site_id = matomo_site_id
+        self.matomo_auth_token = matomo_auth_token
+        self.respect_dnt = respect_dnt
+        self.headers = headers
 
     def __del__(self):
-        self._status_file.close()
-        self._requests_file.close()
-        self._js_errors_file.close()
+        self.status_file.close()
 
     async def add_last_site(self, plan_name: str, status: str, last_site: int):
-        self._status.writerow((plan_name, status, last_site))
+        self.status.writerow((plan_name, status, last_site))
 
-    async def new_request(self, request: web.Request, response: web.Response, time):
-        remote = request.remote if not config.get_bool("is_proxied") else request.headers.get("X-Real-IP")
-        if response.status >= 400:
-            type_ = "BAD"
+    async def _check_dnt(self, request: web.Request):
+        if config.get_bool("matomo_honor_dnt", True) and request.headers.get("DNT", "0") == "1":
+            async with self.client_session.get(self.matomo_url, params={
+                "idsite": self.matomo_site_id,
+                "rec": "1",
+                "apiv": "1",
+                "send_image": "0",
+                "ua": "",
+                "action_name": "Do Not Track enabled",
+            }, headers=self.headers) as r:
+                _LOGGER.debug(f"Sent request info to Matomo: {r.request_info.url} {r.status} '{await r.text()}'")
+            return True
+        return False
+
+    @overload
+    async def _send_to_matomo(self, request: web.Request, time=None,
+                              action_name=None,
+                              url=None,
+                              urlref=None,
+                              ca=False,
+                              #dimensions,
+                              e_c=None,
+                              e_a=None,
+                              e_n=None,
+                              e_v=None
+                              ):
+        ...
+
+    async def _send_to_matomo(self, request: web.Request, **kwargs):
+        # noinspection PyBroadException
+        try:
+            now = datetime.datetime.now()
+            params = {
+                "idsite": self.matomo_site_id,
+                "rec": "1",
+                "apiv": "1",
+
+                "bots": 1 if config.get_bool("matomo_track_bots") else 0,
+                "send_image": "0",
+                "h": now.hour,
+                "m": now.minute,
+                "s": now.second,
+                "ua": request.headers.get(hdrs.USER_AGENT, ""),
+                "lang": request.headers.get(hdrs.ACCEPT_LANGUAGE, ""),
+            }
+            if kwargs.get("time"):
+                params["gt_ms"] = str(int(round(int(kwargs["time"]) * 0.000001)))
+            if kwargs.get("ca"):
+                kwargs["ca"] = "1"
+            params.update(kwargs)
+            if self.matomo_auth_token:
+                params["token_auth"] = self.matomo_auth_token
+                params["cip"] = \
+                    request.remote if not config.get_bool("is_proxied") else request.headers.get("X-Real-IP")
+            _LOGGER.info(params)
+            async with self.client_session.get(self.matomo_url, params=params, headers=self.headers) as r:
+                _LOGGER.debug(f"Sent request info to Matomo: {r.request_info.url} {r.status} '{await r.text()}'")
+        except Exception:
+            _LOGGER.exception("Exception while sending tracking information to Matomo")
+
+    @staticmethod
+    def anonymize_url(url: Union[str, yarl.URL]) -> str:
+        def anonymize_selection(s: str):
+            digits, letters = split_class_name(s)
+            if not digits:
+                return "xxx"
+            return digits + "x"*len(letters)
+        url = yarl.URL(url)
+        selection, _, _ = SubstitutionPlan.parse_selection(url)
+        if selection:
+            url %= {"s": ",".join(anonymize_selection(s) for s in selection)}
+        return str(url)
+
+    async def track_page_view(self, request: web.Request, time, title):
+        if await self._check_dnt(request):
+            return
+        await self._send_to_matomo(
+            request,
+            time=time,
+            action_name=title,
+            url=self.anonymize_url(request.url),
+            urlref=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
+        )
+
+    async def track_push_subscription(self, request: web.Request, time, plan_name, is_active):
+        if await self._check_dnt(request):
+            return
+        if is_active is None:
+            action = "None"
+        elif is_active:
+            action = "Subscribe"
         else:
-            user_agent_lower = request.headers.get(hdrs.USER_AGENT).lower()
-            if any(agent in user_agent_lower for agent in self._BOT_USER_AGENTS):
-                type_ = "BOT"
-            else:
-                type_ = "ALL"
-                if config.get_bool("log_ip_address"):
-                    remote = hashlib.blake2b(remote[1:-2].encode("utf-8"), digest_size=3).hexdigest()
-                else:
-                    remote = ""
-        self._requests.writerow((type_, datetime.datetime.now().strftime("%Y-%m-%d %X"),
-                                 response.status, response.reason, request.method,
-                                 request.path_qs, time, response.body_length,
-                                 request.headers.get(hdrs.USER_AGENT), request.headers.get(hdrs.REFERER), remote))
+            action = "Unsubscribe"
+        await self._send_to_matomo(
+            request,
+            time=time,
+            action_name=f"API / {plan_name} / {action} Push",
+            url=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
+            e_c="Push Subscription",
+            e_a=action,
+            e_n=plan_name
+        )
 
-    async def new_js_error(self, name, message, description, number, filename, lineno, colno, stack, user_agent):
-        self._js_errors.writerow((datetime.datetime.now().isoformat(), name, message, description, number,
-                                  filename, lineno, colno, stack, user_agent))
+    async def new_js_error(self, request, name, message, description, number, filename, lineno, colno, stack):
+        await self._send_to_matomo(
+            request,
+            action_name=f"API / Report JS Error",
+            url=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
+            e_c="JavaScript Errors",
+            e_a=f"{filename}:{lineno}:{colno}, {description}, {number}, {stack}",
+            e_n=f"{name} {message}"
+        )

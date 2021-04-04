@@ -22,7 +22,7 @@ function base64UrlToUint8Array(base64UrlData) {
     return buffer;
 }
 
-function subscribePush(isActive, registration) {
+function subscribePush(isActive, registration, userTriggered) {
     return new Promise((resolve, reject) => {
         registration.pushManager.subscribe({
             userVisibleOnly: true,
@@ -34,7 +34,7 @@ function subscribePush(isActive, registration) {
                 "headers": {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: isActive})
+                body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: isActive, user_triggered: userTriggered})
             });
         }).then(response => response.json()
         ).then(data => {
@@ -55,7 +55,7 @@ function subscribePush(isActive, registration) {
 
 let notificationState;
 
-function setNotificationsInfo(state, registration) {
+function setNotificationsInfo(state, registration, userTriggered = false) {
     console.log("Setting notification-state to", state);
     notificationState = state;
     window.localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
@@ -68,7 +68,7 @@ function setNotificationsInfo(state, registration) {
             } else {
                 notificationsInfo.innerHTML = notificationsInfo_all.innerHTML;
             }
-            subscribePush(true, registration)
+            subscribePush(true, registration, userTriggered)
                 .catch(reason => {
                     console.error("Push subscription failed", reason);
                     setNotificationsInfo("failed", registration);
@@ -85,7 +85,7 @@ function setNotificationsInfo(state, registration) {
             notificationsInfo.innerHTML = notificationsInfo_failed.innerHTML;
             break;
         case "granted-and-disabled":
-            subscribePush(false, registration)
+            subscribePush(false, registration, userTriggered)
                 .catch(reason => {
                     console.error("Push subscription failed", reason);
                     setNotificationsInfo("failed", registration);
@@ -117,11 +117,11 @@ function onNotificationsAvailable(registration) {
                         default:
                             notificationState = permission;
                     }
-                    setNotificationsInfo(notificationState, registration);
+                    setNotificationsInfo(notificationState, registration, true);
                 });
         } else {
             if (notificationState === "granted-and-enabled") {
-                setNotificationsInfo("granted-and-disabled", registration);
+                setNotificationsInfo("granted-and-disabled", registration, true);
             }
         }
     });

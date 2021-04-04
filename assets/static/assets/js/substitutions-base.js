@@ -9,8 +9,7 @@ function reportError(error, event=null) {
             filename: (event == null ? undefined : event.filename) || error.fileName,  // error.fileName is non-standard Mozilla property
             lineno: (event == null ? undefined : event.lineno) || error.lineNumber,  // error.lineNumber is non-standard Mozilla property
             colno: (event == null ? undefined : event.colno) || error.columnNumber,  // error.columnNumber is non-standard Mozilla property
-            stack: (event == null ? undefined : event.stack) || error.stack,  // error.stack is non-standard Mozilla property
-            user_agent: navigator.userAgent
+            stack: (event == null ? undefined : event.stack) || error.stack  // error.stack is non-standard Mozilla property
         })
     }).catch(reason => console.error("reporting error failed", reason))
 }

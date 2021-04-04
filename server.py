@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import os
 import time
 from functools import partial
@@ -32,8 +33,6 @@ REQUEST_HEADERS = {hdrs.USER_AGENT: REQUEST_USER_AGENT}
 STATIC_PATH = os.path.join(WORKING_DIR, "assets/static/")
 STATS_PATH = os.path.join(DATA_DIR, "stats/")
 
-stats = Stats(STATS_PATH)
-
 env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.join(WORKING_DIR, "assets/templates")),
     bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(DATA_DIR, "template_cache/")),
@@ -53,20 +52,10 @@ TEMPLATE_ERROR500 = env.get_template(config.get_str("template500"))
 async def stats_middleware(request: web.Request, handler):
     t1 = time.perf_counter_ns()
     response: web.Response = await handler(request)
-    if not response.prepared:
-        if type(response) != FileResponse:
-            # noinspection PyBroadException
-            try:
-                await response.prepare(request)
-                await response.write_eof()
-            except Exception:
-                _LOGGER.exception("Exception occurred while preparing and writing response")
-        else:
-            if request.path.endswith("js"):
-                response.content_type = "text/javascript"
-            elif request.path.endswith(".css"):
-                response.content_type = "text/css"
-    await stats.new_request(request, response, time.perf_counter_ns()-t1)
+    if request.get("stats_relevant"):
+        asyncio.get_running_loop().create_task(
+            request.app["stats"].track_page_view(request, time.perf_counter_ns()-t1, request.get("stats_title", ""))
+        )
     return response
 
 
@@ -89,10 +78,15 @@ async def error_middleware(request: web.Request, handler):
                         charset="utf-8", headers=RESPONSE_HEADERS)
 
 
-def template_handler(template: jinja2.Template):
+def template_handler(template: jinja2.Template, title):
     # noinspection PyUnusedLocal
     async def handler(request: web.Request):
-        return web.Response(text=await template.render_async(), content_type="text/html", headers=RESPONSE_HEADERS)
+        response = web.Response(text=await template.render_async(), content_type="text/html", headers=RESPONSE_HEADERS)
+        await response.prepare(request)
+        await response.write_eof()
+        request["stats_relevant"] = True
+        request["stats_title"] = title
+        return response
     return handler
 
 
@@ -101,10 +95,9 @@ async def report_js_error_handler(request: web.Request):
         # noinspection PyBroadException
         try:
             data = await request.post()
-            await stats.new_js_error(
+            await request.app["stats"].new_js_error(request,
                 data.get("name", ""), data.get("message", ""), data.get("description", ""), data.get("number", ""),
-                data.get("filename", ""), data.get("lineno", ""), data.get("colno", ""), data.get("stack", ""),
-                data.get("user_agent", ""))
+                data.get("filename", ""), data.get("lineno", ""), data.get("colno", ""), data.get("stack", ""))
         except Exception:
             _LOGGER.exception("Exception while handling JS error report")
     else:
@@ -115,8 +108,10 @@ async def report_js_error_handler(request: web.Request):
 async def client_session_context(app: web.Application):
     _LOGGER.debug(f"Create ClientSession (headers: {REQUEST_HEADERS})")
     session = client.ClientSession(headers=REQUEST_HEADERS)
+    app["stats"].client_session = session
     for substitution_plan in app["substitution_plans"].values():
         substitution_plan.client_session = session
+        substitution_plan.app["stats"] = app["stats"]
     yield
     await session.close()
 
@@ -135,6 +130,12 @@ async def app_factory(dev_mode=False):
     if config.get("default_plan") is None:
         raise ValueError("No default_plan configured")
     app = web.Application(middlewares=[logger.logging_middleware, stats_middleware, error_middleware])
+
+    app["stats"] = Stats(os.path.join(STATS_PATH, "status.csv"),
+                         config.get_str("matomo_url"), config.get_str("matomo_site_id"),
+                         config.get_str("matomo_auth_token", None), config.get_bool("matomo_respect_dnt", True),
+                         config.get("matomo_headers", {}))
+
     app["substitution_plans"] = {}
     for plan_id, plan_config in config.get("substitution_plans").items():
         crawler_id = plan_config["crawler"]["name"]
@@ -151,7 +152,7 @@ async def app_factory(dev_mode=False):
         parser_options = plan_config["parser"].get("options", {})
         template_options = plan_config.get("template_options", {})
         crawler = crawler_class(parser_class, parser_options, **crawler_options)
-        crawler.on_status_changed = partial(stats.add_last_site, plan_id)
+        crawler.on_status_changed = partial(app["stats"].add_last_site, plan_id)
         plan = SubstitutionPlan(plan_id, crawler, env.get_template("substitution-plan.min.html"),
                                 env.get_template("error-500-substitution-plan.min.html"), template_options,
                                 plan_config.get("uppercase_selection", False))
@@ -171,8 +172,8 @@ async def app_factory(dev_mode=False):
 
     app.add_routes([
         web.get("/", root_handler),
-        web.get("/privacy", template_handler(TEMPLATE_PRIVACY)),
-        web.get("/about", template_handler(TEMPLATE_ABOUT)),
+        web.get("/privacy", template_handler(TEMPLATE_PRIVACY, "Datenschutzerklärung")),
+        web.get("/about", template_handler(TEMPLATE_ABOUT, "Impressum")),
         web.post("/api/report-error", report_js_error_handler)
     ])
 

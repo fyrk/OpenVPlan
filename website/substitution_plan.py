@@ -6,10 +6,11 @@ import sqlite3
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import Dict, Iterable, List, MutableSet, Optional, Union
+from typing import Dict, Iterable, List, MutableSet, Optional, Union, Tuple
 
 import jinja2
 import pywebpush
+import yarl
 from aiohttp import ClientSession, web, WSMessage, WSMsgType
 
 from subs_crawler.crawlers.base import BaseSubstitutionCrawler
@@ -73,6 +74,17 @@ class SubstitutionPlan:
         # affected groups are passed from self._root_handler to self._background_tasks:
         self._affected_groups: Optional[Dict[int, Dict[str, Union[str, List[str]]]]] = None
 
+    def create_app(self, static_path: Optional[str] = None) -> web.Application:
+        self._app = web.Application()
+        self._app.add_routes([
+            web.get("/", self._root_handler),
+            web.get("/api/wait-for-updates", self._wait_for_updates_handler),
+            web.post("/api/subscribe-push", self._subscribe_push_handler)
+        ])
+        if static_path:
+            self._app.router.add_static("/", static_path)
+        return self._app
+
     @property
     def name(self):
         return self._plan_id
@@ -94,6 +106,19 @@ class SubstitutionPlan:
     async def _recreate_index_site(self):
         self._index_site = await self._template.render_async(storage=self._crawler.storage,
                                                              options=self._template_options)
+
+    @staticmethod
+    def parse_selection(url: yarl.URL) -> Tuple[str, str, str]:
+        selection = ""
+        selection_str = ""
+        selection_qs = ""
+        if "s" in url.query:
+            selection_qs = ",".join(url.query.getall("s"))
+            selection = split_selection(selection_qs)
+            if selection:
+                selection_str = ", ".join(selection)
+                selection = [s.upper() for s in selection]
+        return selection, selection_str, selection_qs
 
     # ===================
     # REQUEST HANDLERS
@@ -119,17 +144,9 @@ class SubstitutionPlan:
                 _LOGGER.info("SUBSTITUTIONS HAVE CHANGED")
                 self._affected_groups = affected_groups
 
-            selection = ""
-            selection_str = ""
-            selection_qs = ""
-            if "s" in request.query:
-                selection_qs = ",".join(request.query.getall("s"))
-                selection = split_selection(selection_qs)
-                if selection:
-                    selection_str = ", ".join(selection)
-                    if self._uppercase_selection:
-                        selection_str = selection_str.upper()
-                    selection = [s.upper() for s in selection]
+            selection, selection_str, selection_qs = self.parse_selection(request.url)
+            if self._uppercase_selection:
+                selection_str = selection_str.upper()
 
             if not selection:
                 if substitutions_have_changed:
@@ -145,13 +162,20 @@ class SubstitutionPlan:
                                 expires=SELECTION_COOKIE_EXPIRE, path="/" + self._plan_id + "/",
                                 secure=not config.get_bool("dev"),  # secure in non-development mode
                                 httponly=True, samesite="Lax")
+            await response.prepare(request)
+            await response.write_eof()
+
+            request["stats_relevant"] = True
+            if not selection:
+                selection_str = "All"
+            else:
+                selection_str = f"{len(selection)} selected"
+            request["stats_title"] = f"Plan / {self._template_options['title']} / {selection_str}"
 
             if substitutions_have_changed:
-                await response.prepare(request)
-                await response.write_eof()
                 if selection:
                     await self._recreate_index_site()
-                self._app.loop.create_task(self._on_new_substitutions(affected_groups))
+                asyncio.get_running_loop().create_task(self._on_new_substitutions(affected_groups))
         except web.HTTPException as e:
             raise e from None
         except Exception:
@@ -190,7 +214,7 @@ class SubstitutionPlan:
                                 await ws.send_json({"type": "status", "status": self._crawler.storage.status})
                                 if substitutions_have_changed:
                                     await self._recreate_index_site()
-                                    self._app.loop.create_task(self._on_new_substitutions(affected_groups))
+                                    asyncio.get_running_loop().create_task(self._on_new_substitutions(affected_groups))
         except (asyncio.CancelledError, asyncio.TimeoutError):
             pass
         finally:
@@ -201,25 +225,29 @@ class SubstitutionPlan:
     # /api/subscribe-push
     @logger.request_wrapper
     async def _subscribe_push_handler(self, request: web.Request):
+        t1 = time.perf_counter_ns()
+        is_active = None
+        user_triggered = False
         # noinspection PyBroadException
         try:
             data = await request.json()
             self.db.add_push_subscription(self._plan_id, data["subscription"], data["selection"], data["is_active"])
+            is_active = data["is_active"]
+            user_triggered = data.get("user_triggered", False)
+            response = web.json_response({"ok": True})
         except Exception:
             _LOGGER.exception("Subscribing push service failed")
-            return web.json_response({"ok": False}, status=400)
-        return web.json_response({"ok": True})
+            response = web.json_response({"ok": False}, status=400)
 
-    def create_app(self, static_path: Optional[str] = None) -> web.Application:
-        self._app = web.Application()
-        self._app.add_routes([
-            web.get("/", self._root_handler),
-            web.get("/api/wait-for-updates", self._wait_for_updates_handler),
-            web.post("/api/subscribe-push", self._subscribe_push_handler)
-        ])
-        if static_path:
-            self._app.router.add_static("/", static_path)
-        return self._app
+        if user_triggered:
+            await response.prepare(request)
+            await response.write_eof()
+            t2 = time.perf_counter_ns()
+            asyncio.get_running_loop().create_task(
+                self._app["stats"].track_push_subscription(request, t2-t1, self._template_options["title"], is_active)
+            )
+
+        return response
 
     # background task on new substitutions
     async def _on_new_substitutions(self, affected_groups):
