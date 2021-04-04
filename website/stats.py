@@ -86,8 +86,13 @@ class Stats:
                 params["cip"] = \
                     request.remote if not config.get_bool("is_proxied") else request.headers.get("X-Real-IP")
             _LOGGER.info(params)
-            async with self.client_session.get(self.matomo_url, params=params, headers=self.headers) as r:
-                _LOGGER.debug(f"Sent request info to Matomo: {r.request_info.url} {r.status} '{await r.text()}'")
+            if "matomo_ignore" in request.cookies:
+                cookies = {"matomo_ignore": request.cookies["matomo_ignore"]}
+            else:
+                cookies = None
+            async with self.client_session.get(self.matomo_url, params=params, headers=self.headers,
+                                               cookies=cookies) as r:
+                _LOGGER.debug(f"Sent info to Matomo: {r.status} '{await r.text()}'")
         except Exception:
             _LOGGER.exception("Exception while sending tracking information to Matomo")
 
