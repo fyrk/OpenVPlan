@@ -140,6 +140,6 @@ class Stats:
             action_name=f"API / Report JS Error",
             url=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
             e_c="JavaScript Errors",
-            e_a=f"{filename}:{lineno}:{colno}, {description}, {number}, {stack}",
-            e_n=f"{name} {message}"
+            e_a=f"{name} {message}",
+            e_n=f"{stack} {filename}:{lineno}:{colno}, {description}, {number}"
         )
