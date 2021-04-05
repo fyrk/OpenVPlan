@@ -6,8 +6,8 @@ from typing import Optional, overload, Union
 import yarl
 from aiohttp import hdrs, web, ClientSession
 
+from settings import settings
 from subs_crawler.utils import split_class_name
-from website import config
 from website.substitution_plan import SubstitutionPlan
 
 _LOGGER = logging.getLogger("gawvertretung")
@@ -32,7 +32,7 @@ class Stats:
         self.status.writerow((plan_name, status, last_site))
 
     async def _check_dnt(self, request: web.Request):
-        if config.get_bool("matomo_honor_dnt", True) and request.headers.get("DNT", "0") == "1":
+        if settings.MATOMO_HONOR_DNT and request.headers.get("DNT", "0") == "1":
             async with self.client_session.get(self.matomo_url, params={
                 "idsite": self.matomo_site_id,
                 "rec": "1",
@@ -68,7 +68,7 @@ class Stats:
                 "rec": "1",
                 "apiv": "1",
 
-                "bots": 1 if config.get_bool("matomo_track_bots") else 0,
+                "bots": 1 if settings.MATOMO_TRACK_BOTS else 0,
                 "send_image": "0",
                 "h": now.hour,
                 "m": now.minute,
@@ -83,8 +83,7 @@ class Stats:
             params.update(kwargs)
             if self.matomo_auth_token:
                 params["token_auth"] = self.matomo_auth_token
-                params["cip"] = \
-                    request.remote if not config.get_bool("is_proxied") else request.headers.get("X-Real-IP")
+                params["cip"] = request.remote if not settings.IS_PROXIED else request.headers.get("X-Real-IP")
             if "matomo_ignore" in request.cookies:
                 cookies = {"matomo_ignore": request.cookies["matomo_ignore"]}
             else:

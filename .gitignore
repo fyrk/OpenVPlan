@@ -1,5 +1,4 @@
 .DS_Store
-secret_config.json
 node_modules/
 
 # Byte-compiled / optimized / DLL files

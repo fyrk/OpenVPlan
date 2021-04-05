@@ -5,47 +5,34 @@ import time
 from functools import partial
 
 import jinja2
-from aiohttp import client, hdrs, http, web
-from aiohttp.web_fileresponse import FileResponse
+from aiohttp import client, web
 
+import settings
 import subs_crawler
-from website import config, logger
-config.load()
+from settings import settings
+from website import logger
 from website.db import SubstitutionPlanDB
 from website.stats import Stats
 from website.substitution_plan import RESPONSE_HEADERS, SubstitutionPlan
 
-__version__ = "4.0"
+os.chdir(os.path.dirname(__file__))
 
-
-WORKING_DIR = os.path.abspath(os.path.dirname(__file__))
-DATA_DIR = os.path.abspath(config.get_str("data_dir"))
-
-logger.init(os.path.join(WORKING_DIR, config.get_str("logfile")))
+logger.init(settings.LOGFILE)
 _LOGGER = logger.get_logger()
 
-
-REQUEST_USER_AGENT = config.get_str("user_agent", "GaWVertretungBot").format(version=__version__,
-                                                                             server_software=http.SERVER_SOFTWARE)
-REQUEST_HEADERS = {hdrs.USER_AGENT: REQUEST_USER_AGENT}
-
-
-STATIC_PATH = os.path.join(WORKING_DIR, "assets/static/")
-STATS_PATH = os.path.join(DATA_DIR, "stats/")
-
 env = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.join(WORKING_DIR, "assets/templates")),
-    bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(DATA_DIR, "template_cache/")),
+    loader=jinja2.FileSystemLoader("assets/templates"),
+    bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(settings.DATA_DIR, "template_cache/")),
     enable_async=True,
     autoescape=True,
     trim_blocks=True,
     lstrip_blocks=True,
-    auto_reload=config.get_bool("dev")
+    auto_reload=settings.DEBUG
 )
 TEMPLATE_PRIVACY = env.get_template("privacy.min.html")
 TEMPLATE_ABOUT = env.get_template("about.min.html")
-TEMPLATE_ERROR404 = env.get_template(config.get_str("template404"))
-TEMPLATE_ERROR500 = env.get_template(config.get_str("template500"))
+TEMPLATE_ERROR404 = env.get_template(settings.TEMPLATE_404)
+TEMPLATE_ERROR500 = env.get_template(settings.TEMPLATE_500)
 
 
 @web.middleware
@@ -112,8 +99,8 @@ async def report_js_error_handler(request: web.Request):
 
 
 async def client_session_context(app: web.Application):
-    _LOGGER.debug(f"Create ClientSession (headers: {REQUEST_HEADERS})")
-    session = client.ClientSession(headers=REQUEST_HEADERS)
+    _LOGGER.debug(f"Create ClientSession (headers: {settings.REQUEST_HEADERS})")
+    session = client.ClientSession(headers=settings.REQUEST_HEADERS)
     app["stats"].client_session = session
     for substitution_plan in app["substitution_plans"].values():
         substitution_plan.client_session = session
@@ -123,7 +110,7 @@ async def client_session_context(app: web.Application):
 
 
 async def databases_context(app: web.Application):
-    db = SubstitutionPlanDB(os.path.join(DATA_DIR, "storage/db.sqlite3"))
+    db = SubstitutionPlanDB(os.path.join(settings.DATA_DIR, "storage/db.sqlite3"))
     for substitution_plan in app["substitution_plans"].values():
         substitution_plan.db = db
     yield
@@ -131,19 +118,15 @@ async def databases_context(app: web.Application):
 
 
 async def app_factory(dev_mode=False):
-    if config.get("substitution_plans") is None:
-        raise ValueError("No substitution_plans configured")
-    if config.get("default_plan") is None:
-        raise ValueError("No default_plan configured")
     app = web.Application(middlewares=[logger.logging_middleware, stats_middleware, error_middleware])
 
-    app["stats"] = Stats(os.path.join(STATS_PATH, "status.csv"),
-                         config.get_str("matomo_url"), config.get_str("matomo_site_id"),
-                         config.get_str("matomo_auth_token", None), config.get_bool("matomo_respect_dnt", True),
-                         config.get("matomo_headers", {}))
+    app["stats"] = Stats(os.path.join(settings.DATA_DIR, "stats/status.csv"),
+                         settings.MATOMO_URL, settings.MATOMO_SITE_ID,
+                         settings.MATOMO_AUTH_TOKEN, settings.MATOMO_HONOR_DNT,
+                         settings.MATOMO_HEADERS)
 
     app["substitution_plans"] = {}
-    for plan_id, plan_config in config.get("substitution_plans").items():
+    for plan_id, plan_config in settings.SUBSTITUTION_PLANS.items():
         crawler_id = plan_config["crawler"]["name"]
         try:
             crawler_class = subs_crawler.CRAWLERS[crawler_id]
@@ -163,15 +146,15 @@ async def app_factory(dev_mode=False):
                                 env.get_template("error-500-substitution-plan.min.html"), template_options,
                                 plan_config.get("uppercase_selection", False))
 
-        await plan.deserialize(os.path.join(DATA_DIR, f"substitutions/{plan_id}.pickle"))
+        await plan.deserialize(os.path.join(settings.DATA_DIR, f"substitutions/{plan_id}.pickle"))
 
         app.add_subapp(f"/{plan_id}/",
-                       plan.create_app(os.path.abspath("assets/static/" + plan_id) if config.get_bool("dev") else None))
+                       plan.create_app(os.path.abspath("assets/static/" + plan_id) if settings.DEBUG else None))
 
         app["substitution_plans"][plan_id] = plan
 
     async def root_handler(request: web.Request):
-        location = f"/{config.get('default_plan')}/"
+        location = f"/{settings.DEFAULT_PLAN_ID}/"
         if request.query_string:
             location += "?" + request.query_string
         raise web.HTTPPermanentRedirect(location=location)
@@ -184,7 +167,7 @@ async def app_factory(dev_mode=False):
     ])
 
     if dev_mode:
-        app.router.add_static("/", STATIC_PATH)
+        app.router.add_static("/", "assets/static/")
 
     app.cleanup_ctx.extend((client_session_context, databases_context))
 
@@ -209,6 +192,6 @@ if __name__ == "__main__":
         port = None
     else:
         path = None
-        host = args.host if args.host else config.get_str("host", "localhost")
-        port = args.port if args.port else config.get_int("port", 8080)
-    run(path, host, port, config.get_bool("dev"))
+        host = args.host if args.host else settings.HOST
+        port = args.port if args.port else settings.PORT
+    run(path, host, port, settings.DEBUG)

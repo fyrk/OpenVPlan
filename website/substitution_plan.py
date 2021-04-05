@@ -13,9 +13,10 @@ import pywebpush
 import yarl
 from aiohttp import ClientSession, web, WSMessage, WSMsgType
 
+from settings import settings
 from subs_crawler.crawlers.base import BaseSubstitutionCrawler
 from subs_crawler.utils import split_selection
-from website import config, logger
+from website import logger
 from website.db import SubstitutionPlanDB
 
 _LOGGER = logging.getLogger("gawvertretung")
@@ -32,7 +33,7 @@ RESPONSE_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; "
                                "img-src 'self' data:; "
                                "script-src 'self' 'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g='; "
-                               "connect-src 'self' " + ("ws:" if config.get_bool("dev") else "wss:") + "; "
+                               "connect-src 'self' " + ("ws:" if settings.DEBUG else "wss:") + "; "
                                "frame-src 'self' mailto:; object-src 'self' mailto:",
     "Strict-Transport-Security": "max-age=63072000",
     "Referrer-Policy": "same-origin",
@@ -136,7 +137,7 @@ class SubstitutionPlan:
                     raise web.HTTPSeeOther(location="/" + self._plan_id + "/?all")
 
             substitutions_have_changed, affected_groups = await self._crawler.update(self.client_session)
-            if "event" in request.query and config.get_bool("dev"):
+            if "event" in request.query and settings.DEBUG:
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
                 affected_groups = json.loads(request.query["event"])
@@ -160,7 +161,7 @@ class SubstitutionPlan:
                                     headers=RESPONSE_HEADERS_SELECTION)
             response.set_cookie(self._selection_cookie, selection_qs,
                                 expires=SELECTION_COOKIE_EXPIRE, path="/" + self._plan_id + "/",
-                                secure=not config.get_bool("dev"),  # secure in non-development mode
+                                secure=not settings.DEBUG,  # secure in non-development mode
                                 httponly=True, samesite="Lax")
             await response.prepare(request)
             await response.write_eof()
@@ -283,9 +284,9 @@ class SubstitutionPlan:
 
                         endpoint, data, headers = pywebpush.webpush(
                             subscription["subscription"], data,
-                            vapid_private_key=config.get_str("private_vapid_key"),
+                            vapid_private_key=settings.PRIVATE_VAPID_KEY,
                             vapid_claims={
-                                "sub": config.get_str("vapid_sub"),
+                                "sub": settings.VAPID_SUB,
                                 "aud": endpoint_origin,
                                 # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
                                 # be longer than 24 hours from the time the request is made)
