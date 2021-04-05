@@ -55,7 +55,7 @@ class Stats:
                               e_c=None,
                               e_a=None,
                               e_n=None,
-                              e_v=None
+                              e_v=None,
                               ):
         ...
 
@@ -85,7 +85,6 @@ class Stats:
                 params["token_auth"] = self.matomo_auth_token
                 params["cip"] = \
                     request.remote if not config.get_bool("is_proxied") else request.headers.get("X-Real-IP")
-            _LOGGER.info(params)
             if "matomo_ignore" in request.cookies:
                 cookies = {"matomo_ignore": request.cookies["matomo_ignore"]}
             else:
@@ -109,16 +108,28 @@ class Stats:
             url %= {"s": ",".join(anonymize_selection(s) for s in selection)}
         return str(url)
 
-    async def track_page_view(self, request: web.Request, time, title):
+    async def track_page_view(self, request: web.Request, is_sw, time, title):
         if await self._check_dnt(request):
             return
-        await self._send_to_matomo(
-            request,
-            time=time,
-            action_name=title,
-            url=self.anonymize_url(request.url),
-            urlref=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
-        )
+        if not is_sw:
+            await self._send_to_matomo(
+                request,
+                time=time,
+                action_name=title,
+                url=self.anonymize_url(request.url),
+                urlref=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
+            )
+        else:
+            url = self.anonymize_url(request.url)
+            await self._send_to_matomo(
+                request,
+                time=time,
+                url=url,
+                urlref=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
+                e_c="Service Worker Request",
+                e_a=url,
+                ca=True
+            )
 
     async def track_push_subscription(self, request: web.Request, time, plan_name, is_active):
         if await self._check_dnt(request):
@@ -132,19 +143,33 @@ class Stats:
         await self._send_to_matomo(
             request,
             time=time,
-            action_name=f"API / {plan_name} / {action} Push",
+            #action_name=f"API / {plan_name} / {action} Push",
             url=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
             e_c="Push Subscription",
             e_n=plan_name,
             e_a=action,
+            ca=True
         )
 
-    async def new_js_error(self, request, name, message, description, number, filename, lineno, colno, stack):
+    async def track_4xx_error(self, request: web.Request, time, response: web.Response):
+        url = self.anonymize_url(request.url)
+        action_name = f"{response.status} {response.reason}/URL = {url}"
+        if hdrs.REFERER in request.headers:
+            action_name += "/From = " + self.anonymize_url(request.headers[hdrs.REFERER])
         await self._send_to_matomo(
             request,
-            action_name=f"API / Report JS Error",
+            time=time,
+            action_name=action_name,
+            url=url
+        )
+
+    async def track_js_error(self, request, name, message, description, number, filename, lineno, colno, stack):
+        await self._send_to_matomo(
+            request,
+            #action_name=f"API / Report JS Error",
             url=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
             e_c="JavaScript Errors",
             e_n=f"{name} {message}",
-            e_a=f"{stack} {filename}:{lineno}:{colno}, {description}, {number}"
+            e_a=f"{stack} {filename}:{lineno}:{colno}, {description}, {number}",
+            ca=True
         )

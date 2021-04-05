@@ -48,7 +48,7 @@ self.addEventListener("install", event => {
                 //cache.addAll(assetsToCache),
                 Promise.all(
                     // for plans, save a response in cache that is not redirected
-                    planPaths.map(url => fetch(url+"?all").then(r => cache.put(url, r)))
+                    planPaths.map(url => fetch(url+"?all&sw").then(r => cache.put(url, r)))
                 )
             ])
         )

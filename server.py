@@ -54,7 +54,12 @@ async def stats_middleware(request: web.Request, handler):
     response: web.Response = await handler(request)
     if request.get("stats_relevant"):
         asyncio.get_running_loop().create_task(
-            request.app["stats"].track_page_view(request, time.perf_counter_ns()-t1, request.get("stats_title", ""))
+            request.app["stats"].track_page_view(request, "sw" in request.query, time.perf_counter_ns()-t1,
+                                                 request.get("stats_title", ""))
+        )
+    if 400 <= response.status < 500:
+        asyncio.get_running_loop().create_task(
+            request.app["stats"].track_4xx_error(request, time.perf_counter_ns()-t1, response)
         )
     return response
 
@@ -95,9 +100,10 @@ async def report_js_error_handler(request: web.Request):
         # noinspection PyBroadException
         try:
             data = await request.post()
-            await request.app["stats"].new_js_error(request,
-                data.get("name", ""), data.get("message", ""), data.get("description", ""), data.get("number", ""),
-                data.get("filename", ""), data.get("lineno", ""), data.get("colno", ""), data.get("stack", ""))
+            await request.app["stats"].track_js_error(request, data.get("name", ""), data.get("message", ""),
+                                                      data.get("description", ""), data.get("number", ""),
+                                                      data.get("filename", ""), data.get("lineno", ""),
+                                                      data.get("colno", ""), data.get("stack", ""))
         except Exception:
             _LOGGER.exception("Exception while handling JS error report")
     else:
