@@ -166,12 +166,13 @@ class SubstitutionPlan:
             await response.prepare(request)
             await response.write_eof()
 
-            request["stats_relevant"] = True
-            if not selection:
-                selection_str = "All"
-            else:
-                selection_str = f"{len(selection)} selected"
-            request["stats_title"] = f"Plan / {self._template_options['title']} / {selection_str}"
+            if request.method == "GET":
+                request["stats_relevant"] = True
+                if not selection:
+                    selection_str = "All"
+                else:
+                    selection_str = f"{len(selection)} selected"
+                request["stats_title"] = f"Plan / {self._template_options['title']} / {selection_str}"
 
             if substitutions_have_changed:
                 if selection:
