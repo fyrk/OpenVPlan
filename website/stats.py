@@ -46,7 +46,12 @@ class Stats:
                 # without this, Matomo thinks the originating IP address of the request is the server's IP
                 # "" doesn't work, so use "::1" instead
                 params["cip"] = "::1"
-            async with self.client_session.get(self.matomo_url, params=params, headers=self.headers) as r:
+            if "matomo_ignore" in request.cookies:
+                cookies = {"matomo_ignore": request.cookies["matomo_ignore"]}
+            else:
+                cookies = None
+            async with self.client_session.get(self.matomo_url, params=params, headers=self.headers, cookies=cookies) \
+                    as r:
                 _LOGGER.debug(f"Sent info to Matomo (DNT): {r.request_info.url} {r.status} '{await r.text()}'")
             return True
         return False
@@ -94,8 +99,8 @@ class Stats:
                 cookies = {"matomo_ignore": request.cookies["matomo_ignore"]}
             else:
                 cookies = None
-            async with self.client_session.get(self.matomo_url, params=params, headers=self.headers,
-                                               cookies=cookies) as r:
+            async with self.client_session.get(self.matomo_url, params=params, headers=self.headers, cookies=cookies) \
+                    as r:
                 _LOGGER.debug(f"Sent info to Matomo: {r.status} '{await r.text()}'")
         except Exception:
             _LOGGER.exception("Exception while sending tracking information to Matomo")
