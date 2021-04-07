@@ -33,15 +33,21 @@ class Stats:
 
     async def _check_dnt(self, request: web.Request):
         if settings.MATOMO_HONOR_DNT and request.headers.get("DNT", "0") == "1":
-            async with self.client_session.get(self.matomo_url, params={
+            params = {
                 "idsite": self.matomo_site_id,
                 "rec": "1",
                 "apiv": "1",
                 "send_image": "0",
                 "ua": "",
                 "action_name": "Do Not Track enabled",
-            }, headers=self.headers) as r:
-                _LOGGER.debug(f"Sent request info to Matomo: {r.request_info.url} {r.status} '{await r.text()}'")
+            }
+            if self.matomo_auth_token:
+                params["token_auth"] = self.matomo_auth_token
+                # without this, Matomo thinks the originating IP address of the request is the server's IP
+                # "" doesn't work, so use "::1" instead
+                params["cip"] = "::1"
+            async with self.client_session.get(self.matomo_url, params=params, headers=self.headers) as r:
+                _LOGGER.debug(f"Sent info to Matomo (DNT): {r.request_info.url} {r.status} '{await r.text()}'")
             return True
         return False
 
