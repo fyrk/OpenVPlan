@@ -44,9 +44,9 @@
 .share-timetable-button::before {
     @extend  %icon-primary;
     @include icon(
-                    url("data:image/svg+xml,!bi-share-fill"),
-            $position-y: -0.1rem
+                    url("data:image/svg+xml,!bi-share-fill")
     );
+    vertical-align: -0.1rem;
     margin-left: .5rem;
 }
 
@@ -56,9 +56,8 @@
                     url("data:image/svg+xml,!bi-clipboard"),
             $width: 1.2em,
             $height: 1.2em,
-            $position-y: 0.08rem
     );
-    vertical-align: middle;
+    vertical-align: text-top;
 }
 
 .copy-timetable-link.copied::before {
