@@ -39,7 +39,8 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
 
     def __init__(self, storage: SubstitutionStorage, current_timestamp: int, stream: Stream, site_num: int,
                  encoding: str = "utf-8",
-                 group_name_column: int = 0, lesson_column: int = None, class_column: int = None):
+                 group_name_column: int = 0, lesson_column: int = None, class_column: int = None,
+                 group_name_is_class: bool = True):
         HTMLParser.__init__(self)
         BaseMultiPageSubstitutionParser.__init__(self, storage, current_timestamp, stream, site_num)
         self._is_parsing_until_next_site = False
@@ -47,6 +48,7 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
         self._group_name_column = group_name_column
         self._lesson_column = lesson_column
         self._class_column = class_column
+        self._group_name_is_class = group_name_is_class
         self._current_substitution_day: Optional[SubstitutionDay] = None
 
         self._has_read_news_heading = False
@@ -170,8 +172,8 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
                 if (group := self._current_substitution_day.get_group(group_id)) is not None:
                     group.substitutions.append(substitution)
                 else:
-                    self._current_substitution_day.add_group(SubstitutionGroup(group_id[0], group_id[1],
-                                                                               [substitution]))
+                    self._current_substitution_day.add_group(
+                        SubstitutionGroup(group_id[0], group_id[1], [substitution], self._group_name_is_class))
         if tag == "td":
             self._is_in_td = False
         elif self._is_in_td and self._current_section == "info-table" and self._reached_news:

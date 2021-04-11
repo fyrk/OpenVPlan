@@ -4,7 +4,7 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 from sortedcontainers import SortedDict, SortedKeysView, SortedList
 
-from subs_crawler.utils import split_class_name
+from subs_crawler.utils import split_class_name, parse_affected_groups
 
 
 class SubstitutionStorage:
@@ -141,21 +141,22 @@ class SubstitutionGroup:
     striked: bool
     substitutions: List["Substitution"] = dataclasses.field(default_factory=list)
     id: Tuple[str, bool] = dataclasses.field(init=False, compare=False)
-    affected_groups: Optional[List[str]] = dataclasses.field(init=False, compare=False, default_factory=list)
+    affected_groups: Optional[List[str]] = dataclasses.field(init=False, compare=False)
+    selection_name: Optional[str] = dataclasses.field(init=False, compare=False)
 
-    def __post_init__(self):
+    name_is_class: dataclasses.InitVar[bool] = True
+
+    def __post_init__(self, name_is_class):
         object.__setattr__(self, "id", (self.name, self.striked))
         number_part, letters_part = split_class_name(self.name)
         object.__setattr__(self, "_split_name", (int(number_part) if number_part else 0, letters_part, self.striked))
-        letters_upper = letters_part.upper()
-        if number_part:
-            if letters_part:
-                self.affected_groups.extend(number_part + letter for letter in letters_upper)
-            else:
-                self.affected_groups.append(number_part)
+        if name_is_class:
+            affected_groups, selection_name = parse_affected_groups(self.name)
+            object.__setattr__(self, "affected_groups", affected_groups)
+            object.__setattr__(self, "selection_name", selection_name)
         else:
-            if self.name:
-                self.affected_groups.append(letters_upper)
+            object.__setattr__(self, "affected_groups", {self.name})
+            object.__setattr__(self, "selection_name", self.name)
 
     def __lt__(self, other: "SubstitutionGroup"):
         return self._split_name.__lt__(other._split_name)
@@ -163,7 +164,7 @@ class SubstitutionGroup:
     def is_selected(self, selection=None):
         if not self.affected_groups:
             return False
-        return any(any(s in g for s in selection) for g in self.affected_groups)
+        return any(s in self.affected_groups for s in selection)
 
     def get_html_name(self):
         return ("<strike>" + self.name + "</strike>") if self.striked else self.name

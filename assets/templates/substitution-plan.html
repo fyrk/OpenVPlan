@@ -77,11 +77,11 @@
         {%- for group in day.iter_groups(selection) -%}
             {%- set s = group.substitutions[0] -%}
             <tr class="first-of-group{% if day_loop.index == 1 and s.lesson_num is not none %} lesson{{ s.lesson_num }}{% endif %}{% if s.is_new %} new-subs{% endif %}">
-                {%- set has_affected_group = not selection and group.affected_groups is not none and group.affected_groups|length == 1 -%}
+                {%- set is_selectable = not selection and group.selection_name is not none -%}
                 <td rowspan="{{ group.substitutions|length }}"
-                    class="group-name{% if has_affected_group %} selectable{% endif %}">
-                    {%- if has_affected_group -%}
-                        <a class="i-bookmark stretched-link" href="?s={{ group.affected_groups.__iter__().__next__() }}"></a>
+                    class="group-name{% if is_selectable %} selectable{% endif %}">
+                    {%- if is_selectable -%}
+                        <a class="i-bookmark stretched-link" href="?s={{ group.selection_name }}"></a>
                     {%- endif -%}
                     {{- group.get_html_name()|safe -}}
                 </td>
