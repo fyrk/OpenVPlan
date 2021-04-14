@@ -88,7 +88,7 @@ class SubstitutionDay:
     _id2group: Dict[Tuple[str, bool], "SubstitutionGroup"] = dataclasses.field(init=False, default_factory=dict)
 
     def add_group(self, group: "SubstitutionGroup"):
-        assert group.id not in self._id2group
+        assert group.id not in self._id2group, f"{group.id} already exists"
         self._groups.add(group)
         self._id2group[group.id] = group
 
@@ -159,9 +159,13 @@ class SubstitutionGroup:
             object.__setattr__(self, "selection_name", self.name)
 
     def __lt__(self, other: "SubstitutionGroup"):
+        if not self.name:
+            return False  # sort substitutions without a class last
         return self._split_name.__lt__(other._split_name)
 
     def is_selected(self, selection=None):
+        if not self.name:
+            return True  # always include substitutions without a class
         if not self.affected_groups:
             return False
         return any(s in self.affected_groups for s in selection)

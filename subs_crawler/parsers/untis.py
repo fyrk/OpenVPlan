@@ -218,7 +218,7 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
 
     def handle_substitution_data(self, data):
         if self._is_in_td:
-            self._current_substitution.append(data)
+            self._current_substitution.append(data.strip())
             self._current_strikes.append(self._is_in_strike)
 
     def error(self, message):

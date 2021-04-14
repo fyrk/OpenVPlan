@@ -9,16 +9,24 @@ def create_date_timestamp(date: datetime.datetime):
     return int(time.mktime(date.date().timetuple()))
 
 
-REGEX_GROUP_NAME = re.compile(r"^(\d+)(.*)")
+REGEX_GROUP_NAME = re.compile(r"^(\()?(\d+)(.*)(?(1)\)|)")
 
 def split_class_name(class_name: str) -> Tuple[str, str]:
     matches = REGEX_GROUP_NAME.fullmatch(class_name)
     if matches:
-        return matches.group(1), matches.group(2)
+        return matches.group(2), matches.group(3)
     return "", class_name
 
 
-REGEX_CLASS = re.compile(r"^(\d+)([A-Za-z]*)")
+def strip_par(s: str):
+    if s.startswith("(") and s.index(")") == len(s)-1:
+        return s[1:-1].strip()
+    return s
+
+
+REGEX_CLASS = re.compile(r"^(\()?"
+                         r"(\d+)([A-Za-z]*)"
+                         r"(?(1)\)|)")
 
 def parse_affected_groups(class_name: str) -> Tuple[Set[str], Optional[str]]:
     name = class_name.upper().strip()
@@ -31,14 +39,14 @@ def parse_affected_groups(class_name: str) -> Tuple[Set[str], Optional[str]]:
         if match is None:
             return {class_name}, None
         count += 1
-        digits, letters = match.groups()
+        _, digits, letters = match.groups()
         affected_groups.add(digits)
         if len(letters) > 1:
             count += 1
         for letter in letters:
             affected_groups.add(digits + letter)
         name = name[match.span()[1]:]
-    return affected_groups, class_name if count == 1 else None
+    return affected_groups, strip_par(class_name) if count == 1 else None
 
 
 def split_selection(selection: str) -> Optional[List[str]]:
