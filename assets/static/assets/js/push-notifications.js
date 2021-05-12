@@ -58,7 +58,8 @@ let notificationState;
 function setNotificationsInfo(state, registration, userTriggered = false) {
     console.log("Setting notification-state to", state);
     notificationState = state;
-    window.localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
+    if (state !== "failed")
+        window.localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
     switch (notificationState) {
         case "granted-and-enabled":
             toggleNotifications.checked = true;
@@ -127,7 +128,8 @@ function onNotificationsAvailable(registration) {
     });
 
     function reloadPermissionState() {
-        if (!notificationState.startsWith(Notification.permission)) {
+        if (!notificationState.startsWith(Notification.permission) && notificationState !== "failed") {
+            console.log(notificationState + " changed to " + Notification.permission);
             // permission has been changed
             if (Notification.permission === "granted") {
                 setNotificationsInfo("granted-and-disabled", registration);
