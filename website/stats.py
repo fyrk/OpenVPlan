@@ -52,7 +52,7 @@ class Stats:
                 cookies = None
             async with self.client_session.get(self.matomo_url, params=params, headers=self.headers, cookies=cookies) \
                     as r:
-                _LOGGER.debug(f"Sent info to Matomo (DNT): {r.request_info.url} {r.status} '{await r.text()}'")
+                _LOGGER.debug(f"Sent info to Matomo (DNT): {r.status} '{await r.text()}'")
             return True
         return False
 
