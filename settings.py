@@ -36,6 +36,8 @@ class settings:
                          f"+https://gawvertretung.florian-raediker.de) {http.SERVER_SOFTWARE}"
     }
 
+    HEADERS_BLOCK_FLOC = True
+
     DEFAULT_PLAN_ID: Optional[str] = None
 
     SUBSTITUTION_PLANS: Optional[Dict[str, Dict[str, Dict[str, Any]]]] = None
@@ -53,7 +55,6 @@ try:
     import local_settings
 except ImportError:
     pass
-
 settings.__locked = True
 
 settings = settings()

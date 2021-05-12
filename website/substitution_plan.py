@@ -44,6 +44,8 @@ RESPONSE_HEADERS = {
     "X-XSS-Protection": "1",
     "X-Robots-Tag": "noarchive, notranslate"
 }
+if settings.HEADERS_BLOCK_FLOC:
+    RESPONSE_HEADERS["Permissions-Policy"] = "interest-cohort=()"
 
 RESPONSE_HEADERS_SELECTION = {
     **RESPONSE_HEADERS,
