@@ -98,6 +98,11 @@ class SubstitutionPlan:
     def app(self):
         return self._app
 
+    async def close(self):
+        for ws in self._websockets:
+            await ws.close()
+        self._websockets.clear()
+
     async def serialize(self, filepath: str):
         self._crawler.serialize(filepath)
         self._serialization_filepath = filepath
@@ -229,10 +234,10 @@ class SubstitutionPlan:
                                 if substitutions_have_changed:
                                     await self._recreate_index_site()
                                     asyncio.get_running_loop().create_task(self._on_new_substitutions(affected_groups))
+            # no need to remove ws from self._websockets as self._websockets is a WeakSet
         except (asyncio.CancelledError, asyncio.TimeoutError):
             pass
         finally:
-            self._websockets.remove(ws)
             _LOGGER.info(f"WebSocket connection closed: {ws.close_code}")
         return ws
 

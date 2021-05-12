@@ -117,6 +117,12 @@ async def databases_context(app: web.Application):
     db.close()
 
 
+async def shutdown(app):
+    _LOGGER.info("Shutting down...")
+    for subs_plan in app["substitution_plans"].values():
+        await subs_plan.close()
+
+
 async def app_factory(dev_mode=False):
     app = web.Application(middlewares=[logger.logging_middleware, stats_middleware, error_middleware])
 
@@ -126,6 +132,9 @@ async def app_factory(dev_mode=False):
                          settings.MATOMO_HEADERS)
 
     app["substitution_plans"] = {}
+
+    app.on_shutdown.append(shutdown)
+
     for plan_id, plan_config in settings.SUBSTITUTION_PLANS.items():
         crawler_id = plan_config["crawler"]["name"]
         try:
