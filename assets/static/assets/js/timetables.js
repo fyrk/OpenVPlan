@@ -84,10 +84,12 @@ if (selection) {
                 }
                 for (let lesson of lessonString.match(/(\d+)/g)) {
                     lesson = parseInt(lesson);
-                    if (teacherName in groupSubstitutions[lesson-1])
-                        groupSubstitutions[lesson-1][teacherName].push(row);
-                    else
-                        groupSubstitutions[lesson-1][teacherName] = [row];
+                    if (1 <= lesson && lesson <= 10) {
+                        if (teacherName in groupSubstitutions[lesson - 1])
+                            groupSubstitutions[lesson - 1][teacherName].push(row);
+                        else
+                            groupSubstitutions[lesson - 1][teacherName] = [row];
+                    }
                 }
             }
             if (groupName != null)
