@@ -133,6 +133,14 @@ class SubstitutionPlan:
     async def _root_handler(self, request: web.Request) -> web.Response:
         # noinspection PyBroadException
         try:
+            if request.query.get("s_src"):
+                # track selection source with Matomo
+                await self._app["stats"].track_selection_source(request, self._template_options["title"])
+
+                query = dict(request.query)
+                del query["s_src"]
+                raise web.HTTPSeeOther(location=request.url.with_query(query))
+
             if "all" not in request.query and "s" not in request.query:
                 if self._selection_cookie in request.cookies and request.cookies[self._selection_cookie].strip():
                     raise web.HTTPSeeOther(

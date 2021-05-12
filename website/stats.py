@@ -161,6 +161,32 @@ class Stats:
             ca=True
         )
 
+    async def track_selection_source(self, request: web.Request, plan_name):
+        if await self._check_dnt(request):
+            return
+        s_src = request.query.get("s_src")
+        action = None
+        if s_src == "bookmark":
+            action = "via Bookmark"
+        elif s_src == "form":
+            if "all" in request.query:
+                action = "via All Button"
+            elif "s" in request.query:
+                action = "via Form"
+
+        if action:
+            if hdrs.REFERER in request.headers:
+                url = self.anonymize_url(self.anonymize_url(request.headers[hdrs.REFERER]))
+            else:
+                url = None
+            await self._send_to_matomo(
+                request,
+                e_c="Selection",
+                e_n=plan_name,
+                e_a=action,
+                url=url
+            )
+
     async def track_4xx_error(self, request: web.Request, time, response: web.Response):
         url = self.anonymize_url(request.url)
         action_name = f"{response.status} {response.reason}/URL = {url}"
