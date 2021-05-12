@@ -30,7 +30,9 @@ SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(
 DELETE_COOKIE_EXPIRE = formatdate(0)
 
 RESPONSE_HEADERS = {
-    "Content-Security-Policy": "default-src 'self'; "
+    "Content-Security-Policy": "default-src 'none'; "
+                               "style-src 'self'; "
+                               "manifest-src 'self';"
                                "img-src 'self' data:; "
                                "script-src 'self' 'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g='; "
                                "connect-src 'self' " + ("ws:" if settings.DEBUG else "wss:") + "; "
