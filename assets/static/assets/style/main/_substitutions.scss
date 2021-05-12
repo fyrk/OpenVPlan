@@ -153,6 +153,7 @@ $day-info-heading-font-size: 1.15rem;
 
 #online-status {
     font-weight: $font-weight-bold;
+    margin-left: .6em;
 }
 
 #online-status.online::before { // .online is added by JS
