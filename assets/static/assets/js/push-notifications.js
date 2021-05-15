@@ -143,7 +143,10 @@ function onNotificationsAvailable(registration) {
     window.addEventListener("focus", reloadPermissionState);
 
     notificationState = window.localStorage.getItem(substitutionPlanType + "-notification-state");
-    if (notificationState == null)
+    if (notificationState == null
+        // "failed" is no longer stored in localStorage to prevent notifications from being disabled if the offline
+        // page was viewed, but perhaps it's still in there from earlier versions:
+        || notificationState === "failed")
         notificationState = "default";
     if (!reloadPermissionState()) {
         setNotificationsInfo(notificationState, registration);
