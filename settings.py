@@ -1,4 +1,5 @@
-from typing import Optional, Dict, Any
+import logging
+from typing import Optional, Dict, Any, Union
 
 from aiohttp import http, hdrs
 
@@ -11,8 +12,12 @@ class settings:
 
     DEBUG = False
 
-    LOGFILE = "logs/website.log"
     DATA_DIR = "data/"
+    LOGFILE = "logs/website.log"
+    TELEGRAM_BOT_LOGGER_TOKEN: Optional[str] = None
+    TELEGRAM_BOT_LOGGER_CHAT_ID: Optional[Union[int, str]] = None
+    TELEGRAM_BOT_LOGGER_USE_FIXED_WIDTH: bool = False
+    TELEGRAM_BOT_LOGGER_LEVEL: int = logging.WARNING
 
     IS_PROXIED = False
 

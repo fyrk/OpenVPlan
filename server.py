@@ -1,9 +1,11 @@
 import argparse
 import asyncio
 import os
+import sys
 import time
 from functools import partial
 
+import aiohttp
 import jinja2
 from aiohttp import client, web
 
@@ -17,7 +19,6 @@ from website.substitution_plan import RESPONSE_HEADERS, SubstitutionPlan
 
 os.chdir(os.path.dirname(__file__))
 
-logger.init(settings.LOGFILE)
 _LOGGER = logger.get_logger()
 
 env = jinja2.Environment(
@@ -121,9 +122,13 @@ async def shutdown(app):
     _LOGGER.info("Shutting down...")
     for subs_plan in app["substitution_plans"].values():
         await subs_plan.close()
+    await logger.cleanup()
 
 
-async def app_factory(dev_mode=False):
+async def app_factory(dev_mode, start_log_msg):
+    await logger.init(settings.LOGFILE)
+    _LOGGER.info(start_log_msg)
+
     app = web.Application(middlewares=[logger.logging_middleware, stats_middleware, error_middleware])
 
     app["stats"] = Stats(os.path.join(settings.DATA_DIR, "stats/status.csv"),
@@ -175,6 +180,13 @@ async def app_factory(dev_mode=False):
         web.post("/api/report-error", report_js_error_handler)
     ])
 
+    if settings.DEBUG:
+        async def test500_handler(request: web.Request):
+            if "log" in request.query:
+                _LOGGER.error("Test error")
+            raise ValueError
+        app.add_routes([web.get("/test500", test500_handler)])
+
     if dev_mode:
         app.router.add_static("/", "assets/static/")
 
@@ -183,10 +195,11 @@ async def app_factory(dev_mode=False):
     return app
 
 
-def run(path, host, port, dev_mode=False):
-    _LOGGER.info(f"Starting server on {path if path else str(host) + ':' + str(port)}"
-                 f"{' in dev mode' if dev_mode else ''}")
-    web.run_app(app_factory(dev_mode), path=path, host=host, port=port, print=_LOGGER.info)
+def main(path, host, port, dev_mode=False):
+    web.run_app(app_factory(dev_mode,
+                            f"Starting server on {path if path else str(host) + ':' + str(port)} "
+                            f"{' in dev mode' if dev_mode else ''}"),
+                path=path, host=host, port=port, print=_LOGGER.info)
 
 
 if __name__ == "__main__":
@@ -203,4 +216,4 @@ if __name__ == "__main__":
         path = None
         host = args.host if args.host else settings.HOST
         port = args.port if args.port else settings.PORT
-    run(path, host, port, settings.DEBUG)
+    main(path, host, port, settings.DEBUG)

@@ -1,11 +1,16 @@
+import asyncio
 import contextvars
 import logging
 import logging.handlers
 import secrets
 import sys
 import time
+from typing import Union, Optional
 
+import aiohttp
 from aiohttp import web
+
+from settings import settings
 
 _logger = logging.getLogger("gawvertretung")
 
@@ -19,15 +24,53 @@ _stdout_handler = logging.StreamHandler(sys.stdout)
 _stdout_handler.setLevel(logging.ERROR)
 _stdout_handler.setFormatter(_log_formatter)
 _root.addHandler(_stdout_handler)
+_tg_bot_handler: Optional["TelegramBotLogHandler"] = None
 
 # disable aiohttp.access logger
 logging.getLogger("aiohttp.access").propagate = False
 
 
-def init(filepath):
+class TelegramBotLogHandler(logging.Handler):
+    def __init__(self, client_session: aiohttp.ClientSession, level: Union[int, str], token: str, chat_id: Union[int, str]):
+        super().__init__(level)
+        self._client_session = client_session
+        self._url = f"https://api.telegram.org/bot{token}/sendMessage"
+        self._chat_id = chat_id
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """ Important note: Expects logging call to be made from an event loop. """
+        if not self._client_session.closed:
+            loop = asyncio.get_running_loop()
+
+            async def r():
+                if not self._client_session.closed:
+                    data = {"text": self.format(record), "chat_id": self._chat_id, "entities": []}
+                    if settings.TELEGRAM_BOT_LOGGER_USE_FIXED_WIDTH:
+                        msg = data["text"].replace("<", "&lt").replace(">", "&gt;").replace("&", "&amp;")
+                        if "\n" in msg:
+                            msg = "<pre>" + msg + "</pre>"
+                        else:
+                            msg = "<code>" + msg + "</code>"
+                        data["text"] = msg
+                        data["parse_mode"] = "HTML"
+                    await self._client_session.post(self._url, data=data)
+            loop.create_task(r())
+
+    async def cleanup(self):
+        await self._client_session.close()
+
+
+async def init(filepath):
     file_handler = logging.handlers.WatchedFileHandler(filepath, encoding="utf-8")
     file_handler.setFormatter(_log_formatter)
     _root.addHandler(file_handler)
+    if settings.TELEGRAM_BOT_LOGGER_TOKEN:
+        global _tg_bot_handler
+        _tg_bot_handler = TelegramBotLogHandler(aiohttp.ClientSession(), settings.TELEGRAM_BOT_LOGGER_LEVEL,
+                                                settings.TELEGRAM_BOT_LOGGER_TOKEN,
+                                                settings.TELEGRAM_BOT_LOGGER_CHAT_ID)
+        _tg_bot_handler.setFormatter(_log_formatter)
+        _root.addHandler(_tg_bot_handler)
 
     # Add logging factory so that {message} looks like this instead: "[plan_name] [request_id] {message}"
     old_factory = logging.getLogRecordFactory()
@@ -47,6 +90,10 @@ def init(filepath):
         return record
 
     logging.setLogRecordFactory(factory)
+
+
+async def cleanup():
+    await _tg_bot_handler.cleanup()
 
 
 def get_logger():

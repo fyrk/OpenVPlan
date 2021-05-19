@@ -154,7 +154,7 @@ class SubstitutionPlan:
                     raise web.HTTPSeeOther(location="/" + self._plan_id + "/?all")
 
             substitutions_have_changed, affected_groups = await self._crawler.update(self.client_session)
-            if "event" in request.query and settings.DEBUG:
+            if settings.DEBUG and "event" in request.query:
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
                 affected_groups = json.loads(request.query["event"])
