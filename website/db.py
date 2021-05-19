@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import json
 import logging
@@ -16,12 +17,19 @@ sqlite3.register_adapter(list, lambda selection: ",".join(selection).encode("utf
 
 class SubstitutionPlanDB:
     def __init__(self, filepath, **kwargs):
-        self._connection = sqlite3.connect(filepath, detect_types=sqlite3.PARSE_DECLTYPES, **kwargs)
+        self._connection = sqlite3.connect(filepath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES,
+                                           **kwargs)
         self._connection.row_factory = sqlite3.Row
         self._cursor = self._connection.cursor()
-        self._cursor.execute("CREATE TABLE IF NOT EXISTS push_subscriptions2 "
-                             "(plan_id TEXT, subscription JSON, selection SELECTION, is_active BOOLEAN,"
-                             " endpoint_hash TEXT, endpoint_origin TEXT, unique(plan_id, subscription))")
+
+        self._cursor.execute("PRAGMA main.user_version;")
+        user_version = self._cursor.fetchone()["user_version"]
+        if user_version == 0:
+            self._cursor.execute("CREATE TABLE IF NOT EXISTS push_subscriptions2 "
+                                 "(plan_id TEXT, subscription JSON, selection SELECTION, is_active BOOLEAN,"
+                                 " endpoint_hash TEXT, endpoint_origin TEXT, last_change TIMESTAMP, "
+                                 " unique(plan_id, subscription))")
+            self._cursor.execute("PRAGMA main.user_version = 1;")
         self._connection.commit()
 
     def close(self):
@@ -36,8 +44,9 @@ class SubstitutionPlanDB:
             endpoint_origin = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
         except Exception:
             raise ValueError("Wrong subscription object '" + str(subscription) + "'")
-        self._cursor.execute("REPLACE INTO push_subscriptions2 VALUES (?,?,?,?,?,?)",
-                             (plan_id, subscription, selection, is_active, endpoint_hash, endpoint_origin))
+        self._cursor.execute("REPLACE INTO push_subscriptions2 VALUES (?,?,?,?,?,?,?)",
+                             (plan_id, subscription, selection, is_active, endpoint_hash, endpoint_origin,
+                              datetime.datetime.now()))
         self._connection.commit()
         _LOGGER.debug(f"Add push subscription {plan_id}-{endpoint_hash} "
                       f"(is_active={is_active}, origin={endpoint_origin})")
