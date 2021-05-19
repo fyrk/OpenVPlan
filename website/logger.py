@@ -93,7 +93,8 @@ async def init(filepath):
 
 
 async def cleanup():
-    await _tg_bot_handler.cleanup()
+    if _tg_bot_handler:
+        await _tg_bot_handler.cleanup()
 
 
 def get_logger():
