@@ -279,7 +279,10 @@ class SubstitutionPlan:
             # WEBSOCKETS
             _LOGGER.debug(f"Sending update event via WebSocket connection to {len(self._websockets)} clients")
             for ws in self._websockets:
-                await ws.send_json({"type": "new_substitutions"})
+                try:
+                    await ws.send_json({"type": "new_substitutions"})
+                except:
+                    pass
 
             # PUSH NOTIFICATIONS
             if affected_groups:
