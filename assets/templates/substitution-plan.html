@@ -73,6 +73,12 @@
         </div>
     </div>
     {# In the following, {%- -%}/{{- -}} must be used to make subs_table completely empty if there are no substitutions #}
+
+    {# Fix for https://github.com/pallets/jinja/issues/1427 #}
+    {% set s = None %}
+    {% set d = None %}
+    {% set group = None %}
+
     {% set subs_table -%}
         {%- for group in day.iter_groups(selection) -%}
             {%- set s = group.substitutions[0] -%}

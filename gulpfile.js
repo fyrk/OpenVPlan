@@ -2,7 +2,7 @@ const gulp = require("gulp");
 const argv = require("yargs").argv;
 const sourcemaps = require("gulp-sourcemaps");
 const rename = require("gulp-rename");
-const fs = require('fs');
+const fs = require("fs");
 
 
 const closureCompiler = require("google-closure-compiler").gulp();
@@ -43,7 +43,7 @@ gulp.task("build-js", () => {
 })
 
 
-const sass = require("gulp-sass");
+const sass = require("gulp-dart-sass");
 const postcss = require("gulp-postcss");
 const autoprefixer = require("autoprefixer");
 const purgecss = require("@fullhuman/postcss-purgecss");

@@ -1,1 +1,2 @@
-subst_*.htm
+*
+!.gitignore
