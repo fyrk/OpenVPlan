@@ -232,7 +232,7 @@ self.addEventListener("push", async (event) => {
             const options = {
                 body: body,
                 icon: "android-chrome-512x512.png",
-                badge: "favicon-monochrome-96x96.png",
+                badge: "monochrome-96x96.png",
                 lang: "de",
                 timestamp: timestamp,
                 vibrate: [300, 100, 400],
