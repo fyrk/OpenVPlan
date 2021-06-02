@@ -239,11 +239,17 @@ self.addEventListener("push", async (event) => {
                 data: {
                     plan_id: plan_id,
                     url: new URL("/" + plan_id + "/", self.location.origin).href,
-                    affected_groups_by_day: affectedGroups
+                    affected_groups_by_day: affectedGroups,
+                    notification_id: data.notification_id
                 }
             };
 
             self.registration.showNotification(title, options)
+
+            fetch("/api/event", {
+                method: "post",
+                body: new URLSearchParams({type: "notification_received", plan_id: plan_id, notification_id: data.notification_id})
+            });
         })
     );
 });
@@ -252,24 +258,31 @@ self.addEventListener("notificationclick", event => {
     event.notification.close();
 
     // open website
-    event.waitUntil(self.clients.matchAll({
-        type: "window"
-    }).then(function (clientList) {
-        for (let client of clientList) {
-            const url = new URL(client.url);
-            console.log(event.notification.data.url, url.origin+url.pathname);
-            if (url.origin+url.pathname === event.notification.data.url && "focus" in client)
-                return client.focus();
-        }
-        if (self.clients.openWindow)
-            return self.clients.openWindow(event.notification.data.url);
-    }));
+    event.waitUntil(Promise.all([
+        self.clients.matchAll({
+            type: "window"
+        }).then(function (clientList) {
+            for (let client of clientList) {
+                const url = new URL(client.url);
+                console.log(event.notification.data.url, url.origin + url.pathname);
+                if (url.origin + url.pathname === event.notification.data.url && "focus" in client)
+                    return client.focus();
+            }
+            if (self.clients.openWindow)
+                return self.clients.openWindow(event.notification.data.url);
+        }),
 
-    // close all notifications
-    self.registration.getNotifications().then(notifications => {
-        notifications.forEach(n => {
-            if (n.data != null && n.data.plan_id === event.notification.data.plan_id)
-                n.close()
-        });
-    });
+        // close all notifications
+        self.registration.getNotifications().then(notifications => {
+            notifications.forEach(n => {
+                if (n.data != null && n.data.plan_id === event.notification.data.plan_id)
+                    n.close()
+            });
+        }),
+
+        fetch("/api/event", {
+            method: "post",
+            body: new URLSearchParams({type: "notification_clicked", plan_id: event.notification.data.plan_id, notification_id: event.notification.data.notification_id})
+        })
+    ]));
 });

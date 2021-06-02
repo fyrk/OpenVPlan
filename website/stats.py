@@ -57,11 +57,12 @@ class Stats:
         return False
 
     @overload
-    async def _send_to_matomo(self, request: web.Request, time=None,
+    async def _send_to_matomo(self, request: web.Request = None, time=None,
                               action_name=None,
                               url=None,
                               urlref=None,
                               ca=False,
+                              uid=None,
                               #dimensions,
                               e_c=None,
                               e_a=None,
@@ -70,7 +71,7 @@ class Stats:
                               ):
         ...
 
-    async def _send_to_matomo(self, request: web.Request, **kwargs):
+    async def _send_to_matomo(self, request: web.Request = None, **kwargs):
         # noinspection PyBroadException
         try:
             now = datetime.datetime.now()
@@ -83,22 +84,23 @@ class Stats:
                 "send_image": "0",
                 "h": now.hour,
                 "m": now.minute,
-                "s": now.second,
-                "ua": request.headers.get(hdrs.USER_AGENT, ""),
-                "lang": request.headers.get(hdrs.ACCEPT_LANGUAGE, ""),
+                "s": now.second
             }
+            cookies = None
+            if request:
+                params["ua"] = request.headers.get(hdrs.USER_AGENT, "")
+                params["lang"] = request.headers.get(hdrs.ACCEPT_LANGUAGE, "")
+                if self.matomo_auth_token:
+                    params["token_auth"] = self.matomo_auth_token
+                    params["cip"] = request.remote if not settings.IS_PROXIED else request.headers.get("X-Real-IP")
+                if "matomo_ignore" in request.cookies:
+                    cookies = {"matomo_ignore": request.cookies["matomo_ignore"]}
             if kwargs.get("time"):
                 params["gt_ms"] = str(int(round(int(kwargs["time"]) * 0.000001)))
             if kwargs.get("ca"):
                 kwargs["ca"] = "1"
             params.update(kwargs)
-            if self.matomo_auth_token:
-                params["token_auth"] = self.matomo_auth_token
-                params["cip"] = request.remote if not settings.IS_PROXIED else request.headers.get("X-Real-IP")
-            if "matomo_ignore" in request.cookies:
-                cookies = {"matomo_ignore": request.cookies["matomo_ignore"]}
-            else:
-                cookies = None
+
             async with self.client_session.get(self.matomo_url, params=params, headers=self.headers, cookies=cookies) \
                     as r:
                 _LOGGER.debug(f"Sent info to Matomo: {r.status} '{await r.text()}'")
@@ -141,9 +143,10 @@ class Stats:
                 ca=True
             )
 
-    async def track_push_subscription(self, request: web.Request, time, plan_name, is_active):
+    async def track_push_subscription(self, request: web.Request, time, subscription):
         if await self._check_dnt(request):
             return
+        is_active = subscription["is_active"]
         if is_active is None:
             action = "None"
         elif is_active:
@@ -155,9 +158,47 @@ class Stats:
             time=time,
             #action_name=f"API / {plan_name} / {action} Push",
             url=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
+            uid=subscription["endpoint_hash"],
             e_c="Push Subscription",
-            e_n=plan_name,
+            e_n=subscription["plan_id"],
             e_a=action,
+            ca=True
+        )
+
+    async def track_notification_sent(self, subscription):
+        if settings.MATOMO_HONOR_DNT and subscription["dnt_enabled"]:
+            return
+        await self._send_to_matomo(
+            uid=subscription["endpoint_hash"],
+            e_c="Push Subscription",
+            e_n=subscription["plan_id"],
+            e_a="Notification Sent",
+            ca=True
+        )
+
+    async def track_notification_received(self, request: web.Request, time, plan_id, notification_id):
+        if await self._check_dnt(request):
+            return
+        await self._send_to_matomo(
+            request,
+            time=time,
+            uid=notification_id,
+            e_c="Push Subscription",
+            e_n=plan_id,
+            e_a="Notification Received",
+            ca=True
+        )
+
+    async def track_notification_clicked(self, request: web.Request, time, plan_id, notification_id):
+        if await self._check_dnt(request):
+            return
+        await self._send_to_matomo(
+            request,
+            time=time,
+            uid=notification_id,
+            e_c="Push Subscription",
+            e_n=plan_id,
+            e_a="Notification Clicked",
             ca=True
         )
 

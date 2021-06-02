@@ -1,11 +1,9 @@
 import argparse
 import asyncio
 import os
-import sys
 import time
 from functools import partial
 
-import aiohttp
 import jinja2
 from aiohttp import client, web
 
@@ -99,6 +97,24 @@ async def report_js_error_handler(request: web.Request):
     return web.Response()
 
 
+async def api_event_handler(request: web.Request):
+    t1 = time.perf_counter_ns()
+    try:
+        data = await request.post()
+        type_ = data["type"]
+        if type_ == "notification_received":
+            await request.app["stats"].track_notification_received(request, time.perf_counter_ns()-t1, data["plan_id"],
+                                                                   data["notification_id"])
+        elif type_ == "notification_clicked":
+            await request.app["stats"].track_notification_clicked(request, time.perf_counter_ns()-t1, data["plan_id"],
+                                                                  data["notification_id"])
+        else:
+            _LOGGER.warning(f"Invalid type sent to /api/event: {type_!r}")
+    except Exception:
+        _LOGGER.exception("Exception while handling event api request")
+    return web.Response()
+
+
 async def client_session_context(app: web.Application):
     _LOGGER.debug(f"Create ClientSession (headers: {settings.REQUEST_HEADERS})")
     session = client.ClientSession(headers=settings.REQUEST_HEADERS)
@@ -177,7 +193,8 @@ async def app_factory(dev_mode, start_log_msg):
         web.get("/", root_handler),
         web.get("/privacy", template_handler(TEMPLATE_PRIVACY, "Datenschutzerklärung")),
         web.get("/about", template_handler(TEMPLATE_ABOUT, "Impressum")),
-        web.post("/api/report-error", report_js_error_handler)
+        web.post("/api/report-error", report_js_error_handler),
+        web.post("/api/event", api_event_handler)
     ])
 
     if settings.DEBUG:

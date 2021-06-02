@@ -245,26 +245,22 @@ class SubstitutionPlan:
     @logger.request_wrapper
     async def _subscribe_push_handler(self, request: web.Request):
         t1 = time.perf_counter_ns()
-        is_active = None
-        user_triggered = False
         # noinspection PyBroadException
         try:
             data = await request.json()
-            self.db.add_push_subscription(self._plan_id, data["subscription"], data["selection"], data["is_active"])
-            is_active = data["is_active"]
+            subscription = self.db.add_push_subscription(self._plan_id, data["subscription"], data["selection"],
+                                                         data["is_active"], request.headers.get("DNT", "0") == "1")
             user_triggered = data.get("user_triggered", False)
             response = web.json_response({"ok": True})
         except Exception:
             _LOGGER.exception("Subscribing push service failed")
             response = web.json_response({"ok": False}, status=400)
-
-        if user_triggered:
-            await response.prepare(request)
-            await response.write_eof()
-            t2 = time.perf_counter_ns()
-            asyncio.get_running_loop().create_task(
-                self._app["stats"].track_push_subscription(request, t2-t1, self._template_options["title"], is_active)
-            )
+        else:
+            if user_triggered:
+                t2 = time.perf_counter_ns()
+                asyncio.get_running_loop().create_task(
+                    self._app["stats"].track_push_subscription(request, t2-t1, subscription)
+                )
 
         return response
 
@@ -301,7 +297,8 @@ class SubstitutionPlan:
                                            # status_datetime.timestamp() correctly assumes that datetime is local
                                            # time (status_datetime has no tzinfo) and returns the correct UTC
                                            # timestamp
-                                           "timestamp": self._crawler.storage.status_datetime.timestamp()})
+                                           "timestamp": self._crawler.storage.status_datetime.timestamp(),
+                                           "notification_id": subscription["endpoint_hash"]})
 
                         endpoint, data, headers = pywebpush.webpush(
                             subscription["subscription"], data,
@@ -327,6 +324,9 @@ class SubstitutionPlan:
                                 _LOGGER.debug(
                                     f"Successfully sent push notification to {self._plan_id}-{endpoint_hash}: "
                                     f"{r.status} {repr(await r.text())}")
+                                asyncio.get_running_loop().create_task(
+                                    self._app["stats"].track_notification_sent(subscription)
+                                )
                     except Exception:
                         _LOGGER.exception(f"Could not send push notification to "
                                           f"{self._plan_id}-{endpoint_hash} ({endpoint_origin})")
