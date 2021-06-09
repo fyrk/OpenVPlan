@@ -81,6 +81,7 @@ $light-colors: (
 
     "table-border-color": #dee2e6,  // Bootstrap default
     "table-group-separator-color": #dee2e6,
+    "table-grey-substitution-color": #adb5bd,
 
     // Custom variables
     "box-bg": $light-box-bg,
@@ -118,6 +119,7 @@ $dark-colors: (
     "form-check-radio-checked-bg-image": escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='2' fill='#{$dark-box-bg}'/></svg>")),
     "table-border-color": #495057,
     "table-group-separator-color": #495057,
+    "table-grey-substitution-color": #b3b3b3,
 
     // Custom variables
     "box-bg": $dark-box-bg,
@@ -128,7 +130,7 @@ $dark-colors: (
 
     "table-first-of-group-border-color": #8593a5,
 
-    "substitutions-table-new-subs-bg": rgba($dark-primary, 0.2),
+    "substitutions-table-new-subs-bg": rgba(222 222 222 / 9%),
 
     "themes-heading-icon": escape-svg(url('data:image/svg+xml,!bi-moon-fill'))
 );

@@ -115,7 +115,7 @@ $day-info-heading-font-size: 1.15rem;
         }
 
         tr.grey td:not(.group-name) {
-            color: var(--table-border-color);
+            color: var(--table-grey-substitution-color);
         }
 
         tr.is-relevant td:not(.group-name) {
