@@ -89,7 +89,7 @@ class Stats:
             }
             cookies = None
             if request:
-                params["ua"] = kwargs.get("ua") or request.headers.get(hdrs.USER_AGENT) or ""
+                params["ua"] = request.headers.get(hdrs.USER_AGENT, "")
                 params["lang"] = request.headers.get(hdrs.ACCEPT_LANGUAGE, "")
                 if self.matomo_auth_token:
                     params["token_auth"] = self.matomo_auth_token
@@ -171,7 +171,7 @@ class Stats:
             return
         await self._send_to_matomo(
             uid=subscription["endpoint_hash"],
-            ua=subscription["user_agent"],
+            ua=subscription["user_agent"] or "",
             e_c="Push Subscription",
             e_n=subscription["plan_id"],
             e_a="Notification Sent",
