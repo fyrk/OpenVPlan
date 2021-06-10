@@ -63,6 +63,7 @@ class Stats:
                               urlref=None,
                               ca=False,
                               uid=None,
+                              ua=None,
                               #dimensions,
                               e_c=None,
                               e_a=None,
@@ -88,7 +89,7 @@ class Stats:
             }
             cookies = None
             if request:
-                params["ua"] = request.headers.get(hdrs.USER_AGENT, "")
+                params["ua"] = kwargs.get("ua") or request.headers.get(hdrs.USER_AGENT) or ""
                 params["lang"] = request.headers.get(hdrs.ACCEPT_LANGUAGE, "")
                 if self.matomo_auth_token:
                     params["token_auth"] = self.matomo_auth_token
@@ -117,7 +118,7 @@ class Stats:
         url = yarl.URL(url)
         selection, _, _ = SubstitutionPlan.parse_selection(url)
         if selection:
-            url %= {"s": ",".join(anonymize_selection(s) for s in selection)}
+            url = url.with_query(s=",".join(anonymize_selection(s) for s in selection))
         return str(url)
 
     async def track_page_view(self, request: web.Request, is_sw, time, title):
@@ -170,6 +171,7 @@ class Stats:
             return
         await self._send_to_matomo(
             uid=subscription["endpoint_hash"],
+            ua=subscription["user_agent"],
             e_c="Push Subscription",
             e_n=subscription["plan_id"],
             e_a="Notification Sent",

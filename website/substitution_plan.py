@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, MutableSet, Optional, Union, Tuple
 import jinja2
 import pywebpush
 import yarl
-from aiohttp import ClientSession, web, WSMessage, WSMsgType
+from aiohttp import ClientSession, web, WSMessage, WSMsgType, hdrs
 
 from settings import settings
 from subs_crawler.crawlers.base import BaseSubstitutionCrawler
@@ -249,7 +249,8 @@ class SubstitutionPlan:
         try:
             data = await request.json()
             subscription = self.db.add_push_subscription(self._plan_id, data["subscription"], data["selection"],
-                                                         data["is_active"], request.headers.get("DNT", "0") == "1")
+                                                         data["is_active"], request.headers.get("DNT", "0") == "1",
+                                                         request.headers.get(hdrs.USER_AGENT))
             user_triggered = data.get("user_triggered", False)
             response = web.json_response({"ok": True})
         except Exception:
