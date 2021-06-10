@@ -1,3 +1,5 @@
 .day-info-checkbox ~ .day-info-label::before{background-color:white}.substitutions-table{margin-bottom:0}.substitutions-table tbody tr.first-of-group td{border-top-color:#8593a5}.substitutions-table tbody tr.grey td:not(.group-name){color:#495057}.substitutions-table tbody tr.new-subs td:not(.group-name){background-color:rgba(192,114,23,0.2)}.substitutions-table>:not(caption)>*>*{border-bottom-width:0;border-top-width:1px}.substitutions-table>:not(:last-child)>:last-child>*{border-bottom-width:2px}.copy-timetable-link::before{background-color:white}.table{color:#fff;border-color:#495057}.table>:not(:last-child)>:last-child>*{border-bottom-color:#495057}.form-control:disabled,.form-control[readonly]{background-color:inherit}
-
+.substitutions-table tbody tr.new-subs td:not(.group-name) {
+    background-color: #dedede17;
+}
 /*# sourceMappingURL=substitutions-dark.css.map */
