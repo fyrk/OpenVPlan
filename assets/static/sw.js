@@ -178,7 +178,7 @@ self.addEventListener("fetch", event => {
 self.addEventListener("push", async (event) => {
     const data = event.data.json();
 
-    let timestamp = data["timestamp"];
+    //let timestamp = data["timestamp"];
     let plan_id = data["plan_id"];
 
     // merge all affected groups of previous notifications with the same plan id that are still open
@@ -234,7 +234,7 @@ self.addEventListener("push", async (event) => {
                 icon: "android-chrome-512x512.png",
                 badge: "monochrome-96x96.png",
                 lang: "de",
-                timestamp: timestamp,
+                //timestamp: timestamp,
                 vibrate: [300, 100, 400],
                 data: {
                     plan_id: plan_id,
