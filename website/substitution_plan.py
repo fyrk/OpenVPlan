@@ -290,7 +290,8 @@ class SubstitutionPlan:
                 ) -> Optional[sqlite3.Row]:
                     endpoint_hash = subscription["endpoint_hash"]
                     endpoint_origin = subscription["endpoint_origin"]
-                    _LOGGER.debug("Sending push notification to " + endpoint_hash)
+                    _LOGGER.debug(f"Sending push notification to "
+                                  f"{self._plan_id}-{endpoint_hash[:6]} ({endpoint_origin})")
                     # noinspection PyBroadException
                     try:
                         data = json.dumps({"affected_groups_by_day": common_affected_groups,
@@ -313,24 +314,28 @@ class SubstitutionPlan:
                             }, curl=True)  # modifications to make this work: see beginning of this file
                         async with self.client_session.post(endpoint, data=data, headers=headers) as r:
                             if r.status >= 400:
-                                _LOGGER.error(f"Could not send push notification to "
-                                              f"{self._plan_id}-{endpoint_hash} ({endpoint_origin}): "
-                                              f"{r.status} {repr(await r.text())}")
+
                                 # If status code is 404 or 410, the endpoints are unavailable, so delete the
                                 # subscription.
                                 # See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
                                 if r.status in (404, 410):
+                                    _LOGGER.debug(f"No longer valid subscription "
+                                                  f"{self._plan_id}-{endpoint_hash[:6]}: "
+                                                  f"{r.status} {repr(await r.text())}")
                                     return subscription
+                                else:
+                                    _LOGGER.error(f"Could not send push notification to "
+                                                  f"{self._plan_id}-{endpoint_hash[:6]}: "
+                                                  f"{r.status} {repr(await r.text())}")
                             else:
                                 _LOGGER.debug(
-                                    f"Successfully sent push notification to {self._plan_id}-{endpoint_hash}: "
+                                    f"Successfully sent push notification to {self._plan_id}-{endpoint_hash[:6]}: "
                                     f"{r.status} {repr(await r.text())}")
                                 asyncio.get_running_loop().create_task(
                                     self._app["stats"].track_notification_sent(subscription)
                                 )
                     except Exception:
-                        _LOGGER.exception(f"Could not send push notification to "
-                                          f"{self._plan_id}-{endpoint_hash} ({endpoint_origin})")
+                        _LOGGER.exception(f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]}")
                     return None
 
                 def iter_relevant_subscriptions():
