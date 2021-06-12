@@ -16,10 +16,10 @@
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^4.0.3",
     "autoprefixer": "^10.2.5",
-    "bootstrap": "^5.0.0-beta3",
-    "bootstrap-icons": "^1.4.1",
+    "bootstrap": "^5.0.1",
+    "bootstrap-icons": "^1.5.0",
     "del": "^6.0.0",
-    "google-closure-compiler": "^20210302.0.0",
+    "google-closure-compiler": "^20210601.0.0",
     "gulp": "^4.0.2",
     "gulp-dart-sass": "^1.0.2",
     "gulp-html-minifier-terser": "^6.0.1",
@@ -27,9 +27,9 @@
     "gulp-real-favicon": "^0.3.2",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
-    "gulp-sourcemaps": "^2.6.5",
-    "postcss": "^8.2.15",
-    "sass": "^1.34.0",
-    "yargs": "^16.2.0"
+    "gulp-sourcemaps": "^3.0.0",
+    "postcss": "^8.3.2",
+    "sass": "^1.34.1",
+    "yargs": "^17.0.1"
   }
 }
