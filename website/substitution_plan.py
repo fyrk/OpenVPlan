@@ -311,7 +311,9 @@ class SubstitutionPlan:
                                 # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
                                 # be longer than 24 hours from the time the request is made)
                                 "exp": int(time.time()) + 86395
-                            }, curl=True)  # modifications to make this work: see beginning of this file
+                            },
+                            ttl=86400,
+                            curl=True)  # modifications to make this work: see beginning of this file
                         async with self.client_session.post(endpoint, data=data, headers=headers) as r:
                             if r.status >= 400:
 
