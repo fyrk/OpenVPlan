@@ -39,7 +39,7 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
         t2 = time.perf_counter_ns()
         new_status_string, new_status_datetime = await self._parser_class.get_status(first_site)
         old_status = self._storage.status if self._storage is not None else None
-        _LOGGER.debug(f"[multipage-crawler] Got answer in {t2 - t1}ns, status is {repr(new_status_string)}"
+        _LOGGER.debug(f"[multipage-crawler] Got answer in {t2 - t1}ns, status is {repr(new_status_string)} "
                       f"(old: {repr(old_status)})")
         affected_groups = None
         if new_status_string != old_status:
