@@ -134,10 +134,11 @@ class Stats:
         if not is_sw:
             dimensions = {}
             try:
-                features = json.loads(base64.b64decode(request.cookies["features"]))
-                for name, value in features.items():
-                    if name in settings.MATOMO_DIMENSIONS:
-                        dimensions[int(settings.MATOMO_DIMENSIONS[name])] = str(value)
+                if "features" in request.cookies:
+                    features = json.loads(base64.b64decode(request.cookies["features"]))
+                    for name, value in features.items():
+                        if name in settings.MATOMO_DIMENSIONS:
+                            dimensions[int(settings.MATOMO_DIMENSIONS[name])] = str(value)
             except:
                 _LOGGER.exception("Failed to parse features cookie")
             await self._send_to_matomo(
