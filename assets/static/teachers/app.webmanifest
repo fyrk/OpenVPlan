@@ -2,7 +2,7 @@
   "name": "Lehrer*innen - GaW Vertretungsplan",
   "short_name": "GaW VPlan",
   "description": "Lehrer*innen-Vertretungsplan für das Gymnasium am Wall Verden",
-  "start_url": "/teachers/",
+  "start_url": "/teachers/?mtm_campaign=pwa_homescreen",
   "theme_color": "#e67b10",
   "background_color": "#e67b10",
   "display": "standalone",

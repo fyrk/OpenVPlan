@@ -148,11 +148,12 @@ class SubstitutionPlan:
                 raise web.HTTPSeeOther(location=request.url.with_query(query))
 
             if "all" not in request.query and "s" not in request.query:
+                # use 'update_query' so that existing query doesn't change for e.g. "mtm_campain" to work
                 if self._selection_cookie in request.cookies and request.cookies[self._selection_cookie].strip():
                     raise web.HTTPSeeOther(
-                        location="/" + self._plan_id + "/?s=" + request.cookies[self._selection_cookie])
+                        location=request.rel_url.update_query(s=request.cookies[self._selection_cookie]))
                 else:
-                    raise web.HTTPSeeOther(location="/" + self._plan_id + "/?all")
+                    raise web.HTTPSeeOther(location=request.rel_url.update_query("all"))
 
             substitutions_have_changed, affected_groups = await self._crawler.update(self.client_session)
             if settings.DEBUG and "event" in request.query:
