@@ -1,11 +1,11 @@
 import argparse
-import asyncio
 import os
 import time
 from functools import partial
 
 import jinja2
 from aiohttp import client, web
+from aiojobs.aiohttp import setup, spawn
 
 import settings
 import subs_crawler
@@ -39,14 +39,11 @@ async def stats_middleware(request: web.Request, handler):
     t1 = time.perf_counter_ns()
     response: web.Response = await handler(request)
     if request.get("stats_relevant"):
-        asyncio.get_running_loop().create_task(
-            request.app["stats"].track_page_view(request, "sw" in request.query, time.perf_counter_ns()-t1,
-                                                 request.get("stats_title", ""))
-        )
+        await spawn(request,
+                    request.app["stats"].track_page_view(request, "sw" in request.query, time.perf_counter_ns()-t1,
+                                                         request.get("stats_title", "")))
     if 400 <= response.status < 500:
-        asyncio.get_running_loop().create_task(
-            request.app["stats"].track_4xx_error(request, time.perf_counter_ns()-t1, response)
-        )
+        await spawn(request, request.app["stats"].track_4xx_error(request, time.perf_counter_ns()-t1, response))
     return response
 
 
@@ -146,6 +143,7 @@ async def app_factory(dev_mode, start_log_msg):
     _LOGGER.info(start_log_msg)
 
     app = web.Application(middlewares=[logger.logging_middleware, stats_middleware, error_middleware])
+    setup(app)
 
     app["stats"] = Stats(os.path.join(settings.DATA_DIR, "stats/status.csv"),
                          settings.MATOMO_URL, settings.MATOMO_SITE_ID,

@@ -12,6 +12,7 @@ import jinja2
 import pywebpush
 import yarl
 from aiohttp import ClientSession, web, WSMessage, WSMsgType, hdrs
+from aiojobs.aiohttp import spawn, get_scheduler
 
 from settings import settings
 from subs_crawler.crawlers.base import BaseSubstitutionCrawler
@@ -194,7 +195,8 @@ class SubstitutionPlan:
             if substitutions_have_changed:
                 if selection:
                     await self._recreate_index_site()
-                asyncio.get_running_loop().create_task(self._on_new_substitutions(affected_groups))
+                scheduler = get_scheduler(request)
+                await scheduler.spawn(self._on_new_substitutions(scheduler, affected_groups))
         except web.HTTPException as e:
             raise e from None
         except Exception:
@@ -233,7 +235,8 @@ class SubstitutionPlan:
                                 await ws.send_json({"type": "status", "status": self._crawler.storage.status})
                                 if substitutions_have_changed:
                                     await self._recreate_index_site()
-                                    asyncio.get_running_loop().create_task(self._on_new_substitutions(affected_groups))
+                                    scheduler = get_scheduler(request)
+                                    await scheduler.spawn(self._on_new_substitutions(scheduler, affected_groups))
             # no need to remove ws from self._websockets as self._websockets is a WeakSet
         except (asyncio.CancelledError, asyncio.TimeoutError):
             pass
@@ -259,14 +262,12 @@ class SubstitutionPlan:
         else:
             if user_triggered:
                 t2 = time.perf_counter_ns()
-                asyncio.get_running_loop().create_task(
-                    self._app["stats"].track_push_subscription(request, t2-t1, subscription)
-                )
+                await spawn(request, self._app["stats"].track_push_subscription(request, t2-t1, subscription))
 
         return response
 
     # background task on new substitutions
-    async def _on_new_substitutions(self, affected_groups):
+    async def _on_new_substitutions(self, scheduler, affected_groups):
         logger.REQUEST_ID_CONTEXTVAR.set(None)
         # noinspection PyBroadException
         try:
@@ -311,13 +312,13 @@ class SubstitutionPlan:
                                 # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
                                 # be longer than 24 hours from the time the request is made)
                                 "exp": int(time.time()) + 86395
-                            }, curl=True)  # modifications to make this work: see beginning of this file
+                            },
+                            ttl=86400,
+                            curl=True)  # modifications to make this work: see beginning of this file
                         async with self.client_session.post(endpoint, data=data, headers=headers) as r:
                             if r.status >= 400:
-
                                 # If status code is 404 or 410, the endpoints are unavailable, so delete the
-                                # subscription.
-                                # See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
+                                # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
                                 if r.status in (404, 410):
                                     _LOGGER.debug(f"No longer valid subscription "
                                                   f"{self._plan_id}-{endpoint_hash[:6]}: "
@@ -331,9 +332,7 @@ class SubstitutionPlan:
                                 _LOGGER.debug(
                                     f"Successfully sent push notification to {self._plan_id}-{endpoint_hash[:6]}: "
                                     f"{r.status} {repr(await r.text())}")
-                                asyncio.get_running_loop().create_task(
-                                    self._app["stats"].track_notification_sent(subscription)
-                                )
+                                await scheduler.spawn(self._app["stats"].track_notification_sent(subscription))
                     except Exception:
                         _LOGGER.exception(f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]}")
                     return None
