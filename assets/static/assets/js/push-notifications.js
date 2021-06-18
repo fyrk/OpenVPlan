@@ -102,6 +102,7 @@ function setNotificationsInfo(state, registration, userTriggered = false) {
             notificationsInfo.innerHTML = notificationsInfo_none.innerHTML;
             break;
     }
+    setFeature("notifications", state);
 }
 
 function onNotificationsAvailable(registration) {

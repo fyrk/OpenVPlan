@@ -1,7 +1,9 @@
+import base64
 import csv
 import datetime
+import json
 import logging
-from typing import Optional, overload, Union
+from typing import Optional, overload, Union, Dict
 
 import yarl
 from aiohttp import hdrs, web, ClientSession
@@ -64,11 +66,11 @@ class Stats:
                               ca=False,
                               uid=None,
                               ua=None,
-                              #dimensions,
                               e_c=None,
                               e_a=None,
                               e_n=None,
                               e_v=None,
+                              dimensions: Dict[int, str]=None,
                               ):
         ...
 
@@ -100,6 +102,11 @@ class Stats:
                 params["gt_ms"] = str(int(round(int(kwargs["time"]) * 0.000001)))
             if kwargs.get("ca"):
                 kwargs["ca"] = "1"
+            if kwargs.get("dimensions"):
+                for id_, value in kwargs["dimensions"].items():
+                    params["dimension" + str(id_)] = str(value)
+            if "dimensions" in kwargs:
+                del kwargs["dimensions"]
             params.update(kwargs)
 
             async with self.client_session.get(self.matomo_url, params=params, headers=self.headers, cookies=cookies) \
@@ -125,12 +132,21 @@ class Stats:
         if await self._check_dnt(request):
             return
         if not is_sw:
+            dimensions = {}
+            try:
+                features = json.loads(base64.b64decode(request.cookies["features"]))
+                for name, value in features.items():
+                    if name in settings.MATOMO_DIMENSIONS:
+                        dimensions[int(settings.MATOMO_DIMENSIONS[name])] = str(value)
+            except:
+                _LOGGER.exception("Failed to parse features cookie")
             await self._send_to_matomo(
                 request,
                 time=time,
                 action_name=title,
                 url=self.anonymize_url(request.url),
                 urlref=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
+                dimensions=dimensions
             )
         else:
             url = self.anonymize_url(request.url)

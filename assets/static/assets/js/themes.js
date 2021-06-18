@@ -6,9 +6,11 @@ const lightRadio = document.getElementById("themes-light");
 const darkRadio = document.getElementById("themes-dark");
 function applyThemeSetting(setting) {
     localStorage.setItem("theme", setting);
+    let featureTheme = setting;
     switch (setting) {
         case "system-default":
             html.classList.remove("light", "dark");
+            featureTheme = "system-" + ((window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light");
             break;
         case "light":
             html.classList.add("light");
@@ -19,6 +21,7 @@ function applyThemeSetting(setting) {
             html.classList.remove("light");
             break;
     }
+    setFeature("theme", featureTheme);
 }
 switch (localStorage.getItem("theme")) {
     case "light":

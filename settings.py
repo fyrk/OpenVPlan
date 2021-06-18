@@ -32,6 +32,10 @@ class settings:
     MATOMO_SITE_ID: Optional[str] = None
     MATOMO_AUTH_TOKEN: Optional[str] = None
     MATOMO_TRACK_BOTS = False
+    MATOMO_DIMENSIONS = {
+        "notifications": 1,
+        "theme": 2
+    }
 
     MATOMO_HEADERS: Optional[dict] = None
     MATOMO_HONOR_DNT: bool = True
