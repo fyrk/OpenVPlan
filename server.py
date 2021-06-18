@@ -95,16 +95,14 @@ async def report_js_error_handler(request: web.Request):
 
 
 async def api_event_handler(request: web.Request):
-    t1 = time.perf_counter_ns()
     try:
         data = await request.post()
         type_ = data["type"]
+        stats: Stats = request.app["stats"]
         if type_ == "notification_received":
-            await request.app["stats"].track_notification_received(request, time.perf_counter_ns()-t1, data["plan_id"],
-                                                                   data["notification_id"])
+            await stats.track_notification_received(request, data["plan_id"], data["notification_id"])
         elif type_ == "notification_clicked":
-            await request.app["stats"].track_notification_clicked(request, time.perf_counter_ns()-t1, data["plan_id"],
-                                                                  data["notification_id"])
+            await stats.track_notification_clicked(request, data["plan_id"], data["notification_id"])
         else:
             _LOGGER.warning(f"Invalid type sent to /api/event: {type_!r}")
     except Exception:

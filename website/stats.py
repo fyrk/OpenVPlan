@@ -178,12 +178,11 @@ class Stats:
             ca=True
         )
 
-    async def track_notification_received(self, request: web.Request, time, plan_id, notification_id):
+    async def track_notification_received(self, request: web.Request, plan_id, notification_id):
         if await self._check_dnt(request):
             return
         await self._send_to_matomo(
             request,
-            time=time,
             uid=notification_id,
             e_c="Push Subscription",
             e_n=plan_id,
@@ -191,12 +190,11 @@ class Stats:
             ca=True
         )
 
-    async def track_notification_clicked(self, request: web.Request, time, plan_id, notification_id):
+    async def track_notification_clicked(self, request: web.Request, plan_id, notification_id):
         if await self._check_dnt(request):
             return
         await self._send_to_matomo(
             request,
-            time=time,
             uid=notification_id,
             e_c="Push Subscription",
             e_n=plan_id,
