@@ -44,7 +44,7 @@ class Stats:
                 "action_name": "Do Not Track enabled",
             }
             if self.matomo_auth_token:
-                params["token_auth"] = self.matomo_auth_token
+                params["token_auth"] = str(self.matomo_auth_token)
                 # without this, Matomo thinks the originating IP address of the request is the server's IP
                 # "" doesn't work, so use "::1" instead
                 params["cip"] = "::1"
@@ -59,7 +59,9 @@ class Stats:
         return False
 
     @overload
-    async def _send_to_matomo(self, request: web.Request = None, time=None,
+    async def _send_to_matomo(self, request: web.Request = None,
+                              time=None,
+                              dimensions: Dict[int, str] = None,
                               action_name=None,
                               url=None,
                               urlref=None,
@@ -70,11 +72,10 @@ class Stats:
                               e_a=None,
                               e_n=None,
                               e_v=None,
-                              dimensions: Dict[int, str]=None,
                               ):
         ...
 
-    async def _send_to_matomo(self, request: web.Request = None, **kwargs):
+    async def _send_to_matomo(self, request: web.Request = None, time=None, dimensions: Dict[int, str] = None, **kwargs):
         # noinspection PyBroadException
         try:
             now = datetime.datetime.now()
@@ -94,20 +95,25 @@ class Stats:
                 params["ua"] = request.headers.get(hdrs.USER_AGENT, "")
                 params["lang"] = request.headers.get(hdrs.ACCEPT_LANGUAGE, "")
                 if self.matomo_auth_token:
-                    params["token_auth"] = self.matomo_auth_token
-                    params["cip"] = request.remote if not settings.IS_PROXIED else request.headers.get("X-Real-IP")
+                    params["token_auth"] = str(self.matomo_auth_token)
+                    params["cip"] = (str(request.remote)
+                                     if not settings.IS_PROXIED else request.headers.get("X-Real-IP", ""))
                 if "matomo_ignore" in request.cookies:
                     cookies = {"matomo_ignore": request.cookies["matomo_ignore"]}
-            if kwargs.get("time"):
-                params["gt_ms"] = str(int(round(int(kwargs["time"]) * 0.000001)))
-            if kwargs.get("ca"):
-                kwargs["ca"] = "1"
-            if kwargs.get("dimensions"):
-                for id_, value in kwargs["dimensions"].items():
+            if time:
+                params["gt_ms"] = str(int(round(int(time) * 0.000001)))
+            if dimensions:
+                for id_, value in dimensions.items():
                     params["dimension" + str(id_)] = str(value)
-            if "dimensions" in kwargs:
-                del kwargs["dimensions"]
-            params.update(kwargs)
+
+            for key, value in kwargs.items():
+                if value is True:
+                    value = "1"
+                elif value is False:
+                    value = "0"
+                else:
+                    value = str(value)
+                params[key] = value
 
             async with self.client_session.get(self.matomo_url, params=params, headers=self.headers, cookies=cookies) \
                     as r:
