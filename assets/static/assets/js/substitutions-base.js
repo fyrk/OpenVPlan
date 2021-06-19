@@ -91,5 +91,5 @@ function setFeature(feature, value) {
         features = {};
     }
     features[feature] = value;
-    document.cookie = "features=" + btoa(JSON.stringify(features)) + "; SameSite=Lax; Secure";
+    document.cookie = "features=" + btoa(JSON.stringify(features)) + ";path=/;max-age=86400;Secure;SameSite=Lax";
 }
