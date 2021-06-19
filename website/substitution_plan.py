@@ -172,12 +172,14 @@ class SubstitutionPlan:
                 if substitutions_have_changed:
                     await self._recreate_index_site()
                 text = self._index_site
+                headers = RESPONSE_HEADERS
             else:
                 text = await self._template.render_async(storage=self._crawler.storage, selection=selection,
                                                          selection_str=selection_str, options=self._template_options)
+                headers = RESPONSE_HEADERS_SELECTION
 
             response = web.Response(text=text, content_type="text/html", charset="utf-8",
-                                    headers=RESPONSE_HEADERS_SELECTION)
+                                    headers=headers)
             response.set_cookie(self._selection_cookie, selection_qs,
                                 expires=SELECTION_COOKIE_EXPIRE, path="/" + self._plan_id + "/",
                                 secure=not settings.DEBUG,  # secure in non-development mode
