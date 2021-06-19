@@ -7,22 +7,17 @@
 
 {% block manifest_link %}
     <!--suppress HtmlUnknownTarget -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="app.webmanifest">
 {% endblock %}
 {% block keywords %}{% if options["keywords"] %}{% for kw in options["keywords"] %}, {{ kw }}{% endfor %}{% endif %}{% endblock %}
 {% block meta %}
     <meta name="description" content="Vertretungsplan für das Gymnasium am Wall Verden">
 {% endblock %}
-{% block stylesheets %}
-    <link href="/assets/style/substitutions.css?v=1" rel="stylesheet">
-    <link href="/assets/style/substitutions-dark.css?v=2" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
-{% endblock %}
 {% block scripts %}
-    <script src="/assets/js/substitutions.min.js?v=4"></script>
+    <script defer src="/assets/js/substitutions.min.js?v=9"></script>
     {% if options["supports_timetables"] and selection %}
-        <script src="/assets/js/timetables.min.js?v=4"></script>
+        <script defer src="/assets/js/timetables.min.js?v=5"></script>
     {% endif %}
-    <script src="/assets/js/dark-theme.min.js?v=4"></script>
 {% endblock %}
 
 {% block title_end %}
@@ -35,15 +30,6 @@
 {% endblock %}
 
 {% block content %}
-<template id="template-news-dark-theme">
-    <div class="box" aria-hidden="true" id="news-dark-theme">
-        <button type="button" class="btn-close" id="news-dark-theme-close" aria-label="Schließen"></button>
-        Die Webseite kann jetzt in einem hellen und einem dunklen Design dargestellt werden. Das Design kann
-        <a href="#dark-theme-heading">in den Einstellungen am Ende der Seite</a> geändert werden.
-    </div>
-</template>
-
-
 <div class="box status-box clearfix">
     <span>Stand: <span id="status">{{ storage.status }}</span></span>
     <span class="float-end" id="online-status"></span>
@@ -86,15 +72,21 @@
         </div>
     </div>
     {# In the following, {%- -%}/{{- -}} must be used to make subs_table completely empty if there are no substitutions #}
+
+    {# Fix for https://github.com/pallets/jinja/issues/1427 #}
+    {% set s = None %}
+    {% set d = None %}
+    {% set group = None %}
+
     {% set subs_table -%}
         {%- for group in day.iter_groups(selection) -%}
             {%- set s = group.substitutions[0] -%}
             <tr class="first-of-group{% if day_loop.index == 1 and s.lesson_num is not none %} lesson{{ s.lesson_num }}{% endif %}{% if s.is_new %} new-subs{% endif %}">
-                {%- set has_affected_group = not selection and group.affected_groups is not none and group.affected_groups|length == 1 -%}
+                {%- set is_selectable = not selection and group.selection_name is not none -%}
                 <td rowspan="{{ group.substitutions|length }}"
-                    class="group-name{% if has_affected_group %} selectable{% endif %}">
-                    {%- if has_affected_group -%}
-                        <a class="i-bookmark stretched-link" href="?s={{ group.affected_groups.__iter__().__next__() }}"></a>
+                    class="group-name{% if is_selectable %} selectable{% endif %}">
+                    {%- if is_selectable -%}
+                        <a class="i-bookmark stretched-link" href="?s={{ group.selection_name }}&s_src=bookmark"></a>
                     {%- endif -%}
                     {{- group.get_html_name()|safe -}}
                 </td>
@@ -139,18 +131,19 @@
 {% endfor %}
 
 <div class="box">
-    <h1>Einstellungen</h1>
-    <h2 id="select-heading">{{ options["texts"]["select_heading"] }}</h2>
-    <form class="form" type="get">
+    <h1 id="settings-heading">Einstellungen</h1>
+    <h2 id="select-heading">{{ options["texts"]["select_heading"]|safe }}</h2>
+    <form class="form" method="get">
         {% if not selection %}
-            <label for="selectionInput" class="form-label">{{ options["texts"]["select_text"] }}</label>
+            <label for="selectionInput" class="form-label">{{ options["texts"]["select_text"]|safe }}</label>
         {% endif %}
         <div class="row">
             <div class="col-9 col-sm-6 col-md-4 col-xl-3">
                 <input type="text" class="form-control" id="selectionInput" name="s" required
                        value="{% if selection %}{{ selection_str|e }}{% endif %}" aria-describedby="selectionHelp">
+                <input type="hidden" name="s_src" value="form">
                 <small id="selectionHelp" class="form-text text-muted">
-                    {{ options["texts"]["selection_help_text"] }}
+                    {{ options["texts"]["selection_help_text"]|safe }}
                 </small>
             </div>
             <div class="col-3 col-sm-1 col-md-1">
@@ -159,7 +152,7 @@
         </div>
         {% if selection %}
             <div class="mt-3 ms-2">
-                <a class="btn btn-primary" href="?all">{{ options["texts"]["selection_all"] }}</a>
+                <a class="btn btn-primary" href="?all&s_src=form">{{ options["texts"]["selection_all"]|safe }}</a>
             </div>
         {% endif %}
     </form>
@@ -177,7 +170,7 @@
             <input class="form-check-input" type="checkbox" id="toggle-notifications">
             <label class="form-check-label user-select-none" for="toggle-notifications">
                 <template id="notifications-info-none">Benachrichtigungen sind deaktiviert</template>
-                <template id="notifications-info-all">{{ options["texts"]["notifications_info_all"] }}</template>
+                <template id="notifications-info-all">{{ options["texts"]["notifications_info_all"]|safe }}</template>
                 <template id="notifications-info-selection">
                     Du wirst für <i>{{ selection_str|e }}</i> benachrichtigt
                 </template>
@@ -185,8 +178,11 @@
                     <span class="text-danger">Du hast Benachrichtigungen vom Vertretungsplan blockiert. Erlaube
                         Benachrichtigungen in den Einstellungen deines Browsers.</span>
                 </template>
-                <template id="notifications-info-failed">Das Aktivieren von Benachrichtigungen ist fehlgeschlagen.
-                    Lade die Seite neu oder verwende einen anderen Browser.</template>
+                <template id="notifications-info-failed">
+                    Das Aktivieren von Benachrichtigungen ist fehlgeschlagen.
+                    Lade die Seite neu oder verwende einen anderen Browser.
+                    Um Benachrichtigungen aktivieren zu können, muss eine Internetverbindung bestehen.
+                </template>
                 <span id="notifications-info">Benachrichtigungen sind deaktiviert</span>
             </label>
         </div>
@@ -246,22 +242,22 @@
         </div>
     {% endif %}
 
-    <template id="dark-theme-block-template">
-        <h2 id="dark-theme-heading">Design</h2>
+    <template id="themes-block-template">
+        <h2 id="themes-heading">Design</h2>
         <div class="form-check">
-            <input class="form-check-input" type="radio" id="dark-theme-system-default" name="dark-theme" checked>
-            <label class="form-check-label" for="dark-theme-system-default">System</label>
+            <input class="form-check-input" type="radio" id="themes-system-default" name="theme" checked>
+            <label class="form-check-label" for="themes-system-default">System</label>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="radio" id="dark-theme-light" name="dark-theme">
-            <label class="form-check-label" for="dark-theme-light">Hell</label>
+            <input class="form-check-input" type="radio" id="themes-light" name="theme">
+            <label class="form-check-label" for="themes-light">Hell</label>
         </div>
         <div class="form-check">
-            <input class="form-check-input" type="radio" id="dark-theme-dark" name="dark-theme">
-            <label class="form-check-label" for="dark-theme-dark">Dunkel</label>
+            <input class="form-check-input" type="radio" id="themes-dark" name="theme">
+            <label class="form-check-label" for="themes-dark">Dunkel</label>
         </div>
     </template>
-    <div id="dark-theme-block" aria-hidden="true"></div>
+    <div id="themes-block" aria-hidden="true"></div>
 </div>
 {%- endblock -%}
 

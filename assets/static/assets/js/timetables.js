@@ -17,6 +17,7 @@ if (selection) {
         const tableBody = substitutionsBox.querySelector(".substitutions-table tbody");
         if (tableBody) {
             const dayName = substitutionsBox.querySelector(".day-name").textContent;
+            /** @type {String} */
             let groupName = null;
             let groupSubstitutions = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
             function newGroupSubstitutions() {
@@ -83,10 +84,12 @@ if (selection) {
                 }
                 for (let lesson of lessonString.match(/(\d+)/g)) {
                     lesson = parseInt(lesson);
-                    if (teacherName in groupSubstitutions[lesson-1])
-                        groupSubstitutions[lesson-1][teacherName].push(row);
-                    else
-                        groupSubstitutions[lesson-1][teacherName] = [row];
+                    if (1 <= lesson && lesson <= 10) {
+                        if (teacherName in groupSubstitutions[lesson - 1])
+                            groupSubstitutions[lesson - 1][teacherName].push(row);
+                        else
+                            groupSubstitutions[lesson - 1][teacherName] = [row];
+                    }
                 }
             }
             if (groupName != null)
@@ -134,7 +137,7 @@ if (selection) {
         const timetable = timetableTemplate.content.firstElementChild.cloneNode(true);
         timetablesContainer.appendChild(timetable);
         timetable.querySelectorAll(".timetable-selection").forEach(e => e.innerText = s);
-        timetable.querySelector(".share-timetable-button").addEventListener("click", e => {
+        timetable.querySelector(".share-timetable-button").addEventListener("click", () => {
             const shareTimetableBlock = timetable.querySelector(".share-timetable-block");
             if (shareTimetableBlock.hidden) {
                 const linkInput = shareTimetableBlock.querySelector(".timetable-link-input");
@@ -222,8 +225,10 @@ if (selection) {
                     window.localStorage.setItem(substitutionPlanType + "-timetables", JSON.stringify(timetables));
                 });
                 input.dataset.selection = sUpper;
+                // noinspection JSValidateTypes
                 input.dataset.weekday = weekday;
                 input.dataset.weekdayName = weekdayName;
+                // noinspection JSValidateTypes
                 input.dataset.lesson = lessonNum;
                 let teacher = timetables[sUpper][weekday][lessonNum-1];
                 if (teacher != null) {

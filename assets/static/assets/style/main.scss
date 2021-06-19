@@ -6,13 +6,14 @@
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  */
 
-$theme: "light";
-@import "main-theme";
+@import "main/variables";
+
 
 @import "node_modules/bootstrap/scss/mixins/alert";
 @import "node_modules/bootstrap/scss/mixins/buttons";
 @import "node_modules/bootstrap/scss/mixins/border-radius";
 @import "node_modules/bootstrap/scss/mixins/box-shadow";
+@import "node_modules/bootstrap/scss/mixins/breakpoints";
 @import "node_modules/bootstrap/scss/mixins/clearfix";
 @import "node_modules/bootstrap/scss/mixins/container";
 @import "node_modules/bootstrap/scss/mixins/forms";
@@ -41,174 +42,10 @@ $theme: "light";
 @import "node_modules/bootstrap/scss/helpers/stretched-link";
 @import "node_modules/bootstrap/scss/helpers/visually-hidden";
 
-@import "icons";
 
-
-// Bootstrap overrides: Don't use RFS for headings
-h1 {
-    font-size: $h1-font-size;
-}
-
-h2 {
-    font-size: $h2-font-size;
-}
-
-h3 {
-    font-size: $h3-font-size;
-}
-
-h4 {
-    font-size: $h4-font-size;
-}
-
-h5 {
-    font-size: $h5-font-size;
-}
-
-h6 {
-    font-size: $h6-font-size;
-}
-
-body {
-    display: flex;
-    flex-direction: column;
-}
-
-h1, h2, h3, h4, h5, h6 {
-    overflow-wrap: break-word;
-}
-
-a {
-    text-decoration: none !important;
-}
-
-body, html {
-    height: 100%;
-}
-
-#content {
-    @extend .p-0, .px-sm-3;
-    flex: 1 0 auto;
-    max-width: 1140px;
-}
-
-.footer {
-    flex-shrink: 0;
-}
-
-.btn-close {
-    float: right;
-}
-
-
-// ========================
-// BOXES
-
-.box {
-    @extend .my-sm-3;
-    padding: 1rem 1.5rem;
-    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
-    border-radius: $border-radius-sm;
-}
-
-@include media-breakpoint-down(sm) {
-    .box {
-        box-shadow: none;
-        border-radius: 0;
-        padding: 1rem 1rem;
-    }
-
-    .box:not(:last-child) {
-        border-bottom: 1px solid;
-    }
-
-    .box:last-child:not(.title-box) {
-        border-bottom-right-radius: $border-radius-lg !important;
-        border-bottom-left-radius: $border-radius-lg !important;
-        box-shadow: 0 5px 5px 0 #7575754f;
-    }
-}
-
-// Title
-
-.title-box {
-    @extend .user-select-none;
-    text-align: center;
-    padding: $spacer * .8;
-    font-size: $font-size-base * 1.65;
-
-    .selection {
-        color: $primary;
-    }
-}
-
-.title-middle, .title-big {
-    display: none;
-}
-
-@media (min-width: 380px) {
-    .title-small {
-        display: none;
-    }
-    @media (max-width: 768px - 1px) {
-        .title-middle {
-            display: inline;
-        }
-    }
-}
-
-@media (min-width: 768px) {
-    .title-big {
-        display: inline;
-    }
-}
-
-// Status
-
-.status-box {
-    @include clearfix;
-    padding-top: 0.8rem;
-    padding-bottom: 0.8rem;
-}
-
-// Navigation
-
-.nav {
-    font-size: $font-size-base * 1.15;
-    margin-top: $spacer * 0.4;
-}
-
-footer {
-    background-color: $gray-800;
-}
-
-// ========================
-// ICONS
-
-.external::after {
-    @extend %icon-primary;
-    @include icon(
-                    url('data:image/svg+xml,<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-box-arrow-up-right" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M1.5 13A1.5 1.5 0 0 0 3 14.5h8a1.5 1.5 0 0 0 1.5-1.5V9a.5.5 0 0 0-1 0v4a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 0 0-1H3A1.5 1.5 0 0 0 1.5 5v8zm7-11a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-1 0V2.5H9a.5.5 0 0 1-.5-.5z"/><path fill-rule="evenodd" d="M14.354 1.646a.5.5 0 0 1 0 .708l-8 8a.5.5 0 0 1-.708-.708l8-8a.5.5 0 0 1 .708 0z"/></svg>'),
-            $width: 1rem,
-            $height: 1rem,
-    );
-    margin-left: 0.1rem;
-}
-
-
-// ========================
-// SMOOTH TRANSITIONS FOR DARK THEME
-
-body, .text-muted, .form-control, .form-control:focus, .custom-control-input:not(:checked) ~ .custom-control-label::before,
-.nav-pills .nav-link.active, .btn, .btn:hover, .box, .title-box, footer {
-    transition: color .2s, background-color .2s;
-}
-
-
-// ========================
-// MISCELLANEOUS
-
-object {
-    // Chrome adds a white background (instead of transparent) to <object> if (prefers-color-scheme: dark). Fix:
-    color-scheme: light;
-}
+@import "main/themes";
+@import "main/main";
+@import "main/boxes";
+@import "main/settings";
+@import "main/icons";
+@import "main/substitutions";

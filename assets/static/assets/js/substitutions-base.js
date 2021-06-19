@@ -9,20 +9,13 @@ function reportError(error, event=null) {
             filename: (event == null ? undefined : event.filename) || error.fileName,  // error.fileName is non-standard Mozilla property
             lineno: (event == null ? undefined : event.lineno) || error.lineNumber,  // error.lineNumber is non-standard Mozilla property
             colno: (event == null ? undefined : event.colno) || error.columnNumber,  // error.columnNumber is non-standard Mozilla property
-            stack: (event == null ? undefined : event.stack) || error.stack,  // error.stack is non-standard Mozilla property
-            user_agent: navigator.userAgent
+            stack: (event == null ? undefined : event.stack) || error.stack  // error.stack is non-standard Mozilla property
         })
-    })
+    }).catch(reason => console.error("reporting error failed", reason))
 }
+window.addEventListener("error", e => reportError(e.error, e));  // e.error is experimental, according to MDN
+window.addEventListener("unhandledrejection", e => reportError(e.reason));
 
-window.addEventListener("error", e => {
-    reportError(e.error, e);  // e.error is experimental, according to MDN
-});
-
-window.addEventListener("unhandledrejection", e => {
-    console.log("unhandledrejection", e);
-    reportError(e.reason);
-});
 
 const substitutionPlanType = window.location.pathname.split("/", 2)[1];
 const selection = document.getElementById("selectionInput").value;
@@ -31,7 +24,7 @@ const selection = document.getElementById("selectionInput").value;
 // The following is not in timetables.js so that it works even with no selection
 if (window.location.hash.startsWith("#timetable:")) {
     try {
-        let [_, group, timetableStr] = window.location.hash.split(":");
+        let [, group, timetableStr] = window.location.hash.split(":");
         timetableStr = atob(timetableStr);
         let valid = true;
         let timetable;
@@ -88,4 +81,15 @@ if (window.location.hash.startsWith("#timetable:")) {
         console.error("Error while retrieving timetable from URL", e);
         reportError(e);
     }
+}
+
+function setFeature(feature, value) {
+    let features;
+    try {
+        features = JSON.parse(atob(document.cookie.split('; ').find(row => row.startsWith("features=")).split("=")[1]));
+    } catch {
+        features = {};
+    }
+    features[feature] = value;
+    document.cookie = "features=" + btoa(JSON.stringify(features)) + "; SameSite=Lax; Secure";
 }

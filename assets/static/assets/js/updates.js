@@ -1,15 +1,21 @@
 const onlineStatus = document.getElementById("online-status");
 
 let webSocket = null;
+
 function onOnline() {
     onlineStatus.textContent = "Aktuell";
     onlineStatus.classList.add("online");
-    onlineStatus.classList.remove("offline");
+    onlineStatus.classList.remove("offline", "updating");
 }
 function onOffline() {
-    onlineStatus.textContent = "Keine Verbindung zum Server";
+    onlineStatus.textContent = "Offline";
     onlineStatus.classList.add("offline");
-    onlineStatus.classList.remove("online");
+    onlineStatus.classList.remove("online", "updating");
+}
+function onUpdating() {
+    onlineStatus.textContent = "Aktualisiere...";
+    onlineStatus.classList.add("updating");
+    onlineStatus.classList.remove("online", "offline");
 }
 function createWebSocket(openCallback=null) {
     webSocket = new WebSocket(
@@ -20,7 +26,7 @@ function createWebSocket(openCallback=null) {
         console.log("WebSocket opened", event);
         onOnline();
         if (openCallback)
-            openCallback();
+            openCallback(event.target);
     });
     webSocket.addEventListener("close", event => {
         console.log("WebSocket closed", event);
@@ -33,11 +39,17 @@ function createWebSocket(openCallback=null) {
             /*case "heartbeat":
                 clearTimeout(disconnectTimeout);
                 break;*/
-            case "new_substitutions":
-                window.location.reload();
+            case "status":
+                let status = msg.status;
+                if (status) {
+                    if (status === document.getElementById("status").textContent)
+                        onOnline();
+                    else
+                        window.location.reload();
+                }
                 break;
             default:
-                console.warn("Unknown WebSocket message type");
+                console.warn("Unknown WebSocket message type", msg.type);
                 break;
         }
     });
@@ -45,12 +57,12 @@ function createWebSocket(openCallback=null) {
 createWebSocket();
 
 function updateWebSocket() {
-    // Send status to server. The server checks whether the status is still up-to-date. If not, it sends a
-    // message, and thus the page is reloaded.
+    onUpdating();
+    // Request current status from server
     if (webSocket.readyState === webSocket.OPEN) {
-        webSocket.send(JSON.stringify({type: "check_status", status: document.getElementById("status").textContent}));
+        webSocket.send(JSON.stringify({type: "get_status"}));
     } else {
-        createWebSocket(() => webSocket.send(JSON.stringify({type: "check_status", status: document.getElementById("status").textContent})));
+        createWebSocket(ws => ws.send(JSON.stringify({type: "get_status"})));
     }
 }
 
@@ -58,13 +70,11 @@ window.addEventListener("focus", () => {
     console.log("focus, checking for new substitutions");
     updateWebSocket();
 });
-
 window.addEventListener("online", () => {
     console.log("online, checking for new substitutions");
     updateWebSocket();
 });
 window.addEventListener("offline", () => {
-    console.log("offline, closing WebSocket connection");
+    console.log("offline");
     onOffline();
-    webSocket.close();
 });

@@ -1,0 +1,136 @@
+// CUSTOM VARIABLES
+$table-group-separator-width: 2px;
+
+// BOOTSTRAP STYLE OVERRIDES
+// same as Bootstrap with system-ui at the start removed:
+$font-family-sans-serif: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+$font-family-base: $font-family-sans-serif;
+$font-size-base: 1rem;
+
+$headings-font-weight: 700;
+$h1-font-size: $font-size-base * 2;
+$h2-font-size: $font-size-base * 1.5;
+$h3-font-size: $font-size-base * 1.17;
+$h4-font-size: $font-size-base * 1.08;
+$h5-font-size: $font-size-base;
+$h6-font-size: $font-size-base;
+
+
+// THEME COLORS
+$primary: #fc8600;
+
+
+// For the different themes, different CSS variables are used.
+// 1. Bootstrap doesn't use CSS variables, but some colors can be replaced directly within Bootstrap by setting
+//    $value: var(--value).
+//    This doesn't work if the color value is somehow processed further in Bootstrap (e.g. with darken()).
+//    If the latter is the case, the line in the following block is commented out and uses of the color inside Bootstrap
+//    are manually overridden inside _theme.scss.
+// 2. If the value is used as a value for another color, this other color can sometimes be set to var(...).
+
+// 1.
+//$primary: var(--primary);
+//$body-bg: var(--body-bg);
+$body-color: var(--body-color);
+$text-muted: var(--text-muted);
+$input-border-color: var(--input-border-color);
+$input-disabled-bg: var(--input-disabled-bg);
+$form-switch-bg-image: var(--form-switch-bg-image);
+$form-check-input-border: var(--form-check-input-border);
+$form-check-radio-checked-bg-image: var(--form-check-radio-checked-bg-image);
+
+$table-border-color: var(--table-border-color);
+$table-group-separator-color: var(--table-group-separator-color);
+$table-first-of-group-border-color: var(--table-first-of-group-border-color);
+
+$input-bg: inherit;
+$form-check-input-bg: inherit;
+$form-check-input-checked-color: inherit;
+$form-switch-checked-bg-image: var(--form-switch-checked-bg-image);
+$form-check-radio-checked-bg-image: var(--form-check-radio-checked-bg-image);
+// 2.
+$nav-pills-link-active-bg: var(--primary);
+
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+
+// In the following color declarations, variables from Bootstrap can't be used because they're overridden above
+// (overriding the values at the end of the file doesn't work - the changes are reflected in the maps).
+// In case Bootstrap changes default values and the following values for the light theme should be updated: Each value
+// that is adopted from Bootstrap is marked with "// Bootstrap default".
+
+// light
+$light-box-bg: white;
+$light-colors: (
+    // Bootstrap variables
+    "primary": $primary,
+
+    "body-bg": #fc8600,
+    "body-color": #212529,  // Bootstrap default
+
+    "text-muted": #6c757d,  // Bootstrap default
+
+    "input-border-color": #ced4da,  // Bootstrap default
+    "input-disabled-bg": #e9ecef,  // Bootstrap default
+    "form-switch-bg-image": escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$form-switch-color}'/></svg>")),  // Bootstrap default
+    "form-check-input-border": 1px solid rgba(0, 0, 0, .25),  // Bootstrap default
+    "form-switch-checked-bg-image": escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$light-box-bg}'/></svg>")),
+    "form-check-radio-checked-bg-image": escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='2' fill='#{$light-box-bg}'/></svg>")),  // Bootstrap default
+
+
+    "table-border-color": #dee2e6,  // Bootstrap default
+    "table-group-separator-color": #dee2e6,
+    "table-grey-substitution-color": #adb5bd,
+
+    // Custom variables
+    "box-bg": $light-box-bg,
+    "title-box-bg": #f7d45e,
+    "box-border-color": grey,
+
+    "footer-bg": #343a40,
+
+    "table-first-of-group-border-color": #adb5bd,
+
+    "substitutions-table-new-subs-bg": rgba($primary, 0.2),
+
+    "themes-heading-icon": escape-svg(url('data:image/svg+xml,!bi-sun-fill'))
+);
+
+// dark
+$dark-primary: #c07217;
+$dark-box-bg: #1d1d1d;  // $gray-400 instead of $gray-600
+$dark-input-border-color: #6c757d;  // $gray-600 instead of $gray-400
+$dark-colors: (
+    // Bootstrap variables
+    "primary": $dark-primary,
+
+    "body-bg": #050505,
+    "body-color": white,
+
+
+    "text-muted": #ced4da,
+
+    "input-border-color": $dark-input-border-color,
+    "input-disabled-bg": var(--box-bg),
+    "form-switch-bg-image": escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$dark-input-border-color}'/></svg>")),
+    "form-check-input-border": 1px solid $dark-input-border-color,
+    "form-switch-checked-bg-image": escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='#{$dark-box-bg}'/></svg>")),
+    "form-check-radio-checked-bg-image": escape-svg(url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='2' fill='#{$dark-box-bg}'/></svg>")),
+    "table-border-color": #495057,
+    "table-group-separator-color": #495057,
+    "table-grey-substitution-color": #b3b3b3,
+
+    // Custom variables
+    "box-bg": $dark-box-bg,
+    "title-box-bg": #2d2d2d,
+    "box-border-color": #818181,
+
+    "footer-bg": #242424,
+
+    "table-first-of-group-border-color": #8593a5,
+
+    "substitutions-table-new-subs-bg": rgba(222 222 222 / 9%),
+
+    "themes-heading-icon": escape-svg(url('data:image/svg+xml,!bi-moon-fill'))
+);

@@ -1,0 +1,52 @@
+@import "node_modules/bootstrap/scss/mixins/breakpoints";
+
+@import "variables";
+
+
+@mixin theme-colors($colors) {
+    @each $color, $value in $colors {
+        --#{$color}: #{$value};
+    }
+}
+@mixin theme-light {
+    color-scheme: light;
+    @include theme-colors($light-colors);
+}
+@mixin theme-dark {
+    color-scheme: dark;
+    @include theme-colors($dark-colors);
+
+    @include media-breakpoint-down(sm) {
+        --box-bg: #151515;
+    }
+}
+
+html      { @include theme-light }
+html.dark { @include theme-dark }
+@media (prefers-color-scheme: dark) {
+    html       { @include theme-dark }
+    html.light { @include theme-light }
+}
+
+
+// Smooth transitions when changing the theme
+//noinspection CssUnusedSymbol
+body, .box, .title-box, footer, .text-muted, .form-control, .form-check-input, .nav-pills .nav-link.active, .btn {
+    transition: color .2s, background-color .2s;
+}
+
+
+// OVERRIDE USES OF BOOTSTRAP VARIABLES whose values can't be replaced with var() (see _variables.scss)
+
+// $primary
+.btn-primary {
+    color: var(--body-color);
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+// $body-bg
+body {
+    background-color: var(--body-bg);
+}
+

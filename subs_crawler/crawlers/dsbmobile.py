@@ -36,9 +36,9 @@ class DsbmobileSubstitutionCrawler(BaseSubstitutionCrawler):
         # the following uses information from https://github.com/sn0wmanmj/pydsb (MIT license)
         _LOGGER.debug("[dsbmobile-crawler] Requesting token")
         t1 = time.perf_counter_ns()
-        r = await session.get(self.BASE_URL + "/authid?bundleid=de.heinekingmedia.dsbmobile"
-                               "&appversion=35&osversion=22&pushid",
-                               params={"user": self._username, "password": self._password})
+        r = await session.get(self.BASE_URL +
+                              "/authid?bundleid=de.heinekingmedia.dsbmobile&appversion=35&osversion=22&pushid",
+                              params={"user": self._username, "password": self._password})
         r.raise_for_status()
         token = await r.json()
         r.close()

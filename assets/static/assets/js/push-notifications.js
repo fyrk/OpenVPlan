@@ -22,29 +22,29 @@ function base64UrlToUint8Array(base64UrlData) {
     return buffer;
 }
 
-function subscribePush(isActive, registration) {
+function subscribePush(isActive, registration, userTriggered) {
     return new Promise((resolve, reject) => {
         registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: base64UrlToUint8Array("BDu6tTwQHFlGb36-pLCzwMdgumSlyj_vqMR3I1KahllZd3v2se-LM25vhP3Yv_y0qXYx_KPOVOD2EYTaJaibzo8")
         }).then(subscription => {
             console.log("Got push subscription:", subscription, isActive ? "(active)" : "(not active)");
-            fetch(window.location.origin + window.location.pathname + "api/subscribe-push", {
+            return fetch(window.location.origin + window.location.pathname + "api/subscribe-push", {
                 method: "post",
                 "headers": {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: isActive})
-            }).then(response => response.json())
-                .then(data => {
-                    if (data.ok) {
-                        console.log("Push subscription successful");
-                        resolve();
-                    } else {
-                        console.error("Push subscription failed", data);
-                        reject();
-                    }
-                });
+                body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: isActive, user_triggered: userTriggered})
+            });
+        }).then(response => response.json()
+        ).then(data => {
+            if (data.ok) {
+                console.log("Push subscription successful");
+                resolve();
+            } else {
+                console.error("Push subscription failed", data);
+                reject();
+            }
         }).catch(reason => {
             console.error("Push subscription failed", reason);
             reject(reason);
@@ -55,10 +55,11 @@ function subscribePush(isActive, registration) {
 
 let notificationState;
 
-function setNotificationsInfo(state, registration) {
+function setNotificationsInfo(state, registration, userTriggered = false) {
     console.log("Setting notification-state to", state);
     notificationState = state;
-    window.localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
+    if (state !== "failed")
+        window.localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
     switch (notificationState) {
         case "granted-and-enabled":
             toggleNotifications.checked = true;
@@ -68,7 +69,7 @@ function setNotificationsInfo(state, registration) {
             } else {
                 notificationsInfo.innerHTML = notificationsInfo_all.innerHTML;
             }
-            subscribePush(true, registration)
+            subscribePush(true, registration, userTriggered)
                 .catch(reason => {
                     console.error("Push subscription failed", reason);
                     setNotificationsInfo("failed", registration);
@@ -85,7 +86,7 @@ function setNotificationsInfo(state, registration) {
             notificationsInfo.innerHTML = notificationsInfo_failed.innerHTML;
             break;
         case "granted-and-disabled":
-            subscribePush(false, registration)
+            subscribePush(false, registration, userTriggered)
                 .catch(reason => {
                     console.error("Push subscription failed", reason);
                     setNotificationsInfo("failed", registration);
@@ -101,6 +102,7 @@ function setNotificationsInfo(state, registration) {
             notificationsInfo.innerHTML = notificationsInfo_none.innerHTML;
             break;
     }
+    setFeature("notifications", state);
 }
 
 function onNotificationsAvailable(registration) {
@@ -117,17 +119,18 @@ function onNotificationsAvailable(registration) {
                         default:
                             notificationState = permission;
                     }
-                    setNotificationsInfo(notificationState, registration);
+                    setNotificationsInfo(notificationState, registration, true);
                 });
         } else {
             if (notificationState === "granted-and-enabled") {
-                setNotificationsInfo("granted-and-disabled", registration);
+                setNotificationsInfo("granted-and-disabled", registration, true);
             }
         }
     });
 
     function reloadPermissionState() {
-        if (!notificationState.startsWith(Notification.permission)) {
+        if (!notificationState.startsWith(Notification.permission) && notificationState !== "failed") {
+            console.log(notificationState + " changed to " + Notification.permission);
             // permission has been changed
             if (Notification.permission === "granted") {
                 setNotificationsInfo("granted-and-disabled", registration);
@@ -141,7 +144,10 @@ function onNotificationsAvailable(registration) {
     window.addEventListener("focus", reloadPermissionState);
 
     notificationState = window.localStorage.getItem(substitutionPlanType + "-notification-state");
-    if (notificationState == null)
+    if (notificationState == null
+        // "failed" is no longer stored in localStorage to prevent notifications from being disabled if the offline
+        // page was viewed, but perhaps it's still in there from earlier versions:
+        || notificationState === "failed")
         notificationState = "default";
     if (!reloadPermissionState()) {
         setNotificationsInfo(notificationState, registration);

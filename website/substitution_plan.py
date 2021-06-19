@@ -6,19 +6,19 @@ import sqlite3
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import Dict, Iterable, List, MutableSet, Optional, Union
+from typing import Dict, Iterable, List, MutableSet, Optional, Union, Tuple
 
 import jinja2
 import pywebpush
-from aiohttp import ClientSession, web, WSMessage, WSMsgType
-from cryptography.hazmat.primitives import serialization
-from py_vapid.jwt import sign
-from py_vapid.utils import b64urlencode
+import yarl
+from aiohttp import ClientSession, web, WSMessage, WSMsgType, hdrs
+from aiojobs.aiohttp import spawn, get_scheduler
 
+from settings import settings
 from subs_crawler.crawlers.base import BaseSubstitutionCrawler
 from subs_crawler.utils import split_selection
-from website import config, logger
-from website.db import SubstitutionPlanDBStorage
+from website import logger
+from website.db import SubstitutionPlanDB
 
 _LOGGER = logging.getLogger("gawvertretung")
 
@@ -31,10 +31,12 @@ SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(
 DELETE_COOKIE_EXPIRE = formatdate(0)
 
 RESPONSE_HEADERS = {
-    "Content-Security-Policy": "default-src 'self'; "
+    "Content-Security-Policy": "default-src 'none'; "
+                               "style-src 'self'; "
+                               "manifest-src 'self';"
                                "img-src 'self' data:; "
-                               "script-src 'self' 'sha256-l2h6bLQWX9C8tLEINfO+loK3K/jPEQRB05YAe9ehO1o='; "
-                               "connect-src 'self' " + ("ws:" if config.get_bool("dev") else "wss:") + "; "
+                               "script-src 'self' 'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g='; "
+                               "connect-src 'self' " + ("ws:" if settings.DEBUG else "wss:") + "; "
                                "frame-src 'self' mailto:; object-src 'self' mailto:",
     "Strict-Transport-Security": "max-age=63072000",
     "Referrer-Policy": "same-origin",
@@ -43,6 +45,8 @@ RESPONSE_HEADERS = {
     "X-XSS-Protection": "1",
     "X-Robots-Tag": "noarchive, notranslate"
 }
+if settings.HEADERS_BLOCK_FLOC:
+    RESPONSE_HEADERS["Permissions-Policy"] = "interest-cohort=()"
 
 RESPONSE_HEADERS_SELECTION = {
     **RESPONSE_HEADERS,
@@ -50,25 +54,42 @@ RESPONSE_HEADERS_SELECTION = {
 }
 
 
+# intercept pywebpush.WebPusher.as_curl() call in pywebpush.WebPusher.send() so that request can be made with aiohttp
+# a call to pywebpush.webpush will now return (endpoint, data, headers)
+pywebpush.WebPusher.as_curl = lambda s, e, d, h: (e, d, h)
+
+
 class SubstitutionPlan:
     def __init__(self, plan_id: str, crawler: BaseSubstitutionCrawler, template: jinja2.Template,
-                 error500_template: jinja2.Template, template_options: dict):
+                 error500_template: jinja2.Template, template_options: dict, uppercase_selection: bool):
         self._plan_id = plan_id
         self._crawler = crawler
         self._template = template
         self._error500_template = error500_template
         self._template_options = template_options
         self._template_options["id"] = self._plan_id
-        self._event_new_substitutions = asyncio.Event()
+        self._uppercase_selection = uppercase_selection
+        self._selection_cookie = self._plan_id + "-selection"
 
         self._index_site = None
         self._serialization_filepath = None
-        self.storage: Optional[SubstitutionPlanDBStorage] = None
+        self.db: Optional[SubstitutionPlanDB] = None
         self.client_session: Optional[ClientSession] = None
         self._app: Optional[web.Application] = None
         self._websockets: MutableSet[web.WebSocketResponse] = WeakSet()
         # affected groups are passed from self._root_handler to self._background_tasks:
         self._affected_groups: Optional[Dict[int, Dict[str, Union[str, List[str]]]]] = None
+
+    def create_app(self, static_path: Optional[str] = None) -> web.Application:
+        self._app = web.Application()
+        self._app.add_routes([
+            web.get("/", self._root_handler),
+            web.get("/api/wait-for-updates", self._wait_for_updates_handler),
+            web.post("/api/subscribe-push", self._subscribe_push_handler)
+        ])
+        if static_path:
+            self._app.router.add_static("/", static_path)
+        return self._app
 
     @property
     def name(self):
@@ -77,6 +98,11 @@ class SubstitutionPlan:
     @property
     def app(self):
         return self._app
+
+    async def close(self):
+        for ws in self._websockets:
+            await ws.close()
+        self._websockets.clear()
 
     async def serialize(self, filepath: str):
         self._crawler.serialize(filepath)
@@ -88,12 +114,22 @@ class SubstitutionPlan:
         if self._crawler.storage is not None:
             await self._recreate_index_site()
 
-    def _prettify_selection(self, selection: List[str]) -> str:
-        return ", ".join(selection)
-
     async def _recreate_index_site(self):
         self._index_site = await self._template.render_async(storage=self._crawler.storage,
                                                              options=self._template_options)
+
+    @staticmethod
+    def parse_selection(url: yarl.URL) -> Tuple[str, str, str]:
+        selection = ""
+        selection_str = ""
+        selection_qs = ""
+        if "s" in url.query:
+            selection_qs = ",".join(url.query.getall("s"))
+            selection = split_selection(selection_qs)
+            if selection:
+                selection_str = ", ".join(selection)
+                selection = [s.upper() for s in selection]
+        return selection, selection_str, selection_qs
 
     # ===================
     # REQUEST HANDLERS
@@ -103,57 +139,65 @@ class SubstitutionPlan:
     async def _root_handler(self, request: web.Request) -> web.Response:
         # noinspection PyBroadException
         try:
+            if request.query.get("s_src"):
+                # track selection source with Matomo
+                await self._app["stats"].track_selection_source(request, self._template_options["title"])
+
+                query = dict(request.query)
+                del query["s_src"]
+                raise web.HTTPSeeOther(location=request.url.with_query(query))
+
             if "all" not in request.query and "s" not in request.query:
-                if self._plan_id + "-selection" in request.cookies and \
-                        request.cookies[self._plan_id + "-selection"].strip():
+                # use 'update_query' so that existing query doesn't change for e.g. "mtm_campaign" to work
+                if self._selection_cookie in request.cookies and request.cookies[self._selection_cookie].strip():
                     raise web.HTTPSeeOther(
-                        location="/" + self._plan_id + "/?s=" + request.cookies[self._plan_id + "-selection"]
-                    )
+                        location=request.rel_url.update_query(s=request.cookies[self._selection_cookie]))
                 else:
-                    raise web.HTTPSeeOther(location="/" + self._plan_id + "/?all")
+                    raise web.HTTPSeeOther(location=request.rel_url.update_query("all"))
+
             substitutions_have_changed, affected_groups = await self._crawler.update(self.client_session)
-            if affected_groups:
-                self._affected_groups = affected_groups
-            if "event" in request.query and config.get_bool("dev"):
+            if settings.DEBUG and "event" in request.query:
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True
-                self._affected_groups = json.loads(request.query["event"])
+                affected_groups = json.loads(request.query["event"])
             if substitutions_have_changed:
                 _LOGGER.info("SUBSTITUTIONS HAVE CHANGED")
-            if "s" in request.query \
-                    and (selection := split_selection(selection_qs := ",".join(request.query.getall("s")))):
-                # noinspection PyUnboundLocalVariable
-                selection_str = self._prettify_selection(selection)
-                selection = [s.upper() for s in selection]
-                response = web.Response(
-                    text=await self._template.render_async(storage=self._crawler.storage, selection=selection,
-                                                           selection_str=selection_str, options=self._template_options),
-                    content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS_SELECTION)
-                # noinspection PyUnboundLocalVariable
-                response.set_cookie(self._plan_id + "-selection", selection_qs,
-                                    expires=SELECTION_COOKIE_EXPIRE, path="/"+self._plan_id+"/",
-                                    secure=not config.get_bool("dev"),  # secure in non-development mode
-                                    httponly=True, samesite="Lax")
+                self._affected_groups = affected_groups
+
+            selection, selection_str, selection_qs = self.parse_selection(request.url)
+            if self._uppercase_selection:
+                selection_str = selection_str.upper()
+
+            if not selection:
                 if substitutions_have_changed:
-                    await response.prepare(request)
-                    await response.write_eof()
                     await self._recreate_index_site()
-                    self._event_new_substitutions.set()
+                text = self._index_site
             else:
-                if substitutions_have_changed or config.get_bool("dev"):
+                text = await self._template.render_async(storage=self._crawler.storage, selection=selection,
+                                                         selection_str=selection_str, options=self._template_options)
+
+            response = web.Response(text=text, content_type="text/html", charset="utf-8",
+                                    headers=RESPONSE_HEADERS_SELECTION)
+            response.set_cookie(self._selection_cookie, selection_qs,
+                                expires=SELECTION_COOKIE_EXPIRE, path="/" + self._plan_id + "/",
+                                secure=not settings.DEBUG,  # secure in non-development mode
+                                httponly=True, samesite="Lax")
+            await response.prepare(request)
+            await response.write_eof()
+
+            if request.method == "GET":
+                request["stats_relevant"] = True
+                if not selection:
+                    selection_str = "All"
+                else:
+                    selection_str = f"{len(selection)} selected"
+                request["stats_title"] = f"Plan / {self._template_options['title']} / {selection_str}"
+
+            if substitutions_have_changed:
+                if selection:
                     await self._recreate_index_site()
-                response = web.Response(text=self._index_site, content_type="text/html", charset="utf-8",
-                                        headers=RESPONSE_HEADERS)
-                # delete cookie by setting value to "":
-                response.set_cookie(self._plan_id + "-selection", "",
-                                    expires=SELECTION_COOKIE_EXPIRE, path="/"+self._plan_id+"/",
-                                    secure=not config.get_bool("dev"),  # secure in non-development mode
-                                    httponly=True, samesite="Lax")
-                if substitutions_have_changed:
-                    await response.prepare(request)
-                    await response.write_eof()
-                    self._event_new_substitutions.set()
-                return response
+                scheduler = get_scheduler(request)
+                await scheduler.spawn(self._on_new_substitutions(scheduler, affected_groups))
         except web.HTTPException as e:
             raise e from None
         except Exception:
@@ -184,144 +228,137 @@ class SubstitutionPlan:
                         _LOGGER.exception("WebSocket: Received malformed JSON message")
                     else:
                         if "type" in data:
-                            if data["type"] == "check_status":
-                                if "status" in data:
-                                    substitutions_have_changed, affected_groups = \
-                                        await self._crawler.update(self.client_session)
-                                    if affected_groups:
-                                        self._affected_groups = affected_groups
-                                    if self._crawler.storage.status != data["status"]:
-                                        # inform client that substitutions are not up-to-date
-                                        await ws.send_json({"type": "new_substitutions"})
-                                    if substitutions_have_changed:
-                                        await self._recreate_index_site()
-                                        self._event_new_substitutions.set()
+                            if data["type"] == "get_status":
+                                substitutions_have_changed, affected_groups = \
+                                    await self._crawler.update(self.client_session)
+                                if affected_groups:
+                                    self._affected_groups = affected_groups
+                                await ws.send_json({"type": "status", "status": self._crawler.storage.status})
+                                if substitutions_have_changed:
+                                    await self._recreate_index_site()
+                                    scheduler = get_scheduler(request)
+                                    await scheduler.spawn(self._on_new_substitutions(scheduler, affected_groups))
+            # no need to remove ws from self._websockets as self._websockets is a WeakSet
         except (asyncio.CancelledError, asyncio.TimeoutError):
             pass
         finally:
-            self._websockets.remove(ws)
             _LOGGER.info(f"WebSocket connection closed: {ws.close_code}")
         return ws
 
     # /api/subscribe-push
     @logger.request_wrapper
     async def _subscribe_push_handler(self, request: web.Request):
+        t1 = time.perf_counter_ns()
         # noinspection PyBroadException
         try:
             data = await request.json()
-            self.storage.add_push_subscription(data["subscription"], data["selection"], data["is_active"])
+            subscription = self.db.add_push_subscription(self._plan_id, data["subscription"], data["selection"],
+                                                         data["is_active"], request.headers.get("DNT", "0") == "1",
+                                                         request.headers.get(hdrs.USER_AGENT))
+            user_triggered = data.get("user_triggered", False)
+            response = web.json_response({"ok": True})
         except Exception:
             _LOGGER.exception("Subscribing push service failed")
-            return web.json_response({"ok": False}, status=400)
-        return web.json_response({"ok": True})
+            response = web.json_response({"ok": False}, status=400)
+        else:
+            if user_triggered:
+                t2 = time.perf_counter_ns()
+                await spawn(request, self._app["stats"].track_push_subscription(request, t2-t1, subscription))
 
-    def create_app(self, static_path: Optional[str] = None) -> web.Application:
-        async def create_background_tasks(app):
-            app["background_tasks"] = asyncio.create_task(self._background_tasks())
+        return response
 
-        async def cleanup_background_tasks(app):
-            app["background_tasks"].cancel()
-            await app["background_tasks"]
-
-        self._app = web.Application()
-        self._app.on_startup.append(create_background_tasks)
-        self._app.on_cleanup.append(cleanup_background_tasks)
-        self._app.add_routes([
-            web.get("/", self._root_handler),
-            web.get("/api/wait-for-updates", self._wait_for_updates_handler),
-            web.post("/api/subscribe-push", self._subscribe_push_handler)
-        ])
-        if static_path:
-            self._app.router.add_static("/", static_path)
-        return self._app
-
-    async def _background_tasks(self):
-        token = logger.PLAN_NAME_CONTEXTVAR.set(self._plan_id)
+    # background task on new substitutions
+    async def _on_new_substitutions(self, scheduler, affected_groups):
+        logger.REQUEST_ID_CONTEXTVAR.set(None)
+        # noinspection PyBroadException
         try:
-            while True:
-                _LOGGER.debug("Waiting for new substitutions event...")
-                await self._event_new_substitutions.wait()
-                self._event_new_substitutions.clear()
-                # noinspection PyTypeChecker
-                affected_groups: Dict[int, Dict[str, Union[str, List[str]]]] = self._affected_groups
-                self._affected_groups = None
+            # SERIALIZE
+            await self.serialize(self._serialization_filepath)
 
-                # SERIALIZE
-                await self.serialize(self._serialization_filepath)
+            # WEBSOCKETS
+            _LOGGER.debug(f"Sending update event via WebSocket connection to {len(self._websockets)} clients")
+            for ws in self._websockets:
+                try:
+                    await ws.send_json({"type": "status", "status": self._crawler.storage.status})
+                except:
+                    pass
 
-                # WEBSOCKETS
-                _LOGGER.debug(f"Sending update event via WebSocket connection to {len(self._websockets)} clients")
-                for ws in self._websockets:
-                    await ws.send_json({"type": "new_substitutions"})
+            # PUSH NOTIFICATIONS
+            if affected_groups:
+                _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
 
-                # PUSH NOTIFICATIONS
-                if affected_groups:
-                    _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
+                async def send_push_notification(
+                        subscription, common_affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]
+                ) -> Optional[sqlite3.Row]:
+                    endpoint_hash = subscription["endpoint_hash"]
+                    endpoint_origin = subscription["endpoint_origin"]
+                    _LOGGER.debug(f"Sending push notification to "
+                                  f"{self._plan_id}-{endpoint_hash[:6]} ({endpoint_origin})")
+                    # noinspection PyBroadException
+                    try:
+                        data = json.dumps({"affected_groups_by_day": common_affected_groups,
+                                           "plan_id": self._plan_id,
+                                           # status_datetime.timestamp() correctly assumes that datetime is local
+                                           # time (status_datetime has no tzinfo) and returns the correct UTC
+                                           # timestamp
+                                           "timestamp": self._crawler.storage.status_datetime.timestamp(),
+                                           "notification_id": subscription["endpoint_hash"]})
 
-                    async def send_push_notification(
-                            subscription_entry, common_affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]
-                    ) -> Optional[sqlite3.Row]:
-                        endpoint_hash = subscription_entry["endpoint_hash"]
-                        endpoint_origin = subscription_entry["endpoint_origin"]
-                        _LOGGER.debug("Sending push notification to " + endpoint_hash)
-                        # noinspection PyBroadException
-                        try:
-                            data = json.dumps({"affected_groups_by_day": common_affected_groups,
-                                               "plan_id": self._plan_id,
-                                               # status_datetime.timestamp() correctly assumes that datetime is local
-                                               # time (status_datetime has no tzinfo) and returns the correct UTC
-                                               # timestamp
-                                               "timestamp": self._crawler.storage.status_datetime.timestamp()})
-                            encoded = \
-                                pywebpush.WebPusher(subscription_info=subscription_entry["subscription"]).encode(data)
-                            headers = {"content-encoding": "aes128gcm"}
-                            if "crypto_key" in encoded:
-                                headers["crypto-key"] = "dh=" + encoded["crypto_key"].decode("utf-8")
-                            if "salt" in encoded:
-                                headers["encryption"] = "salt=" + encoded["salt"].decode("utf-8")
-
-                            vv = pywebpush.Vapid.from_string(private_key=config.get_str("private_vapid_key"))
-                            sig = sign({
-                                "sub": config.get_str("vapid_sub"),
+                        endpoint, data, headers = pywebpush.webpush(
+                            subscription["subscription"], data,
+                            vapid_private_key=settings.PRIVATE_VAPID_KEY,
+                            vapid_claims={
+                                "sub": settings.VAPID_SUB,
                                 "aud": endpoint_origin,
-                                # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not be
-                                # longer than 24 hours from the time the request is made)
+                                # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
+                                # be longer than 24 hours from the time the request is made)
                                 "exp": int(time.time()) + 86395
-                            }, vv.private_key)
-                            pkey = vv.public_key.public_bytes(serialization.Encoding.X962,
-                                                              serialization.PublicFormat.UncompressedPoint)
-                            headers["ttl"] = str(86400)
-                            headers["Authorization"] = f"{'vapid'} t={sig},k={b64urlencode(pkey)}"
-
-                            async with self.client_session.post(subscription_entry["endpoint"], data=encoded["body"],
-                                                                headers=headers) as r:
-                                if r.status >= 400:
-                                    _LOGGER.error(
-                                        f"Could not send push notification to {endpoint_hash} ({endpoint_origin}): "
-                                        f"{r.status} {repr(await r.text())}")
-                                    # If status code is 404 or 410, the endpoints are unavailable, so delete the
-                                    # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
-                                    if r.status in (404, 410):
-                                        return subscription_entry
+                            },
+                            ttl=86400,
+                            curl=True)  # modifications to make this work: see beginning of this file
+                        async with self.client_session.post(endpoint, data=data, headers=headers) as r:
+                            if r.status >= 400:
+                                # If status code is 404 or 410, the endpoints are unavailable, so delete the
+                                # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
+                                if r.status in (404, 410):
+                                    _LOGGER.debug(f"No longer valid subscription "
+                                                  f"{self._plan_id}-{endpoint_hash[:6]}: "
+                                                  f"{r.status} {repr(await r.text())}")
+                                    return subscription
                                 else:
-                                    _LOGGER.debug(f"Successfully sent push notification to {endpoint_hash}: {r.status} "
-                                                  f"{repr(await r.text())}")
-                        except Exception:
-                            _LOGGER.exception(f"Could not send push notification to "
-                                              f"{subscription_entry['endpoint_hash']} ({endpoint_origin})")
-                        return None
+                                    _LOGGER.error(f"Could not send push notification to "
+                                                  f"{self._plan_id}-{endpoint_hash[:6]}: "
+                                                  f"{r.status} {repr(await r.text())}")
+                            else:
+                                _LOGGER.debug(
+                                    f"Successfully sent push notification to {self._plan_id}-{endpoint_hash[:6]}: "
+                                    f"{r.status} {repr(await r.text())}")
+                                await scheduler.spawn(self._app["stats"].track_notification_sent(subscription))
+                    except Exception:
+                        _LOGGER.exception(f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]}")
+                    return None
 
-                    subscription_entries_to_delete: Iterable[sqlite3.Row] = await asyncio.gather(
-                        *(send_push_notification(subscription, common_affected_groups)
-                          for subscription, common_affected_groups in
-                          self.storage.iter_active_push_subscriptions(affected_groups)))
-                    for subscription_entry in subscription_entries_to_delete:
-                        if subscription_entry is not None:
-                            self.storage.delete_push_subscription(subscription_entry)
-        finally:
-            logger.PLAN_NAME_CONTEXTVAR.reset(token)
+                def iter_relevant_subscriptions():
+                    subscription: sqlite3.Row
+                    for subscription in self.db.iter_active_push_subscriptions(self._plan_id):
+                        selection = subscription["selection"]
+                        if selection is None:
+                            # selection is None when all groups are selected
+                            yield subscription, affected_groups
+                        else:
+                            intersection = {}
+                            for expiry_time, day in affected_groups.items():
+                                groups = day["groups"]
+                                common_groups = [s for s in selection if any(s in g for g in groups)]
+                                if common_groups:
+                                    intersection[expiry_time] = {"name": day["name"], "groups": common_groups}
+                            if intersection:
+                                yield subscription, intersection
 
-
-class SubstitutionPlanUppercaseSelection(SubstitutionPlan):
-    def _prettify_selection(self, selection: List[str]) -> str:
-        return super()._prettify_selection(selection).upper()
+                subscriptions_to_delete: Iterable[sqlite3.Row] = await asyncio.gather(
+                    *(send_push_notification(s, i) for s, i in iter_relevant_subscriptions()))
+                for subscription in subscriptions_to_delete:
+                    if subscription is not None:
+                        self.db.delete_push_subscription(subscription)
+        except Exception:
+            _LOGGER.exception("Exception in on_new_substitutions background task")

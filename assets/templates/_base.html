@@ -5,68 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{% endblock %} - Vertretungsplan GaW Verden</title>
     {% block breadcrumb_list %}{% endblock %}
-    <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">
-    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" type="image/x-icon">
-    <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
-    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
-    <link rel="icon" href="/favicon-64.png" sizes="64x64" type="image/png">
-    <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
     {% block manifest_link %}{% endblock %}
-    <link rel="apple-touch-icon" href="/favicon-128.png">
     <meta name="apple-mobile-web-app-title" content="GaW VPlan">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="GaW VPlan">
-    <meta name="msapplication-TileColor" content="#00a300">
-    <meta name="theme-color" content="#e67b10">
-    <meta name="keywords"
-          content="Gymnasium am Wall, GaW Verden, Vertretung, Vertretungsplan, Schule{% block keywords %}{% endblock %}">
+    <meta name="keywords" content="Gymnasium am Wall, GaW Verden, Vertretung, Vertretungsplan, Schule {% block keywords %}{% endblock %}">
     {% block meta %}{% endblock %}
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://gawvertretung.florian-raediker.de">
     <meta property="og:title" content="{% block og_title %}{% endblock %} - Vertretungsplan GaW Verden">
     <meta property="og:locale" content="de_DE">
-    <meta property="og:image" content="/favicon.svg">
-    <meta property="og:image:type" content="image/svg+xml">
-    <meta property="og:image" content="/favicon-192.png">
-    <meta property="og:image:type" content="image/png">
     <meta name="color-scheme" content="light dark">
-    <link href="/assets/style/main.css?v=2" rel="stylesheet">
-    <link href="/assets/style/main-dark.css?v=1" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
-    {% block stylesheets %}{% endblock %}
-    <script>switch(localStorage.getItem("dark-theme")){case "light":for(let s of document.getElementsByClassName("dark-stylesheet"))s.setAttribute("media","none");document.querySelector('meta[name="color-scheme"]').setAttribute("content","light");break;case "dark":for(let s of document.getElementsByClassName("dark-stylesheet"))s.removeAttribute("media");document.querySelector('meta[name="color-scheme"]').setAttribute("content","dark")}</script>
-</head>
-<body class="d-flex flex-column">
-    <a class="visually-hidden visually-hidden-focusable" href="#main">Zum Inhalt</a>
-    <div id="content" class="container-fluid">
-        <header>
-            <div class="box title-box">
-                {% block title_bar %}
-                    {% if selection %}<span class="selection">{{ selection_str|e }}</span> - {% endif %}
-                    <span class="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
-                    <span class="title-middle">GaW Vertretungsplan</span>
-                    <span class="title-small">GaW VPlan</span>
-                {% endblock %}
-                {% block title_end %}{% endblock %}
-            </div>
-        </header>
-        <main role="main" id="main">
-            {% block content %}{% endblock %}
-        </main>
-    </div>
-    <footer class="text-center text-white p-3 mt-4">
-        <p>
-            Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
-            <a href="{% block original_data_link %}{% endblock %}" rel="noopener" target="_blank" class="external text-nowrap">gaw-verden.de</a>.<br>
-            Alle Angaben ohne Gewähr.
-        </p>
-        <p>
-            Programmiert von Florian Rädiker.
-        </p>
-        <p>
-            <!--suppress HtmlUnknownTarget -->
-            <a href="/about">Impressum</a> | <!--suppress HtmlUnknownTarget --><a href="/privacy">Datenschutzerklärung</a>
-        </p>
-        <object data="/assets/img/python-powered.min.svg">python powered</object>
-    </footer>
+    <script>const a=localStorage.getItem("dark-theme");null!=a&&(localStorage.setItem("theme",a),localStorage.removeItem("dark-theme"));switch(localStorage.getItem("theme")){case "light":document.documentElement.classList.add("light");break;case "dark":document.documentElement.classList.add("dark")}</script>
+    <link href="/assets/style/main.css?v=4" rel="stylesheet">
+    <!-- the following comment is replaced by gulpfile.js with generated code by realfavicon; the following two
+    properties are missing -->
+    <!-- ###realfavicon-replace### -->
+    <meta property="og:image:width" content="500">
+    <meta property="og:image:height" content="500">
     {% block scripts %}{% endblock scripts %}
+</head>
+
+<body class="d-flex flex-column">
+<a class="visually-hidden visually-hidden-focusable" href="#main">Zum Inhalt</a>
+<div id="content" class="container-fluid">
+    <header>
+        <div class="box title-box">
+            {% block title_bar %}
+                {% if selection %}<span class="selection">{{ selection_str|e }}</span> - {% endif %}
+                <span class="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
+                <span class="title-middle">GaW Vertretungsplan</span>
+                <span class="title-small">GaW VPlan</span>
+            {% endblock %}
+            {% block title_end %}{% endblock %}
+        </div>
+    </header>
+    <main role="main" id="main">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+<footer class="text-center text-white p-3 mt-4">
+    <p>
+        Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
+        <a href="{% block original_data_link %}{% endblock %}" rel="noopener" target="_blank"
+           class="external text-nowrap">gaw-verden.de</a>.<br>
+        Alle Angaben ohne Gewähr.
+    </p>
+    <p>
+        Programmiert von Florian Rädiker.
+    </p>
+    <p>
+        <!--suppress HtmlUnknownTarget -->
+        <a href="/about">Impressum</a> | <!--suppress HtmlUnknownTarget --><a href="/privacy">Datenschutzerklärung</a>
+    </p>
+    <object data="/assets/img/python-powered.min.svg">python powered</object>
+</footer>
 </body>
 </html>

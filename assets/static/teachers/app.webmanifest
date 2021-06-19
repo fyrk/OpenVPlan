@@ -1,0 +1,40 @@
+{
+  "name": "Lehrer*innen - GaW Vertretungsplan",
+  "short_name": "GaW VPlan",
+  "description": "Lehrer*innen-Vertretungsplan für das Gymnasium am Wall Verden",
+  "start_url": "/teachers/?mtm_campaign=pwa_homescreen",
+  "theme_color": "#e67b10",
+  "background_color": "#e67b10",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/android-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/android-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/monochrome-96x96.png",
+      "sizes": "96x96",
+      "purpose": "monochrome"
+    },
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

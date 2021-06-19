@@ -1,0 +1,82 @@
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/mixins/breakpoints";
+@import "node_modules/bootstrap/scss/mixins/clearfix";
+
+
+//noinspection CssUnusedSymbol
+.box {
+    @extend .my-sm-3;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    border-radius: $border-radius-sm;
+    background-color: var(--box-bg);
+}
+
+@include media-breakpoint-down(sm) {
+    .box {
+        box-shadow: none;
+        border-radius: 0;
+        padding: 1rem 1rem;
+    }
+
+    .box:not(:last-child) {
+        border-bottom: 1px solid;
+        border-bottom-color: var(--box-border-color);
+    }
+
+    .box:last-child:not(.title-box) {
+        border-bottom-right-radius: $border-radius-lg !important;
+        border-bottom-left-radius: $border-radius-lg !important;
+        box-shadow: 0 5px 5px 0 #7575754f;
+    }
+}
+
+// Title
+
+.title-box {
+    user-select: none;
+    text-align: center;
+    padding: $spacer * .8;
+    font-size: $font-size-base * 1.65;
+    background-color: var(--title-box-bg);
+
+    .selection {
+        color: var(--primary);
+    }
+}
+
+.title-middle, .title-big {
+    display: none;
+}
+
+@media (min-width: 380px) {
+    .title-small {
+        display: none;
+    }
+    @media (max-width: 768px - 1px) {
+        .title-middle {
+            display: inline;
+        }
+    }
+}
+
+@media (min-width: 768px) {
+    .title-big {
+        display: inline;
+    }
+}
+
+// Status
+
+.status-box {
+    @include clearfix;
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+}
+
+// Navigation
+
+.nav {
+    font-size: $font-size-base * 1.15;
+    margin-top: $spacer * 0.4;
+}

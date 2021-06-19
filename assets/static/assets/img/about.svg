@@ -9,7 +9,6 @@
                 D-27283 Verden (Aller)<br/>
                 <a id="view-e"></a>
             </p>
-            <!-- The following does not currently work with Chromium-based browsers -->
             <script>document.getElementById("view-e").addEventListener("click", e=>e.target.href=atob("bWFpbHRvOmdhd3ZlcnRyZXR1bmcrc3BhbUA=").replace("+spam", "")+"florian-raediker.de")</script>
         </div>
     </foreignObject>

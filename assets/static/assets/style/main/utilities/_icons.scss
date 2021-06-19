@@ -1,0 +1,26 @@
+@import "node_modules/bootstrap/scss/functions";
+
+%icon {
+    display: inline-block;
+    content: "";
+}
+
+%icon-primary {
+    background-color: $primary;  // always use light color (also with dark theme), because it looks better
+}
+
+@mixin icon($path, $width: 1em, $height: 1em, $position-x: null, $position-y: null) {
+    @extend %icon;
+    mask: $path no-repeat 0 0/#{$width} $height;
+    width: $width;
+    height: $height;
+    @if $position-x {
+        margin-left: $position-x;
+        margin-right: -$position-x;
+    }
+    @if $position-y {
+        //margin-top: -$position-y;
+        //margin-bottom: $position-y;
+        vertical-align: $position-y;
+    }
+}
