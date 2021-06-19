@@ -159,19 +159,12 @@ if ("serviceWorker" in navigator) {
         navigator.serviceWorker.ready
             .then(registration => {
                 console.log("ServiceWorker is active:", registration.active);
-                if (!("Notification" in window)) {
-                    console.warn("Notification is not supported");
-                    return;
+                if ("Notification" in window && "localStorage" in window && "PushManager" in window) {
+                    onNotificationsAvailable(registration);
+                } else {
+                    console.warn("Push Notifications are not supported");
+                    setFeature("notifications", "unsupported");
                 }
-                if (!("localStorage" in window)) {
-                    console.warn("localStorage is not supported");
-                    return;
-                }
-                if (!("PushManager" in window)) {
-                    console.warn("PushManager is not supported");
-                    return;
-                }
-                onNotificationsAvailable(registration);
             });
         navigator.serviceWorker.register("/sw.min.js")
             .then(registration => {
@@ -180,4 +173,5 @@ if ("serviceWorker" in navigator) {
     });
 } else {
     console.warn("serviceWorker is not supported");
+    setFeature("notifications", "unsupported");
 }
