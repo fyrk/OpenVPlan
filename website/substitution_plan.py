@@ -148,7 +148,7 @@ class SubstitutionPlan:
                 raise web.HTTPSeeOther(location=request.url.with_query(query))
 
             if "all" not in request.query and "s" not in request.query:
-                # use 'update_query' so that existing query doesn't change for e.g. "mtm_campain" to work
+                # use 'update_query' so that existing query doesn't change for e.g. "mtm_campaign" to work
                 if self._selection_cookie in request.cookies and request.cookies[self._selection_cookie].strip():
                     raise web.HTTPSeeOther(
                         location=request.rel_url.update_query(s=request.cookies[self._selection_cookie]))
@@ -279,7 +279,7 @@ class SubstitutionPlan:
             _LOGGER.debug(f"Sending update event via WebSocket connection to {len(self._websockets)} clients")
             for ws in self._websockets:
                 try:
-                    await ws.send_json({"type": "new_substitutions"})
+                    await ws.send_json({"type": "status", "status": self._crawler.storage.status})
                 except:
                     pass
 
