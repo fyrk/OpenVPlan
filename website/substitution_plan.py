@@ -141,7 +141,10 @@ class SubstitutionPlan:
         try:
             if request.query.get("s_src"):
                 # track selection source with Matomo
-                await self._app["stats"].track_selection_source(request, self._template_options["title"])
+                try:
+                    await self._app["stats"].track_selection_source(request, self._template_options["title"])
+                except:
+                    _LOGGER.exception("Exception while sending selection source to Matomo")
 
                 query = dict(request.query)
                 del query["s_src"]
