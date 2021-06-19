@@ -1,4 +1,4 @@
-name: "Production Deploy (production branch 'production')"
+name: "Production Deploy ('production' branch)"
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
     - name: Copy Files
       uses: burnett01/rsync-deployments@4.1
       with:
-          switches: "-rtv"
+          switches: "-avh --delete --filter='P local_settings.py' --exclude=.git --exclude=.github"
           remote_host: ${{ secrets.REMOTE_HOST }}
           remote_user: ${{ secrets.REMOTE_USER }}
           remote_key:  ${{ secrets.SERVER_PRIVATE_SSH_KEY }}
