@@ -186,12 +186,16 @@ class Stats:
     async def track_notification_sent(self, subscription):
         if settings.MATOMO_HONOR_DNT and subscription["dnt_enabled"]:
             return
+        if not subscription["selection"]:
+            selected = "no selection"
+        else:
+            selected = "has selection"
         await self._send_to_matomo(
             uid=subscription["endpoint_hash"],
             ua=subscription["user_agent"] or "",
             e_c="Push Subscription",
             e_n=subscription["plan_id"],
-            e_a="Notification Sent",
+            e_a="Notification Sent (" + selected + ")",
             ca=True
         )
 
