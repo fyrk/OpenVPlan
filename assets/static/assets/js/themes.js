@@ -5,7 +5,7 @@ const systemDefaultRadio = document.getElementById("themes-system-default");
 const lightRadio = document.getElementById("themes-light");
 const darkRadio = document.getElementById("themes-dark");
 function setThemeFeature(setting) {
-    if (setting === "system-default")
+    if (setting === "system-default" || !setting)
         setting = "system-" + ((window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light");
     setFeature("theme", setting);
 }
