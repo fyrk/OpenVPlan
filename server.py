@@ -28,10 +28,11 @@ env = jinja2.Environment(
     lstrip_blocks=True,
     auto_reload=settings.DEBUG
 )
-TEMPLATE_PRIVACY = env.get_template("privacy.min.html")
-TEMPLATE_ABOUT = env.get_template("about.min.html")
-TEMPLATE_ERROR404 = env.get_template(settings.TEMPLATE_404)
-TEMPLATE_ERROR500 = env.get_template(settings.TEMPLATE_500)
+
+TEMPLATE_PRIVACY = partial(env.get_template, "privacy.min.html")
+TEMPLATE_ABOUT = partial(env.get_template, "about.min.html")
+TEMPLATE_ERROR404 = partial(env.get_template, settings.TEMPLATE_404)
+TEMPLATE_ERROR500 = partial(env.get_template, settings.TEMPLATE_500)
 
 
 @web.middleware
@@ -54,7 +55,7 @@ async def error_middleware(request: web.Request, handler):
         return await handler(request)
     except web.HTTPException as e:
         if e.status == 404:
-            return web.Response(text=await TEMPLATE_ERROR404.render_async(), status=404, content_type="text/html",
+            return web.Response(text=await TEMPLATE_ERROR404().render_async(), status=404, content_type="text/html",
                                 charset="utf-8", headers=RESPONSE_HEADERS)
         raise e from None
     except Exception:
@@ -62,7 +63,7 @@ async def error_middleware(request: web.Request, handler):
     except BaseException as e:
         _LOGGER.exception(f"{request.method} {request.path} BaseException while handling request")
         raise e
-    return web.Response(text=await TEMPLATE_ERROR500.render_async(), status=500, content_type="text/html",
+    return web.Response(text=await TEMPLATE_ERROR500().render_async(), status=500, content_type="text/html",
                         charset="utf-8", headers=RESPONSE_HEADERS)
 
 
@@ -168,8 +169,8 @@ async def app_factory(dev_mode, start_log_msg):
         template_options = plan_config.get("template_options", {})
         crawler = crawler_class(parser_class, parser_options, **crawler_options)
         crawler.on_status_changed = partial(app["stats"].add_last_site, plan_id)
-        plan = SubstitutionPlan(plan_id, crawler, env.get_template("substitution-plan.min.html"),
-                                env.get_template("error-500-substitution-plan.min.html"), template_options,
+        plan = SubstitutionPlan(plan_id, crawler, partial(env.get_template, "substitution-plan.min.html"),
+                                partial(env.get_template, "error-500-substitution-plan.min.html"), template_options,
                                 plan_config.get("uppercase_selection", False))
 
         await plan.deserialize(os.path.join(settings.DATA_DIR, f"substitutions/{plan_id}.pickle"))
@@ -187,8 +188,8 @@ async def app_factory(dev_mode, start_log_msg):
 
     app.add_routes([
         web.get("/", root_handler),
-        web.get("/privacy", template_handler(TEMPLATE_PRIVACY, "Datenschutzerklärung")),
-        web.get("/about", template_handler(TEMPLATE_ABOUT, "Impressum")),
+        web.get("/privacy", template_handler(TEMPLATE_PRIVACY(), "Datenschutzerklärung")),
+        web.get("/about", template_handler(TEMPLATE_ABOUT(), "Impressum")),
         web.post("/api/report-error", report_js_error_handler),
         web.post("/api/event", api_event_handler)
     ])

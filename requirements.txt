@@ -4,3 +4,4 @@ sortedcontainers
 pywebpush
 cryptography
 aiojobs
+yarl

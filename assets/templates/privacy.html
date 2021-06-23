@@ -1,11 +1,9 @@
-{% extends "_info_site.min.html" %}
-{% block title %}Datenschutzerklärung{% endblock %}
-{% block og_title %}Datenschutzerklärung{% endblock %}
-{% block keywords %}, Datenschutzerklärung{% endblock %}
+{% extends "_base.min.html" %}
+{% import "_common.html" as c %}
 
-{% block breadcrumb_list %}
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"gawvertretung.florian-raediker.de","item":"https://gawvertretung.florian-raediker.de"},{"@type":"ListItem","position":2,"name":"Datenschutzerklärung","item":"https://florian-raediker.de/privacy"}]}</script>
-{% endblock %}
+{% block title %}{% block og_title %}Datenschutzerklärung{% endblock %}{% endblock %}
+{% block keywords %}, Datenschutzerklärung{% endblock %}
+{% block breadcrumb_list %}{{ c.breadcrumb_list("Datenschutzerklärung", "https://gawvertretung.florian-raediker.de/privacy") }}{% endblock %}
 
 {% block content %}
 <div class="box">
@@ -122,5 +120,3 @@
     </p>
 </div>
 {% endblock %}
-
-{% block original_data_link %}https://gaw-verden.de/images/vertretung/klassen/subst_001.htm{% endblock %}

@@ -44,6 +44,12 @@ gulp.task("build-js", () => {
 })
 
 
+function getBootstrapIcon(name) {
+    return fs.readFileSync("node_modules/bootstrap-icons/icons/" + name + ".svg", "utf8")
+        .replace(/>\s*</g, "><")
+        .replace(/"/g, "'");
+}
+
 const sass = require("gulp-dart-sass");
 const postcss = require("gulp-postcss");
 const autoprefixer = require("autoprefixer");
@@ -73,11 +79,6 @@ gulp.task("build-sass", () => {
         .pipe(replace(/!bi-([\w-]*)/g, match => getBootstrapIcon(match.substr(4))))
         .pipe(gulp.dest(path));
 });
-function getBootstrapIcon(name) {
-    return fs.readFileSync("node_modules/bootstrap-icons/icons/" + name + ".svg", "utf8")
-        .replace(/>\s*</g, "><")
-        .replace(/"/g, "'");
-}
 
 
 const htmlmin = require("gulp-html-minifier-terser");
@@ -89,7 +90,12 @@ gulp.task("minify-xml", () => {
     let x = gulp.src(path + srcFile);
     if (destFile === "_base.min.html")
         x = x.pipe(replace("<!-- ###realfavicon-replace### -->", JSON.parse(fs.readFileSync(FAVICON_DATA_FILE)).favicon.html_code));
-    return x.pipe(htmlmin({collapseWhitespace: true, removeComments: true}))
+    return x.pipe(replace(/<!--bi-([\w-]*)-->/g, (m, p1) => getBootstrapIcon(p1)))
+        .pipe(htmlmin({
+            collapseWhitespace: true,
+            removeComments: true,
+            ignoreCustomFragments: [/<!--bi-([\w-]*)-->/]
+        }))
         .pipe(rename(destFile))
         .pipe(gulp.dest(path));
 });

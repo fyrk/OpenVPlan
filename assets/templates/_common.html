@@ -1,0 +1,12 @@
+{% macro navigation(plan_id=None) %}
+<nav class="nav nav-pills flex-sm-row justify-content-around">
+    <!--suppress HtmlUnknownTarget -->
+    <a class="nav-item nav-link{% if plan_id == 'students' %} active{% endif %}" href="/students/">Schüler*innen</a>
+    <!--suppress HtmlUnknownTarget -->
+    <a class="nav-item nav-link{% if plan_id == 'teachers' %} active{% endif %}" href="/teachers/">Lehrer*innen</a>
+</nav>
+{% endmacro %}
+
+{% macro breadcrumb_list(name, plan_id) %}
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"gawvertretung.florian-raediker.de","item":"https://gawvertretung.florian-raediker.de"},{"@type":"ListItem","position":2,"name":"{{ name }}","item":"https://gawvertretung.florian-raediker.de/{{ plan_id }}/"}]}</script>
+{% endmacro %}

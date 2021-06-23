@@ -1,28 +1,19 @@
-{% extends "_info_site.min.html" %}
-{% block title %}{{ options["title"] }}{% endblock %}
-{% block og_title %}{% if options["title"] %}{{ options["title"] }}{% else %}{{ options["og_title"] }}{% endif %}{% endblock %}
-{% block breadcrumb_list %}
-    <script type="application/ld+json">{"@context": "https://schema.org","@type": "BreadcrumbList","itemListElement": [{"@type": "ListItem","position": 1,"name": "gawvertretung.florian-raediker.de","item": "https://gawvertretung.florian-raediker.de"},{"@type": "ListItem","position": 2,"name": {{ options["title"] }},"item": "https://gawvertretung.florian-raediker.de/{{ options["id"] }}/"}]}</script>
-{% endblock %}
+{% extends "substitution-plan.min.html" %}
 
-{% block manifest_link %}
-    <!--suppress HtmlUnknownTarget -->
-    <link rel="manifest" href="manifest.json">
-{% endblock %}
-{% block keywords %}{% if options["keywords"] %}{% for kw in options["keywords"] %}, {{ kw }}{% endfor %}{% endif %}{% endblock %}
-{% block meta %}
-    <meta name="description" content="Vertretungsplan für das Gymnasium am Wall Verden">
-{% endblock %}
-{% block stylesheets %}
-    <link href="/assets/style/substitutions.css" rel="stylesheet">
-    <link href="/assets/style/substitutions-dark.css" rel="stylesheet" class="dark-stylesheet" media="(prefers-color-scheme: dark)">
+{% block scripts %}
 {% endblock %}
 
 {% block content %}
     <div class="box">
         <h1>Ein Fehler ist aufgetreten</h1>
-        Der <a href="https://gaw-verden.de/images/vertretung/lehrer/subst_001.htm" rel="noopener">originale Vertretungsplan</a> konnte nicht eingelesen werden.
+        Der originale Vertretungsplan konnte nicht eingelesen werden.
+        <div class="mt-2 mb-2 row g-2 justify-content-start">
+            <div class="col-12 col-sm-auto">
+                <a href="" rel="noopener" class="btn btn-primary" role="button"><!--bi-arrow-clockwise--> Erneut versuchen</a>
+            </div>
+            <div class="col-12 col-sm-auto">
+                <a href="{{ options["original_data_link"] }}" rel="noopener" class="btn btn-primary" role="button"><!--bi-box-arrow-up-right--> Zum originalen Plan</a>
+            </div>
+        </div>
     </div>
 {% endblock %}
-
-{% block original_data_link %}https://gaw-verden.de/images/vertretung/klassen/subst_001.htm{% endblock %}

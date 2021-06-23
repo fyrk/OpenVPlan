@@ -6,7 +6,7 @@ import sqlite3
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import Dict, Iterable, List, MutableSet, Optional, Union, Tuple
+from typing import Dict, Iterable, List, MutableSet, Optional, Union, Tuple, Callable
 
 import jinja2
 import pywebpush
@@ -35,7 +35,9 @@ RESPONSE_HEADERS = {
                                "style-src 'self'; "
                                "manifest-src 'self';"
                                "img-src 'self' data:; "
-                               "script-src 'self' 'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g='; "
+                               "script-src 'self' "
+                                   "'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g=' "
+                                   "'sha256-3/1ODIQTRjv+w06gdm2GcdfvbXBk8D893PBaImH3siQ='; "
                                "connect-src 'self' " + ("ws:" if settings.DEBUG else "wss:") + "; "
                                "frame-src 'self' mailto:; object-src 'self' mailto:",
     "Strict-Transport-Security": "max-age=63072000",
@@ -60,8 +62,8 @@ pywebpush.WebPusher.as_curl = lambda s, e, d, h: (e, d, h)
 
 
 class SubstitutionPlan:
-    def __init__(self, plan_id: str, crawler: BaseSubstitutionCrawler, template: jinja2.Template,
-                 error500_template: jinja2.Template, template_options: dict, uppercase_selection: bool):
+    def __init__(self, plan_id: str, crawler: BaseSubstitutionCrawler, template: Callable[[], jinja2.Template],
+                 error500_template: Callable[[], jinja2.Template], template_options: dict, uppercase_selection: bool):
         self._plan_id = plan_id
         self._crawler = crawler
         self._template = template
@@ -115,8 +117,8 @@ class SubstitutionPlan:
             await self._recreate_index_site()
 
     async def _recreate_index_site(self):
-        self._index_site = await self._template.render_async(storage=self._crawler.storage,
-                                                             options=self._template_options)
+        self._index_site = await self._template().render_async(storage=self._crawler.storage,
+                                                               options=self._template_options)
 
     @staticmethod
     def parse_selection(url: yarl.URL) -> Tuple[str, str, str]:
@@ -177,7 +179,7 @@ class SubstitutionPlan:
                 text = self._index_site
                 headers = RESPONSE_HEADERS
             else:
-                text = await self._template.render_async(storage=self._crawler.storage, selection=selection,
+                text = await self._template().render_async(storage=self._crawler.storage, selection=selection,
                                                          selection_str=selection_str, options=self._template_options)
                 headers = RESPONSE_HEADERS_SELECTION
 
@@ -207,7 +209,7 @@ class SubstitutionPlan:
             raise e from None
         except Exception:
             _LOGGER.exception("Exception occurred while handling request")
-            response = web.Response(text=await self._error500_template.render_async(options=self._template_options),
+            response = web.Response(text=await self._error500_template().render_async(options=self._template_options),
                                     status=500, content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
         return response
 

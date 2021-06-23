@@ -1,3 +1,4 @@
+{% import "_common.min.html" as c -%}
 <!doctype html>
 <html lang="de" prefix="og: https://ogp.me/ns#">
 <head>
@@ -17,9 +18,8 @@
     <meta property="og:locale" content="de_DE">
     <meta name="color-scheme" content="light dark">
     <script>const a=localStorage.getItem("dark-theme");null!=a&&(localStorage.setItem("theme",a),localStorage.removeItem("dark-theme"));switch(localStorage.getItem("theme")){case "light":document.documentElement.classList.add("light");break;case "dark":document.documentElement.classList.add("dark")}</script>
-    <link href="/assets/style/main.css?v=4" rel="stylesheet">
-    <!-- the following comment is replaced by gulpfile.js with generated code by realfavicon; the following two
-    properties are missing -->
+    <link href="/assets/style/main.css?v=5" rel="stylesheet">
+    <!-- the following comment is replaced by gulpfile.js with generated code by realfavicon; the following two properties are missing -->
     <!-- ###realfavicon-replace### -->
     <meta property="og:image:width" content="500">
     <meta property="og:image:height" content="500">
@@ -37,7 +37,9 @@
                 <span class="title-middle">GaW Vertretungsplan</span>
                 <span class="title-small">GaW VPlan</span>
             {% endblock %}
-            {% block title_end %}{% endblock %}
+            {% block navigation %}
+                {{ c.navigation() }}
+            {% endblock %}
         </div>
     </header>
     <main role="main" id="main">
@@ -47,7 +49,7 @@
 <footer class="text-center text-white p-3 mt-4">
     <p>
         Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
-        <a href="{% block original_data_link %}{% endblock %}" rel="noopener" target="_blank"
+        <a href="{% block original_data_link %}https://gaw-verden.de/images/vertretung/klassen/subst_001.htm{% endblock %}" rel="noopener" target="_blank"
            class="external text-nowrap">gaw-verden.de</a>.<br>
         Alle Angaben ohne Gewähr.
     </p>
@@ -60,5 +62,6 @@
     </p>
     <object data="/assets/img/python-powered.min.svg">python powered</object>
 </footer>
+{% block body_end %}{% endblock %}
 </body>
 </html>
