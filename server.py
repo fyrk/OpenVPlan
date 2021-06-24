@@ -39,9 +39,10 @@ TEMPLATE_ERROR500 = partial(env.get_template, settings.TEMPLATE_500)
 async def stats_middleware(request: web.Request, handler):
     t1 = time.perf_counter_ns()
     response: web.Response = await handler(request)
-    if request.get("stats_relevant"):
+    if request.get("stats_relevant") or response.status >= 500:
         await spawn(request,
-                    request.app["stats"].track_page_view(request, "sw" in request.query, time.perf_counter_ns()-t1,
+                    request.app["stats"].track_page_view(request, response, "sw" in request.query,
+                                                         time.perf_counter_ns()-t1,
                                                          request.get("stats_title", "")))
     if 400 <= response.status < 500:
         await spawn(request, request.app["stats"].track_4xx_error(request, time.perf_counter_ns()-t1, response))

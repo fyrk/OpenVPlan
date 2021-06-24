@@ -134,9 +134,11 @@ class Stats:
             url = url.with_query(s=",".join(anonymize_selection(s) for s in selection))
         return str(url)
 
-    async def track_page_view(self, request: web.Request, is_sw, time, title):
+    async def track_page_view(self, request: web.Request, response: web.Response, is_sw, time, title):
         if await self._check_dnt(request):
             return
+        if response.status >= 500:
+            title = str(response.status) + " " + response.reason
         if not is_sw:
             dimensions = {}
             try:
