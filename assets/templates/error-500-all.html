@@ -2,7 +2,7 @@
 
 {% block title %}{% block og_title %}Fehler{% endblock %}{% endblock %}
 
-{% block content %}
+{% macro error500_content(original_data_link) %}
     <div class="box">
         <h1>Ein Fehler ist aufgetreten</h1>
         Der originale Vertretungsplan konnte nicht eingelesen werden.
@@ -11,8 +11,11 @@
                 <a href="" rel="noopener" class="btn btn-primary" role="button"><!--bi-arrow-clockwise--> Erneut versuchen</a>
             </div>
             <div class="col-12 col-sm-auto">
-                <a href="https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm" rel="noopener" class="btn btn-primary" role="button"><!--bi-box-arrow-up-right--> Zum originalen Plan</a>
+                <a href="{{ original_data_link }}" rel="noopener" class="btn btn-primary" role="button"><!--bi-box-arrow-up-right--> Zum offiziellen Plan</a>
             </div>
         </div>
     </div>
+{% endmacro %}
+{% block content %}
+    {{ error500_content("https://gaw-verden.de/images/vertretung/klassen/subst_001.htm") }}
 {% endblock %}

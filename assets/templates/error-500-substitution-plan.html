@@ -1,19 +1,9 @@
 {% extends "substitution-plan.min.html" %}
+{% from "error-500-all.min.html" import error500_content %}
 
 {% block scripts %}
 {% endblock %}
 
 {% block content %}
-    <div class="box">
-        <h1>Ein Fehler ist aufgetreten</h1>
-        Der originale Vertretungsplan konnte nicht eingelesen werden.
-        <div class="mt-2 mb-2 row g-2 justify-content-start">
-            <div class="col-12 col-sm-auto">
-                <a href="" rel="noopener" class="btn btn-primary" role="button"><!--bi-arrow-clockwise--> Erneut versuchen</a>
-            </div>
-            <div class="col-12 col-sm-auto">
-                <a href="{{ options["original_data_link"] }}" rel="noopener" class="btn btn-primary" role="button"><!--bi-box-arrow-up-right--> Zum originalen Plan</a>
-            </div>
-        </div>
-    </div>
+    {{ error500_content(options["original_data_link"]) }}
 {% endblock %}
