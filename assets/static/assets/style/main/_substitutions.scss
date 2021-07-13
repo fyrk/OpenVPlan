@@ -1,4 +1,5 @@
 @import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/mixins/breakpoints";
 
 @import "variables";
 @import "utilities/icons";
@@ -180,4 +181,31 @@ $day-info-heading-font-size: 1.1rem;
 
 #online-status.offline { // .offline is added by JS
     color: red;
+}
+
+
+// ========================
+// NAV TOGGLE
+// navigation bar is hidden on small screens with selection
+#nav-toggle {
+    visibility: hidden;
+    appearance: none;
+    float: left;
+    vertical-align: top;
+    width: 1.5em;
+    height: 1.5em;
+}
+
+#nav-toggle::before {
+    @include icon(url("data:image/svg+xml,!bi-list"), $width: 1.5em, $height: 1.5em);
+    background-color: var(--body-color);
+}
+
+@include media-breakpoint-down(sm) {
+    #nav-toggle {
+        visibility: visible;
+    }
+    #nav-toggle:not(:checked) ~ .nav {
+        display: none;
+    }
 }

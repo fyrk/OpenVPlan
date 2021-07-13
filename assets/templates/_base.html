@@ -18,7 +18,7 @@
     <meta property="og:locale" content="de_DE">
     <meta name="color-scheme" content="light dark">
     <script>const a=localStorage.getItem("dark-theme");null!=a&&(localStorage.setItem("theme",a),localStorage.removeItem("dark-theme"));switch(localStorage.getItem("theme")){case "light":document.documentElement.classList.add("light");break;case "dark":document.documentElement.classList.add("dark")}</script>
-    <link href="/assets/style/main.css?v=6" rel="stylesheet">
+    <link href="/assets/style/main.css?v=7" rel="stylesheet">
     <!-- the following comment is replaced by gulpfile.js with generated code by realfavicon; the following two properties are missing -->
     <!-- ###realfavicon-replace### -->
     <meta property="og:image:width" content="500">
@@ -32,7 +32,7 @@
     <header>
         <div class="box title-box">
             {% block title_bar %}
-                {% if selection %}<span class="selection">{{ selection_str|e }}</span> - {% endif %}
+                {% block pre_title %}{% endblock %}
                 <span class="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
                 <span class="title-middle">GaW Vertretungsplan</span>
                 <span class="title-small">GaW VPlan</span>

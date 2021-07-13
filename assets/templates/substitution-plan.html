@@ -1,5 +1,5 @@
 {% extends "_base.min.html" %}
-{% import "_common.html" as c %}
+{% import "_common.min.html" as c %}
 
 {% block title %}{% if not selection %}{{ options["title"] }}{% else %}{{ selection_str|e }}{% endif %}{% endblock %}
 {% block og_title %}{% if options["title"] %}{{ options["title"] }}{% else %}{{ options["og_title"] }}
@@ -24,6 +24,10 @@
 
 {% block navigation %}
     {{ c.navigation(options["id"]) }}
+{% endblock %}
+
+{% block pre_title %}
+    {% if selection %}<input type="checkbox" id="nav-toggle" aria-hidden="true"><span class="selection">{{ selection_str|e }}</span> - {% endif %}
 {% endblock %}
 
 {% block content %}
