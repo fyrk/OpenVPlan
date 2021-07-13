@@ -2,8 +2,10 @@
 {% import "_common.html" as c %}
 
 {% block title %}{% if not selection %}{{ options["title"] }}{% else %}{{ selection_str|e }}{% endif %}{% endblock %}
-{% block og_title %}{% if options["title"] %}{{ options["title"] }}{% else %}{{ options["og_title"] }}{% endif %}{% endblock %}
-{% block keywords %}{% if options["keywords"] %}{% for kw in options["keywords"] %}, {{ kw }}{% endfor %}{% endif %}{% endblock %}
+{% block og_title %}{% if options["title"] %}{{ options["title"] }}{% else %}{{ options["og_title"] }}
+{% endif %}{% endblock %}
+{% block keywords %}{% if options["keywords"] %}{% for kw in options["keywords"] %}, {{ kw }}{% endfor %}
+{% endif %}{% endblock %}
 {% block breadcrumb_list %}{{ c.breadcrumb_list(options["title"], options["id"]) }}{% endblock %}
 
 {% block meta %}
@@ -36,7 +38,7 @@
 <div class="box substitutions-box">
     <div class="p-0 mb-3">
         <div class="row">
-            <div class="col-md">
+            <div class="col-md-6">
                 <div class="day-heading">
                     <span class="day-name pe-1">{{ day.name }}</span>
                     <span class="text-muted date">{{ day.date }}</span>
@@ -44,27 +46,25 @@
                 Woche {{ day.week }}
                 {% if day.news %}
                     <div class="day-info">
-                        {% set id %}day-info-checkbox-{{ day.date|replace(".", "_") }}-news{% endset %}
-                        <input type="checkbox" class="day-info-checkbox" id="{{ id }}" aria-hidden="true">
-                        <label class="day-info-label" for="{{ id }}">
-                            <span class="day-info-heading">Nachrichten: </span>
-                            <span class="day-info-content">{{ day.news|join("<br>")|safe }}</span>
-                        </label>
+                        <span class="day-info-heading">Nachrichten: </span>
+                        <span class="day-info-content">{{ day.news|join("<br>")|safe }}</span>
                     </div>
                 {% endif %}
             </div>
-            <div class="col-md">
-                {% for title, text in day.info %}
-                    <div class="day-info">
-                        {% set id %}day-info-checkbox-{{ day.date|replace(".", "_") }}-{{ loop.index0 }}{% endset %}
-                        <input type="checkbox" class="day-info-checkbox" id="{{ id }}" aria-hidden="true">
-                        <label class="day-info-label" for="{{ id }}">
-                            <span class="day-info-heading">{{ title }}: </span>
-                            <span class="day-info-content">{{ text }}</span>
-                        </label>
-                    </div>
-                {% endfor %}
-            </div>
+            {% if day.info %}
+                <div class="col-md-6">
+                    {% for title, text in day.info %}
+                        <div class="day-info">
+                            {% set id %}day-info-checkbox-{{ day.date|replace(".", "_") }}-{{ loop.index0 }}{% endset %}
+                            <input type="checkbox" class="day-info-checkbox" id="{{ id }}" aria-hidden="true">
+                            <label class="day-info-label" for="{{ id }}">
+                                <span class="day-info-heading">{{ title }}: </span>
+                                <span class="day-info-content">{{ text }}</span>
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
     </div>
     {# In the following, {%- -%}/{{- -}} must be used to make subs_table completely empty if there are no substitutions #}

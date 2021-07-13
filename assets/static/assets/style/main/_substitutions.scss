@@ -22,10 +22,10 @@
 }
 
 .day-info {
-    margin-top: $spacer * .65;
+    margin-top: $spacer * .4;
 }
 
-$day-info-heading-font-size: 1.15rem;
+$day-info-heading-font-size: 1.1rem;
 
 .day-info-checkbox {
     float: left;
@@ -71,10 +71,6 @@ $day-info-heading-font-size: 1.15rem;
                 transition: transform 0.1s;
             }
         }
-
-        &~ .day-info-label .day-info-content {
-            display: block;  // make content start at next line
-        }
     }
 }
 
@@ -109,7 +105,12 @@ $day-info-heading-font-size: 1.15rem;
         }
     }
 
+
     tbody {
+        .group-name {
+            min-width: 2.5em;
+        }
+
         tr.first-of-group td {
             border-top: $table-border-width solid var(--table-first-of-group-border-color);
         }
