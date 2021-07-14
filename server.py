@@ -80,6 +80,12 @@ def template_handler(template: jinja2.Template, title):
     return handler
 
 
+def redirect_handler(location, **kwargs):
+    async def handler(r):
+        raise web.HTTPMovedPermanently(location, **kwargs)
+    return handler
+
+
 async def report_js_error_handler(request: web.Request):
     if request.content_length < 10000:
         # noinspection PyBroadException
@@ -189,8 +195,8 @@ async def app_factory(dev_mode, start_log_msg):
 
     app.add_routes([
         web.get("/", root_handler),
-        web.get("/privacy", template_handler(TEMPLATE_PRIVACY(), "Datenschutzerklärung")),
-        web.get("/about", template_handler(TEMPLATE_ABOUT(), "Impressum")),
+        web.get("/privacy", redirect_handler("/about")),
+        web.get("/about", template_handler(TEMPLATE_ABOUT(), "Impressum & Datenschutzerklärung")),
         web.post("/api/report-error", report_js_error_handler),
         web.post("/api/event", api_event_handler)
     ])
