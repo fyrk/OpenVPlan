@@ -13,7 +13,6 @@ import subs_crawler
 from settings import settings
 from website import logger
 from website.db import SubstitutionPlanDB
-from website.stats import Stats
 from website.substitution_plan import RESPONSE_HEADERS, SubstitutionPlan
 
 os.chdir(os.path.dirname(__file__))
@@ -33,20 +32,6 @@ env = jinja2.Environment(
 TEMPLATE_ABOUT = partial(env.get_template, "about.min.html")
 TEMPLATE_ERROR404 = partial(env.get_template, settings.TEMPLATE_404)
 TEMPLATE_ERROR500 = partial(env.get_template, settings.TEMPLATE_500)
-
-
-@web.middleware
-async def stats_middleware(request: web.Request, handler):
-    t1 = time.perf_counter_ns()
-    response: web.Response = await handler(request)
-    if request.get("stats_relevant") or response.status >= 500:
-        await spawn(request,
-                    request.app["stats"].track_page_view(request, response, "sw" in request.query,
-                                                         time.perf_counter_ns()-t1,
-                                                         request.get("stats_title", "")))
-    if 400 <= response.status < 500:
-        await spawn(request, request.app["stats"].track_4xx_error(request, time.perf_counter_ns()-t1, response))
-    return response
 
 
 @web.middleware
@@ -75,8 +60,6 @@ def template_handler(template: Callable[[], jinja2.Template], title):
                                 headers=RESPONSE_HEADERS)
         await response.prepare(request)
         await response.write_eof()
-        request["stats_relevant"] = True
-        request["stats_title"] = title
         return response
     return handler
 
@@ -87,45 +70,11 @@ def redirect_handler(location, **kwargs):
     return handler
 
 
-async def report_js_error_handler(request: web.Request):
-    if request.content_length < 10000:
-        # noinspection PyBroadException
-        try:
-            data = await request.post()
-            await request.app["stats"].track_js_error(request, data.get("name", ""), data.get("message", ""),
-                                                      data.get("description", ""), data.get("number", ""),
-                                                      data.get("filename", ""), data.get("lineno", ""),
-                                                      data.get("colno", ""), data.get("stack", ""))
-        except Exception:
-            _LOGGER.exception("Exception while handling JS error report")
-    else:
-        _LOGGER.warn(f"JS error report body too long ({request.content_length})")
-    return web.Response()
-
-
-async def api_event_handler(request: web.Request):
-    try:
-        data = await request.post()
-        type_ = data["type"]
-        stats: Stats = request.app["stats"]
-        if type_ == "notification_received":
-            await stats.track_notification_received(request, data["plan_id"], data["notification_id"])
-        elif type_ == "notification_clicked":
-            await stats.track_notification_clicked(request, data["plan_id"], data["notification_id"])
-        else:
-            _LOGGER.warning(f"Invalid type sent to /api/event: {type_!r}")
-    except Exception:
-        _LOGGER.exception("Exception while handling event api request")
-    return web.Response()
-
-
 async def client_session_context(app: web.Application):
     _LOGGER.debug(f"Create ClientSession (headers: {settings.REQUEST_HEADERS})")
     session = client.ClientSession(headers=settings.REQUEST_HEADERS)
-    app["stats"].client_session = session
     for substitution_plan in app["substitution_plans"].values():
         substitution_plan.client_session = session
-        substitution_plan.app["stats"] = app["stats"]
     yield
     await session.close()
 
@@ -149,13 +98,8 @@ async def app_factory(dev_mode, start_log_msg):
     await logger.init(settings.LOGFILE)
     _LOGGER.info(start_log_msg)
 
-    app = web.Application(middlewares=[logger.logging_middleware, stats_middleware, error_middleware])
+    app = web.Application(middlewares=[logger.logging_middleware, error_middleware])
     setup(app)
-
-    app["stats"] = Stats(os.path.join(settings.DATA_DIR, "stats/status.csv"),
-                         settings.MATOMO_URL, settings.MATOMO_SITE_ID,
-                         settings.MATOMO_AUTH_TOKEN, settings.MATOMO_HONOR_DNT,
-                         settings.MATOMO_HEADERS)
 
     app["substitution_plans"] = {}
 
@@ -176,7 +120,6 @@ async def app_factory(dev_mode, start_log_msg):
         parser_options = plan_config["parser"].get("options", {})
         template_options = plan_config.get("template_options", {})
         crawler = crawler_class(parser_class, parser_options, **crawler_options)
-        crawler.on_status_changed = partial(app["stats"].add_last_site, plan_id)
         plan = SubstitutionPlan(plan_id, crawler, partial(env.get_template, "substitution-plan.min.html"),
                                 partial(env.get_template, "error-500-substitution-plan.min.html"), template_options,
                                 plan_config.get("uppercase_selection", False))
@@ -197,9 +140,7 @@ async def app_factory(dev_mode, start_log_msg):
     app.add_routes([
         web.get("/", root_handler),
         web.get("/privacy", redirect_handler("/about")),
-        web.get("/about", template_handler(TEMPLATE_ABOUT, "Impressum & Datenschutzerklärung")),
-        web.post("/api/report-error", report_js_error_handler),
-        web.post("/api/event", api_event_handler)
+        web.get("/about", template_handler(TEMPLATE_ABOUT, "Impressum & Datenschutzerklärung"))
     ])
 
     if settings.DEBUG:

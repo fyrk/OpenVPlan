@@ -1,4 +1,4 @@
-function reportError(error, event=null) {
+/*function reportError(error, event=null) {
     fetch("/api/report-error", {
         method: "post",
         body: new URLSearchParams({
@@ -15,7 +15,7 @@ function reportError(error, event=null) {
 }
 self.addEventListener("error", e => reportError(e.error, e));  // e.error is experimental, according to MDN
 self.addEventListener("unhandledrejection", e => reportError(e.reason));
-
+*/ // TODO (plausible)
 
 const CACHE = "gawvertretung-v1";
 
@@ -246,10 +246,7 @@ self.addEventListener("push", async (event) => {
 
             self.registration.showNotification(title, options)
 
-            fetch("/api/event", {
-                method: "post",
-                body: new URLSearchParams({type: "notification_received", plan_id: plan_id, notification_id: data.notification_id})
-            });
+            // TODO (plausible): Send notification received event
         })
     );
 });
@@ -280,9 +277,7 @@ self.addEventListener("notificationclick", event => {
             });
         }),
 
-        fetch("/api/event", {
-            method: "post",
-            body: new URLSearchParams({type: "notification_clicked", plan_id: event.notification.data.plan_id, notification_id: event.notification.data.notification_id})
-        })
+        // TODO (plausible): Send notification clicked event
+
     ]));
 });

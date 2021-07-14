@@ -1,4 +1,4 @@
-function reportError(error, event=null) {
+/*function reportError(error, event=null) {
     fetch("/api/report-error", {
         method: "post",
         body: new URLSearchParams({
@@ -15,6 +15,7 @@ function reportError(error, event=null) {
 }
 window.addEventListener("error", e => reportError(e.error, e));  // e.error is experimental, according to MDN
 window.addEventListener("unhandledrejection", e => reportError(e.reason));
+*/ // TODO (plausible)
 
 
 const substitutionPlanType = window.location.pathname.split("/", 2)[1];

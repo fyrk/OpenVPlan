@@ -22,7 +22,7 @@ function base64UrlToUint8Array(base64UrlData) {
     return buffer;
 }
 
-function subscribePush(isActive, registration, userTriggered) {
+function subscribePush(isActive, registration) {
     return new Promise((resolve, reject) => {
         registration.pushManager.subscribe({
             userVisibleOnly: true,
@@ -34,7 +34,7 @@ function subscribePush(isActive, registration, userTriggered) {
                 "headers": {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: isActive, user_triggered: userTriggered})
+                body: JSON.stringify({subscription: subscription.toJSON(), selection: selection, is_active: isActive})
             });
         }).then(response => response.json()
         ).then(data => {
@@ -55,7 +55,7 @@ function subscribePush(isActive, registration, userTriggered) {
 
 let notificationState;
 
-function setNotificationsInfo(state, registration, userTriggered = false) {
+function setNotificationsInfo(state, registration) {
     console.log("Setting notification-state to", state);
     notificationState = state;
     if (state !== "failed")
@@ -69,7 +69,7 @@ function setNotificationsInfo(state, registration, userTriggered = false) {
             } else {
                 notificationsInfo.innerHTML = notificationsInfo_all.innerHTML;
             }
-            subscribePush(true, registration, userTriggered)
+            subscribePush(true, registration)
                 .catch(reason => {
                     console.error("Push subscription failed", reason);
                     setNotificationsInfo("failed", registration);
@@ -86,7 +86,7 @@ function setNotificationsInfo(state, registration, userTriggered = false) {
             notificationsInfo.innerHTML = notificationsInfo_failed.innerHTML;
             break;
         case "granted-and-disabled":
-            subscribePush(false, registration, userTriggered)
+            subscribePush(false, registration)
                 .catch(reason => {
                     console.error("Push subscription failed", reason);
                     setNotificationsInfo("failed", registration);

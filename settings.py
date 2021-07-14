@@ -28,18 +28,6 @@ class settings:
     PRIVATE_VAPID_KEY: Optional[str] = None
     VAPID_SUB: Optional[str] = None
 
-    MATOMO_URL: Optional[str] = None
-    MATOMO_SITE_ID: Optional[str] = None
-    MATOMO_AUTH_TOKEN: Optional[str] = None
-    MATOMO_TRACK_BOTS = False
-    MATOMO_DIMENSIONS = {
-        "notifications": 1,
-        "theme": 2
-    }
-
-    MATOMO_HEADERS: Optional[dict] = None
-    MATOMO_HONOR_DNT: bool = True
-
     REQUEST_HEADERS: dict = {
         hdrs.USER_AGENT: f"Mozilla/5.0 (compatible; GaWVertretungBot/{VERSION}; "
                          f"+https://gawvertretung.florian-raediker.de) {http.SERVER_SOFTWARE}"

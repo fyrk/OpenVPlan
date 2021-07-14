@@ -26,7 +26,7 @@ _LOGGER = logging.getLogger("gawvertretung")
 # Saxony normally take place.
 now = datetime.datetime.now()
 SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(
-    datetime.datetime(now.year if now < datetime.datetime(now.year, 7, 29) else now.year+1, 7, 29).timetuple()))
+    datetime.datetime(now.year if now < datetime.datetime(now.year, 7, 29) else now.year + 1, 7, 29).timetuple()))
 # Time for a cookie which should be deleted (Thu, 01 Jan 1970 00:00:00 GMT)
 DELETE_COOKIE_EXPIRE = formatdate(0)
 
@@ -36,10 +36,10 @@ RESPONSE_HEADERS = {
                                "manifest-src 'self';"
                                "img-src 'self' data:; "
                                "script-src 'self' "
-                                   "'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g=' "
-                                   "'sha256-3/1ODIQTRjv+w06gdm2GcdfvbXBk8D893PBaImH3siQ='; "
+                               "'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g=' "
+                               "'sha256-3/1ODIQTRjv+w06gdm2GcdfvbXBk8D893PBaImH3siQ='; "
                                "connect-src 'self' " + ("ws:" if settings.DEBUG else "wss:") + "; "
-                               "frame-src 'self' mailto:; object-src 'self' mailto:",
+                                                                                               "frame-src 'self' mailto:; object-src 'self' mailto:",
     "Strict-Transport-Security": "max-age=63072000",
     "Referrer-Policy": "same-origin",
     "X-Content-Type-Options": "nosniff",
@@ -54,7 +54,6 @@ RESPONSE_HEADERS_SELECTION = {
     **RESPONSE_HEADERS,
     "X-Robots-Tag": "noindex"
 }
-
 
 # intercept pywebpush.WebPusher.as_curl() call in pywebpush.WebPusher.send() so that request can be made with aiohttp
 # a call to pywebpush.webpush will now return (endpoint, data, headers)
@@ -141,17 +140,6 @@ class SubstitutionPlan:
     async def _root_handler(self, request: web.Request) -> web.Response:
         # noinspection PyBroadException
         try:
-            if request.query.get("s_src"):
-                # track selection source with Matomo
-                try:
-                    await self._app["stats"].track_selection_source(request, self._template_options["title"])
-                except:
-                    _LOGGER.exception("Exception while sending selection source to Matomo")
-
-                query = dict(request.query)
-                del query["s_src"]
-                raise web.HTTPSeeOther(location=request.url.with_query(query))
-
             if "all" not in request.query and "s" not in request.query:
                 # use 'update_query' so that existing query doesn't change for e.g. "mtm_campaign" to work
                 if self._selection_cookie in request.cookies and request.cookies[self._selection_cookie].strip():
@@ -180,7 +168,7 @@ class SubstitutionPlan:
                 headers = RESPONSE_HEADERS
             else:
                 text = await self._template().render_async(storage=self._crawler.storage, selection=selection,
-                                                         selection_str=selection_str, options=self._template_options)
+                                                           selection_str=selection_str, options=self._template_options)
                 headers = RESPONSE_HEADERS_SELECTION
 
             response = web.Response(text=text, content_type="text/html", charset="utf-8",
@@ -191,14 +179,6 @@ class SubstitutionPlan:
                                 httponly=True, samesite="Lax")
             await response.prepare(request)
             await response.write_eof()
-
-            if request.method == "GET":
-                request["stats_relevant"] = True
-                if not selection:
-                    selection_str = "All"
-                else:
-                    selection_str = f"{len(selection)} selected"
-                request["stats_title"] = f"Plan / {self._template_options['title']} / {selection_str}"
 
             if substitutions_have_changed:
                 if selection:
@@ -255,23 +235,14 @@ class SubstitutionPlan:
     # /api/subscribe-push
     @logger.request_wrapper
     async def _subscribe_push_handler(self, request: web.Request):
-        t1 = time.perf_counter_ns()
         # noinspection PyBroadException
         try:
             data = await request.json()
-            subscription = self.db.add_push_subscription(self._plan_id, data["subscription"], data["selection"],
-                                                         data["is_active"], request.headers.get("DNT", "0") == "1",
-                                                         request.headers.get(hdrs.USER_AGENT))
-            user_triggered = data.get("user_triggered", False)
+            self.db.add_push_subscription(self._plan_id, data["subscription"], data["selection"], data["is_active"])
             response = web.json_response({"ok": True})
         except Exception:
             _LOGGER.exception("Subscribing push service failed")
             response = web.json_response({"ok": False}, status=400)
-        else:
-            if user_triggered:
-                t2 = time.perf_counter_ns()
-                await spawn(request, self._app["stats"].track_push_subscription(request, t2-t1, subscription))
-
         return response
 
     # background task on new substitutions
@@ -340,7 +311,6 @@ class SubstitutionPlan:
                                 _LOGGER.debug(
                                     f"Successfully sent push notification to {self._plan_id}-{endpoint_hash[:6]}: "
                                     f"{r.status} {repr(await r.text())}")
-                                await scheduler.spawn(self._app["stats"].track_notification_sent(subscription))
                     except Exception:
                         _LOGGER.exception(f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]}")
                     return None
