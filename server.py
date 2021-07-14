@@ -2,6 +2,7 @@ import argparse
 import os
 import time
 from functools import partial
+from typing import Callable
 
 import jinja2
 from aiohttp import client, web
@@ -29,7 +30,6 @@ env = jinja2.Environment(
     auto_reload=settings.DEBUG
 )
 
-TEMPLATE_PRIVACY = partial(env.get_template, "privacy.min.html")
 TEMPLATE_ABOUT = partial(env.get_template, "about.min.html")
 TEMPLATE_ERROR404 = partial(env.get_template, settings.TEMPLATE_404)
 TEMPLATE_ERROR500 = partial(env.get_template, settings.TEMPLATE_500)
@@ -68,10 +68,11 @@ async def error_middleware(request: web.Request, handler):
                         charset="utf-8", headers=RESPONSE_HEADERS)
 
 
-def template_handler(template: jinja2.Template, title):
+def template_handler(template: Callable[[], jinja2.Template], title):
     # noinspection PyUnusedLocal
     async def handler(request: web.Request):
-        response = web.Response(text=await template.render_async(), content_type="text/html", headers=RESPONSE_HEADERS)
+        response = web.Response(text=await template().render_async(), content_type="text/html",
+                                headers=RESPONSE_HEADERS)
         await response.prepare(request)
         await response.write_eof()
         request["stats_relevant"] = True
@@ -196,7 +197,7 @@ async def app_factory(dev_mode, start_log_msg):
     app.add_routes([
         web.get("/", root_handler),
         web.get("/privacy", redirect_handler("/about")),
-        web.get("/about", template_handler(TEMPLATE_ABOUT(), "Impressum & Datenschutzerklärung")),
+        web.get("/about", template_handler(TEMPLATE_ABOUT, "Impressum & Datenschutzerklärung")),
         web.post("/api/report-error", report_js_error_handler),
         web.post("/api/event", api_event_handler)
     ])
