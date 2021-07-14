@@ -93,6 +93,7 @@ gulp.task("minify-xml", () => {
         x = x.pipe(replace("<!-- ###realfavicon-replace### -->", JSON.parse(fs.readFileSync(FAVICON_DATA_FILE)).favicon.html_code));
     return x.pipe(replace(/<!--bi-([\w-]*)-->/g, (m, p1) => getBootstrapIcon(p1)))
         .pipe(htmlmin({
+            collapseBooleanAttributes: true,
             collapseWhitespace: true,
             removeComments: true,
             ignoreCustomFragments: [/<!--bi-([\w-]*)-->/]
