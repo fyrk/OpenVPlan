@@ -19,15 +19,16 @@ const SUBSTITUTIONS_BUNDLE_FILES = [
 gulp.task("build-js", () => {
     const srcFile = argv.srcFile;
     let destFile = argv.destFile;
-    const path = argv.path || "assets/static/assets/js/";
+    let path = argv.path;
     let s;
     if (SUBSTITUTIONS_BUNDLE_FILES.includes(srcFile)) {
         let paths = [];
-        for (let filename of SUBSTITUTIONS_BUNDLE_FILES) paths.push(path + filename);
+        for (let filename of SUBSTITUTIONS_BUNDLE_FILES) paths.push((path || "assets/static/assets/js/substitutions/") + filename);
         s = gulp.src(paths);
+        path = "assets/static/assets/js/";
         destFile = "substitutions.min.js";
     } else {
-        s = gulp.src(path + srcFile);
+        s = gulp.src((path || "assets/static/assets/js/") + srcFile);
     }
     return s
         .pipe(sourcemaps.init())
