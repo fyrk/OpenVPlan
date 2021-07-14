@@ -1,12 +1,11 @@
 import argparse
 import os
-import time
 from functools import partial
 from typing import Callable
 
 import jinja2
 from aiohttp import client, web
-from aiojobs.aiohttp import setup, spawn
+from aiojobs.aiohttp import setup
 
 import settings
 import subs_crawler
@@ -41,22 +40,22 @@ async def error_middleware(request: web.Request, handler):
         return await handler(request)
     except web.HTTPException as e:
         if e.status == 404:
-            return web.Response(text=await TEMPLATE_ERROR404().render_async(), status=404, content_type="text/html",
-                                charset="utf-8", headers=RESPONSE_HEADERS)
+            return web.Response(text=await TEMPLATE_ERROR404().render_async(options=settings.TEMPLATE_OPTIONS),
+                                status=404, content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
         raise e from None
     except Exception:
         _LOGGER.exception(f"{request.method} {request.path} Exception while handling request")
     except BaseException as e:
         _LOGGER.exception(f"{request.method} {request.path} BaseException while handling request")
         raise e
-    return web.Response(text=await TEMPLATE_ERROR500().render_async(), status=500, content_type="text/html",
+    return web.Response(text=await TEMPLATE_ERROR500().render_async(options=settings.TEMPLATE_OPTIONS), status=500, content_type="text/html",
                         charset="utf-8", headers=RESPONSE_HEADERS)
 
 
-def template_handler(template: Callable[[], jinja2.Template], title):
+def template_handler(template: Callable[[], jinja2.Template]):
     # noinspection PyUnusedLocal
     async def handler(request: web.Request):
-        response = web.Response(text=await template().render_async(), content_type="text/html",
+        response = web.Response(text=await template().render_async(options=settings.TEMPLATE_OPTIONS), content_type="text/html",
                                 headers=RESPONSE_HEADERS)
         await response.prepare(request)
         await response.write_eof()
@@ -118,7 +117,7 @@ async def app_factory(dev_mode, start_log_msg):
             raise ValueError(f"Invalid parser id '{parser_id}'")
         crawler_options = plan_config["crawler"].get("options", {})
         parser_options = plan_config["parser"].get("options", {})
-        template_options = plan_config.get("template_options", {})
+        template_options = {**settings.TEMPLATE_OPTIONS, **plan_config.get("template_options", {})}
         crawler = crawler_class(parser_class, parser_options, **crawler_options)
         plan = SubstitutionPlan(plan_id, crawler, partial(env.get_template, "substitution-plan.min.html"),
                                 partial(env.get_template, "error-500-substitution-plan.min.html"), template_options,
@@ -140,7 +139,7 @@ async def app_factory(dev_mode, start_log_msg):
     app.add_routes([
         web.get("/", root_handler),
         web.get("/privacy", redirect_handler("/about")),
-        web.get("/about", template_handler(TEMPLATE_ABOUT, "Impressum & Datenschutzerklärung"))
+        web.get("/about", template_handler(TEMPLATE_ABOUT))
     ])
 
     if settings.DEBUG:

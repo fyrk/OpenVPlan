@@ -19,6 +19,13 @@ class settings:
     TELEGRAM_BOT_LOGGER_USE_FIXED_WIDTH: bool = False
     TELEGRAM_BOT_LOGGER_LEVEL: int = logging.WARNING
 
+    TEMPLATE_OPTIONS: dict = {
+        "plausible_domain": None,
+        "plausible_js": "https://plausible.io/js/plausible.js",
+        "plausible_endpoint": None
+    }
+
+
     IS_PROXIED = False
 
     TEMPLATE_404: str = "error-404.min.html"

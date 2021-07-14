@@ -11,8 +11,8 @@ from typing import Dict, Iterable, List, MutableSet, Optional, Union, Tuple, Cal
 import jinja2
 import pywebpush
 import yarl
-from aiohttp import ClientSession, web, WSMessage, WSMsgType, hdrs
-from aiojobs.aiohttp import spawn, get_scheduler
+from aiohttp import ClientSession, web, WSMessage, WSMsgType
+from aiojobs.aiohttp import get_scheduler
 
 from settings import settings
 from subs_crawler.crawlers.base import BaseSubstitutionCrawler
@@ -30,16 +30,32 @@ SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(
 # Time for a cookie which should be deleted (Thu, 01 Jan 1970 00:00:00 GMT)
 DELETE_COOKIE_EXPIRE = formatdate(0)
 
+
+csp = {
+    "default-src": "'none'",
+    "style-src": "'self'",
+    "manifest-src": "'self'",
+    "img-src": "'self' data:",
+    "script-src": [
+        "'self'",
+        "'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g='",
+        "'sha256-3/1ODIQTRjv+w06gdm2GcdfvbXBk8D893PBaImH3siQ='"
+    ],
+    "connect-src": ["'self'", "ws:" if settings.DEBUG else "wss:"],
+    "frame-src": "'self' mailto:",
+    "object-src": "'self' mailto:"
+}
+if plausible_js := settings.TEMPLATE_OPTIONS.get("plausible_js"):
+    csp["script-src"].append(plausible_js)
+
+csp_header = ""
+for key, value in csp.items():
+    if type(value) is list:
+        value = " ".join(value)
+    csp_header += key + " " + value + "; "
+
 RESPONSE_HEADERS = {
-    "Content-Security-Policy": "default-src 'none'; "
-                               "style-src 'self'; "
-                               "manifest-src 'self';"
-                               "img-src 'self' data:; "
-                               "script-src 'self' "
-                               "'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g=' "
-                               "'sha256-3/1ODIQTRjv+w06gdm2GcdfvbXBk8D893PBaImH3siQ='; "
-                               "connect-src 'self' " + ("ws:" if settings.DEBUG else "wss:") + "; "
-                                                                                               "frame-src 'self' mailto:; object-src 'self' mailto:",
+    "Content-Security-Policy": csp_header,
     "Strict-Transport-Security": "max-age=63072000",
     "Referrer-Policy": "same-origin",
     "X-Content-Type-Options": "nosniff",

@@ -11,6 +11,9 @@
     line-height: 1;
 }
 
+.external {
+    white-space: nowrap;
+}
 .external::after {
     @extend %icon-primary;
     @include icon(

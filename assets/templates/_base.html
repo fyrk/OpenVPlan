@@ -23,6 +23,8 @@
     <!-- ###realfavicon-replace### -->
     <meta property="og:image:width" content="500">
     <meta property="og:image:height" content="500">
+    <script defer {% if options.plausible_domain %}data-domain="{{ options.plausible_domain }}" {% endif %}{% if options.plausible_endpoint %}data-api="{{ options.plausible_endpoint }}" {% endif %}src="{{ options.plausible_js }}"></script>
+    <script defer src="/assets/js/pa.min.js"></script>
     {% block scripts %}{% endblock scripts %}
 </head>
 
@@ -49,8 +51,8 @@
 <footer class="text-center text-white p-3 mt-4">
     <p>
         Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von
-        <a href="{% block original_data_link %}https://gaw-verden.de/images/vertretung/klassen/subst_001.htm{% endblock %}" rel="noopener" target="_blank"
-           class="external text-nowrap">gaw-verden.de</a>.<br>
+        <a href="{% block original_data_link %}https://gaw-verden.de/images/vertretung/klassen/subst_001.htm{% endblock %}"
+           rel="noopener" target="_blank" class="external">gaw-verden.de</a>.<br>
         Alle Angaben ohne Gewähr.
     </p>
     <p>
