@@ -1,7 +1,8 @@
 {% extends "substitution-plan.min.html" %}
-{% from "error-500-all.min.html" import error500_content %}
+{% from "_common.min.html" import error500_content %}
 
 {% block scripts %}
+    <script>plausible("500",{props:{path:document.location.pathname}})</script>
 {% endblock %}
 
 {% block content %}

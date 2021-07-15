@@ -4,11 +4,7 @@ const html = document.documentElement;
 const systemDefaultRadio = document.getElementById("themes-system-default");
 const lightRadio = document.getElementById("themes-light");
 const darkRadio = document.getElementById("themes-dark");
-function setThemeFeature(setting) {
-    if (setting === "system-default" || !setting)
-        setting = "system-" + ((window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light");
-    setFeature("theme", setting);
-}
+
 function applyThemeSetting(setting) {
     localStorage.setItem("theme", setting);
     switch (setting) {
@@ -24,7 +20,6 @@ function applyThemeSetting(setting) {
             html.classList.remove("light");
             break;
     }
-    setThemeFeature(setting);
 }
 
 let theme = localStorage.getItem("theme");
@@ -39,5 +34,3 @@ switch (theme) {
 systemDefaultRadio.addEventListener("change", () => applyThemeSetting("system-default"));
 lightRadio.addEventListener("change", () => applyThemeSetting("light"));
 darkRadio.addEventListener("change", () => applyThemeSetting("dark"));
-
-setThemeFeature(theme);

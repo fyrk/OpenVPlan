@@ -38,8 +38,11 @@ csp = {
     "img-src": "'self' data:",
     "script-src": [
         "'self'",
-        "'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g='",
-        "'sha256-3/1ODIQTRjv+w06gdm2GcdfvbXBk8D893PBaImH3siQ='"
+        "'sha256-VXAFuXMdnSA19vGcFOCPVOnWUq6Dq5vRnaGtNp0nH8g='",  # const a=localStorage.getItem("dark-theme") ...
+        "'sha256-3/1ODIQTRjv+w06gdm2GcdfvbXBk8D893PBaImH3siQ='",  # document.getElementById("view-e") ...
+        "'sha256-DxdO0KMifr4qBxX++GTv0w7cNu8FeArRvitEZf1FSrE='",  # window.plausible=window.plausible||function() ...
+        "'sha256-bfloDFhW9eAYHv7CGM+kIiD7H2F+b/hGF5Wj8LOnLyo='",  # plausible("404",{props:{path:document.location ...
+        "'sha256-MUo3BR9SqVxUnxV7Dw9uvwDu81yLUU2qKuLSqkGuXmE='",  # plausible("500",{props:{path:document.location ...
     ],
     "connect-src": ["'self'", "ws:" if settings.DEBUG else "wss:"],
     "frame-src": "'self' mailto:",
@@ -165,6 +168,8 @@ class SubstitutionPlan:
                     raise web.HTTPSeeOther(location=request.rel_url.update_query("all"))
 
             substitutions_have_changed, affected_groups = await self._crawler.update(self.client_session)
+            if settings.DEBUG and "raise500" in request.query:
+                raise ValueError
             if settings.DEBUG and "event" in request.query:
                 # in development, simulate new substitutions event by "event" parameter
                 substitutions_have_changed = True

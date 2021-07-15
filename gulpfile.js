@@ -13,7 +13,8 @@ const SUBSTITUTIONS_BUNDLE_FILES = [
     "highlight-new-substitutions.js",
     "push-notifications.js",
     "updates.js",
-    "themes.js"
+    "themes.js",
+    "plausible.js"
 ];
 
 gulp.task("build-js", () => {

@@ -1,1 +1,1 @@
-{% extends "substitution-plan.min.html" %} {% from "error-500-all.min.html" import error500_content %} {% block scripts %} {% endblock %} {% block content %} {{ error500_content(options["original_data_link"]) }} {% endblock %}
+{% extends "substitution-plan.min.html" %} {% from "_common.min.html" import error500_content %} {% block scripts %}<script>plausible("500",{props:{path:document.location.pathname}})</script>{% endblock %} {% block content %} {{ error500_content(options["original_data_link"]) }} {% endblock %}

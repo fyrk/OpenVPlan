@@ -59,7 +59,8 @@ function setNotificationsInfo(state, registration) {
     console.log("Setting notification-state to", state);
     notificationState = state;
     if (state !== "failed")
-        window.localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
+        localStorage.setItem(substitutionPlanType + "-notification-state", notificationState);
+    localStorage.setItem(substitutionPlanType + "-notification-state-all", notificationState);  // for Plausible with "failed", see plausible.js
     switch (notificationState) {
         case "granted-and-enabled":
             toggleNotifications.checked = true;
@@ -102,7 +103,6 @@ function setNotificationsInfo(state, registration) {
             notificationsInfo.innerHTML = notificationsInfo_none.innerHTML;
             break;
     }
-    setFeature("notifications", state);
 }
 
 function onNotificationsAvailable(registration) {
@@ -163,7 +163,7 @@ if ("serviceWorker" in navigator) {
                     onNotificationsAvailable(registration);
                 } else {
                     console.warn("Push Notifications are not supported");
-                    setFeature("notifications", "unsupported");
+                    notificationState = "unsupported";
                 }
             });
         navigator.serviceWorker.register("/sw.min.js")
@@ -172,6 +172,6 @@ if ("serviceWorker" in navigator) {
             }).catch(reason => console.warn("ServiceWorker registration failed:", reason))
     });
 } else {
-    console.warn("serviceWorker is not supported");
-    setFeature("notifications", "unsupported");
+    console.warn("Service Worker is not supported");
+    notificationState = "unsupported";
 }

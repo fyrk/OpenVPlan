@@ -83,14 +83,3 @@ if (window.location.hash.startsWith("#timetable:")) {
         reportError(e);
     }
 }
-
-function setFeature(feature, value) {
-    let features;
-    try {
-        features = JSON.parse(atob(document.cookie.split('; ').find(row => row.startsWith("features=")).split("=")[1]));
-    } catch {
-        features = {};
-    }
-    features[feature] = value;
-    document.cookie = "features=" + btoa(JSON.stringify(features)) + ";path=/;max-age=86400;Secure;SameSite=Lax";
-}
