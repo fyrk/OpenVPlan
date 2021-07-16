@@ -22,12 +22,14 @@ gulp.task("build-js", () => {
     let destFile = argv.destFile;
     let path = argv.path;
     let s;
+    let sourceMapDest = "/";
     if (SUBSTITUTIONS_BUNDLE_FILES.includes(srcFile)) {
         let paths = [];
         for (let filename of SUBSTITUTIONS_BUNDLE_FILES) paths.push((path || "assets/static/assets/js/substitutions/") + filename);
         s = gulp.src(paths);
         path = "assets/static/assets/js/";
         destFile = "substitutions.min.js";
+        sourceMapDest = "/substitutions"
     } else {
         s = gulp.src((path || "assets/static/assets/js/") + srcFile);
     }
@@ -41,7 +43,7 @@ gulp.task("build-js", () => {
             language_in: "ECMASCRIPT_NEXT_IN",
             language_out: "ECMASCRIPT_NEXT",
         }))
-        .pipe(sourcemaps.write("/"))
+        .pipe(sourcemaps.write(sourceMapDest))
         .pipe(gulp.dest(path));
 })
 

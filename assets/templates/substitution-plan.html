@@ -86,7 +86,7 @@
                 <td rowspan="{{ group.substitutions|length }}"
                     class="group-name{% if is_selectable %} selectable{% endif %}">
                     {%- if is_selectable -%}
-                        <a class="i-bookmark stretched-link" href="?s={{ group.selection_name }}&s_src=bookmark"></a>
+                        <a class="i-bookmark stretched-link" href="?s={{ group.selection_name }}" data-pa='"Select",{"{{ options["id"] }}":"Bookmark"}'></a>
                     {%- endif -%}
                     {{- group.get_html_name()|safe -}}
                 </td>
@@ -141,21 +141,20 @@
             <div class="col-9 col-sm-6 col-md-4 col-xl-3">
                 <input type="text" class="form-control" id="selectionInput" name="s" required
                        value="{% if selection %}{{ selection_str|e }}{% endif %}" aria-describedby="selectionHelp">
-                <input type="hidden" name="s_src" value="form">
                 <small id="selectionHelp" class="form-text text-muted">
                     {{ options["texts"]["selection_help_text"]|safe }}
                 </small>
             </div>
             <div class="col-3 col-sm-1 col-md-1">
-                <button type="submit" class="btn btn-primary mb-2">OK</button>
+                <button type="submit" class="btn btn-primary mb-2" data-pa='"Select",{"{{ options["id"] }}":"Form"}'>OK</button>
             </div>
         </div>
-        {% if selection %}
-            <div class="mt-3 ms-2">
-                <a class="btn btn-primary" href="?all&s_src=form">{{ options["texts"]["selection_all"]|safe }}</a>
-            </div>
-        {% endif %}
     </form>
+    {% if selection %}
+        <div class="mt-3 ms-2">
+            <a class="btn btn-primary" href="?all" data-pa='"Select",{"{{ options["id"] }}":"All Button"}'>{{ options["texts"]["selection_all"]|safe }}</a>
+        </div>
+    {% endif %}
 
     <div id="notifications-block">
         <h2 id="notifications-heading">Benachrichtigungen</h2>
