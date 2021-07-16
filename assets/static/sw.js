@@ -1,21 +1,58 @@
-/*function reportError(error, event=null) {
-    fetch("/api/report-error", {
-        method: "post",
-        body: new URLSearchParams({
-            name: error.name,
-            message: (event == null ? undefined : event.message) || error.message,
-            description: error.description,  // non-standard Microsoft property
-            number: error.number, // non-standard Microsoft property
-            filename: (event == null ? undefined : event.filename) || error.fileName,  // error.fileName is non-standard Mozilla property
-            lineno: (event == null ? undefined : event.lineno) || error.lineNumber,  // error.lineNumber is non-standard Mozilla property
-            colno: (event == null ? undefined : event.colno) || error.columnNumber,  // error.columnNumber is non-standard Mozilla property
-            stack: (event == null ? undefined : event.stack) || error.stack  // error.stack is non-standard Mozilla property
-        })
+
+// the following is inspired by code from (https://github.com/plausible/analytics/blob/0089add5944177bd2352510236a09157dc9d16bf/tracker/src/plausible.js, MIT license)
+// the original code isn't designed to be used with SWs
+//var plausible_ignore = window.localStorage.plausible_ignore;  // TODO: localStorage is not supported by SW
+function plausible(eventName, options) {
+    const payload = {
+        n: eventName,
+        u: self.location.toString(),
+        d: "gawvertretung.florian-raediker.de",
+        r: null,
+        //w: 0
+    }
+    if (options && options.meta) {
+        payload.m = JSON.stringify(options.meta)
+    }
+    if (options && options.props) {
+        payload.p = JSON.stringify(options.props)
+    }
+    fetch("https://plausible.io/api/event", {
+        method: "POST",
+        headers: {"Content-Type": "text/plain"},
+        body: JSON.stringify(payload)
     }).catch(reason => console.error("reporting error failed", reason))
 }
+
+function reportError(error, event = null) {
+    console.error("reporting error", error, event);
+    try {
+        let name = error.name;
+        let message = (event == null ? undefined : event.message) ||
+            error.message;
+        let description = error.description;  // non-standard Microsoft property
+        let number = error.number; // non-standard Microsoft property
+        let filename = (event == null ? undefined : event.filename) ||
+            error.fileName;  // error.fileName is non-standard Mozilla property
+        let lineno = (event == null ? undefined : event.lineno) ||
+            error.lineNumber;  // error.lineNumber is non-standard Mozilla property
+        let colno = (event == null ? undefined : event.colno) ||
+            error.columnNumber;  // error.columnNumber is non-standard Mozilla property
+        let stack = (event == null ? undefined : event.stack) ||
+            error.stack;  // error.stack is non-standard Mozilla property
+        plausible("JavaScript Error (Service Worker)", {
+            props: {
+                [(name || "Generic Error") + ": " + message]: stack + " - " + filename + ":" + lineno + ":" + colno +
+                " " + description + " " + number
+            }
+        });
+    } catch (e) {
+        console.error("reporting error failed", e);
+    }
+}
+
 self.addEventListener("error", e => reportError(e.error, e));  // e.error is experimental, according to MDN
 self.addEventListener("unhandledrejection", e => reportError(e.reason));
-*/ // TODO (plausible)
+
 
 const CACHE = "gawvertretung-v1";
 
