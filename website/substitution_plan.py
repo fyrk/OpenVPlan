@@ -89,7 +89,6 @@ class SubstitutionPlan:
         self._template_options = template_options
         self._template_options["id"] = self._plan_id
         self._uppercase_selection = uppercase_selection
-        self._selection_cookie = self._plan_id + "-selection"
 
         self._index_site = None
         self._serialization_filepath = None
@@ -160,10 +159,16 @@ class SubstitutionPlan:
         # noinspection PyBroadException
         try:
             if "all" not in request.query and "s" not in request.query:
+                # "<plan-id>-selection" is the name of the cookie previously used to store the selection
+                selection = None
+                if "selection" in request.cookies and (s := request.cookies["selection"].strip()):
+                    selection = s
+                elif self._plan_id + "-selection" in request.cookies \
+                        and (s := request.cookies[self._plan_id + "-selection"].strip()):
+                    selection = s
                 # use 'update_query' so that existing query doesn't change for e.g. "mtm_campaign" to work
-                if self._selection_cookie in request.cookies and request.cookies[self._selection_cookie].strip():
-                    raise web.HTTPSeeOther(
-                        location=request.rel_url.update_query(s=request.cookies[self._selection_cookie]))
+                if selection is not None:
+                    raise web.HTTPSeeOther(location=request.rel_url.update_query(s=selection))
                 else:
                     raise web.HTTPSeeOther(location=request.rel_url.update_query("all"))
 
@@ -194,7 +199,7 @@ class SubstitutionPlan:
 
             response = web.Response(text=text, content_type="text/html", charset="utf-8",
                                     headers=headers)
-            response.set_cookie(self._selection_cookie, selection_qs,
+            response.set_cookie("selection", selection_qs,
                                 expires=SELECTION_COOKIE_EXPIRE, path="/" + self._plan_id + "/",
                                 secure=not settings.DEBUG,  # secure in non-development mode
                                 httponly=True, samesite="Lax")
