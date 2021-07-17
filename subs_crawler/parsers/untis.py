@@ -29,6 +29,11 @@ class DidNotFindNextSiteException(Exception):
 
 
 class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
+    # some of the tags from https://developer.mozilla.org/en-US/docs/Web/HTML/Element#inline_text_semantics and
+    # https://developer.mozilla.org/en-US/docs/Web/HTML/Element#inline_text_semantics
+    ALLOWED_NEWS_FORMATTING_TAGS = ("b", "code", "em", "i", "kbd", "mark", "s", "small", "strong", "sub", "sub", "u",
+                                    "big", "blink", "center", "strike", "tt")
+
     @staticmethod
     async def get_status(text: bytes) -> Tuple[str, datetime.datetime]:
         status = _REGEX_STATUS.search(text)
@@ -130,7 +135,7 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
         elif self._current_section == "info-table" and self._is_in_td and self._reached_news:
             if tag == "br":
                 self._current_substitution_day.news.append("")
-            else:
+            elif tag in self.ALLOWED_NEWS_FORMATTING_TAGS:
                 self._current_substitution_day.news[-1] += "<" + tag + ">"
         elif tag == "strike":
             self._is_in_strike = True
@@ -177,7 +182,8 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
         if tag == "td":
             self._is_in_td = False
         elif self._is_in_td and self._current_section == "info-table" and self._reached_news:
-            self._current_substitution_day.news[-1] += "</" + tag + ">"
+            if tag in self.ALLOWED_NEWS_FORMATTING_TAGS:
+                self._current_substitution_day.news[-1] += "</" + tag + ">"
         elif tag == "strike":
             self._is_in_strike = False
         self._is_in_tag = False
