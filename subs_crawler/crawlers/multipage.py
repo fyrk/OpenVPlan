@@ -19,12 +19,13 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
 
     def __init__(self, last_version_id: Optional[str],
                  parser_class: Type[BaseMultiPageSubstitutionParser], parser_options: Dict[str, Any],
-                 url: str, site_load_count: int = 5,
+                 url: str, site_load_count: int = 5, max_site_load_num: int = 99,
                  timeout_total: float = None, timeout_connect: float = None, timeout_sock_read: float = None,
                  timeout_sock_connect: float = None):
         super().__init__(last_version_id, parser_class, parser_options)
         self._url = url
         self._site_load_count = site_load_count
+        self._max_site_load_num = max_site_load_num
         self._timeout = aiohttp.ClientTimeout(total=timeout_total, connect=timeout_connect, sock_read=timeout_sock_read,
                                               sock_connect=timeout_sock_connect)
 
@@ -88,19 +89,19 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
             if next_site == "001":
                 _LOGGER.debug(f"[multipage-crawler] {num} is last site")
                 last_site_num = num
-                for l in loads[num-current_site+1:]:
+                for l in loads[num-start_num+1:]:
                     l.cancel()
-            results[num-current_site] = (parser, request)
+            results[num-start_num] = (parser, request)
             if next_waiting_result == num:
-                index = next_waiting_result-current_site
-                results_to_load = [(index+current_site, results[index])]
+                index = next_waiting_result-start_num
+                results_to_load = [(index+start_num, results[index])]
                 results[index] = None
                 next_waiting_result += 1
                 index += 1
                 while last_site_num is None or next_waiting_result <= last_site_num:
                     try:
                         if results[index] is not None:
-                            results_to_load.append((index+current_site, results[index]))
+                            results_to_load.append((index+start_num, results[index]))
                             results[index] = None
                             index += 1
                             next_waiting_result += 1
@@ -119,27 +120,25 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
 
                 await asyncio.gather(*(asyncio.ensure_future(complete_parse(parse, request))
                                      for num, (parse, request) in results_to_load))
-                _LOGGER.info(f"[multipage-crawler] Finished load_from_stream {num} (if)")
-            _LOGGER.info(f"[multipage-crawler] Finished load_from_stream {num}")
 
         last_site_num = None
         current_timestamp = create_date_timestamp(datetime.datetime.now())
         storage = SubstitutionStorage(status, status_datetime)
 
-        current_site = 1
         next_waiting_result = 1
-        while True:
-            next_site = current_site + self._site_load_count
+        for start_num in range(1, self._max_site_load_num+1, self._site_load_count):
+            end_num = start_num+self._site_load_count
+            # load sites from start_num to end_num-1
             results: List[Optional[Tuple[BaseMultiPageSubstitutionParser, aiohttp.ClientResponse]]] = \
                 [None for _ in range(self._site_load_count)]
-            if current_site == 1 and first_site is not None:
+            if start_num == 1 and first_site is not None:
                 loads = ([asyncio.create_task(load_from_stream(1, AsyncBytesIOWrapper(first_site)), name="site1")] +
                          [asyncio.create_task(load_from_website(num), name="site" + str(num))
-                          for num in range(current_site+1, next_site)])
+                          for num in range(start_num+1, end_num)])
             else:
                 loads = [asyncio.create_task(load_from_website(num), name="site" + str(num))
-                         for num in range(current_site, next_site)]
-            _LOGGER.debug(f"[multipage-crawler] Loading pages {current_site} to {next_site - 1}")
+                         for num in range(start_num, end_num)]
+            _LOGGER.debug(f"[multipage-crawler] Loading pages {start_num} to {end_num-1}")
             try:
                 done, pending = await asyncio.wait_for(asyncio.wait(loads, return_when=asyncio.FIRST_EXCEPTION),
                                                        timeout=1.0)
@@ -158,4 +157,4 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                 new_affected_groups = storage.get_new_affected_groups(self._storage)
                 self._storage = storage
                 return last_site_num, new_affected_groups
-            current_site = next_site
+        raise ValueError("Site loading limit (max_site_load_num={self._max_site_load_num}) reached")
