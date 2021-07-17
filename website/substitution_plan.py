@@ -18,7 +18,7 @@ from settings import settings
 from subs_crawler.crawlers.base import BaseSubstitutionCrawler
 from subs_crawler.utils import split_selection
 from website import logger
-from website.db import SubstitutionPlanDB
+from website.db import SubstitutionPlanDB, hash_endpoint
 
 _LOGGER = logging.getLogger("gawvertretung")
 
@@ -294,10 +294,9 @@ class SubstitutionPlan:
                 async def send_push_notification(
                         subscription, common_affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]
                 ) -> Optional[sqlite3.Row]:
-                    endpoint_hash = subscription["endpoint_hash"]
-                    endpoint_origin = subscription["endpoint_origin"]
+                    endpoint_hash = hash_endpoint(subscription["endpoint"])
                     _LOGGER.debug(f"Sending push notification to "
-                                  f"{self._plan_id}-{endpoint_hash[:6]} ({endpoint_origin})")
+                                  f"{self._plan_id}-{endpoint_hash[:6]}")
                     # noinspection PyBroadException
                     try:
                         data = json.dumps({"affected_groups_by_day": common_affected_groups,
@@ -305,15 +304,14 @@ class SubstitutionPlan:
                                            # status_datetime.timestamp() correctly assumes that datetime is local
                                            # time (status_datetime has no tzinfo) and returns the correct UTC
                                            # timestamp
-                                           "timestamp": self._crawler.storage.status_datetime.timestamp(),
-                                           "notification_id": subscription["endpoint_hash"]})
+                                           "timestamp": self._crawler.storage.status_datetime.timestamp()})
 
                         endpoint, data, headers = pywebpush.webpush(
                             subscription["subscription"], data,
                             vapid_private_key=settings.PRIVATE_VAPID_KEY,
                             vapid_claims={
                                 "sub": settings.VAPID_SUB,
-                                "aud": endpoint_origin,
+                                #"aud": endpoint_origin,  # aud is automatically set in webpush()
                                 # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
                                 # be longer than 24 hours from the time the request is made)
                                 "exp": int(time.time()) + 86395

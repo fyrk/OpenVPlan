@@ -277,7 +277,6 @@ self.addEventListener("push", async (event) => {
                     plan_id: plan_id,
                     url: new URL("/" + plan_id + "/?source=Notification", self.location.origin).href,
                     affected_groups_by_day: affectedGroups,
-                    notification_id: data.notification_id
                 }
             };
 
