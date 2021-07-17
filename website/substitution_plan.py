@@ -285,7 +285,7 @@ class SubstitutionPlan:
 
             # PUSH NOTIFICATIONS
             if affected_groups:
-                _LOGGER.debug("Sending affected groups via push messages: " + str(affected_groups))
+                _LOGGER.debug("Sending affected groups via push messages")
 
                 async def send_push_notification(
                         subscription, common_affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]
