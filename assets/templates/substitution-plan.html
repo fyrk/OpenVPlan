@@ -30,6 +30,8 @@
     {% if selection %}<input type="checkbox" id="nav-toggle" aria-hidden="true"><span class="selection">{{ selection_str|e }}</span> - {% endif %}
 {% endblock %}
 
+{% block original_data_link %}{{ options["original_data_link"] }}{% endblock %}
+
 {% block content %}
 <div class="box status-box clearfix">
     <span>Stand: <span id="status">{{ storage.status }}</span></span>
