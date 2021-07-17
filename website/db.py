@@ -52,7 +52,7 @@ class SubstitutionPlanDB:
             self._cursor.execute("PRAGMA main.user_version = 4;")
         if user_version <= 4:
             self._cursor.execute(
-                "CREATE TABLE IF NOT EXISTS last_substitution_version_id (plan_id TEXT unique, version_id TEXT)")
+                "CREATE TABLE IF NOT EXISTS last_substitution_version_id (plan_id TEXT unique, version_id JSON)")
             self._cursor.execute("PRAGMA main.user_version = 5;")
 
         self._connection.commit()

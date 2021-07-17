@@ -16,7 +16,7 @@ class BaseSubstitutionCrawler(ABC):
     _storage: "SubstitutionStorage"
     storage: "SubstitutionStorage"
 
-    def __init__(self, last_version_id: Optional[str],
+    def __init__(self, last_version_id,
                  parser_class: Type[BaseSubstitutionParser], parser_options: Dict[str, Any]):
         self.last_version_id = last_version_id
         self._parser_class = parser_class

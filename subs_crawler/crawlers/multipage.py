@@ -5,6 +5,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
+from aiohttp import hdrs
 
 from subs_crawler.crawlers.base import BaseSubstitutionCrawler
 from subs_crawler.parsers.base import AsyncBytesIOWrapper, BaseMultiPageSubstitutionParser, Stream
@@ -17,7 +18,7 @@ _LOGGER = logging.getLogger("gawvertretung")
 class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
     _parser_class: Type[BaseMultiPageSubstitutionParser]
 
-    def __init__(self, last_version_id: Optional[str],
+    def __init__(self, last_version_id,
                  parser_class: Type[BaseMultiPageSubstitutionParser], parser_options: Dict[str, Any],
                  url: str, site_load_count: int = 5, max_site_load_num: int = 99,
                  timeout_total: float = None, timeout_connect: float = None, timeout_sock_read: float = None,
@@ -32,16 +33,30 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
         self._url_first_site = self._url.format(1)
         self._update_substitutions_lock = asyncio.Lock()
 
-    async def _check_for_update(self, session: aiohttp.ClientSession) -> Tuple[bool, Optional[tuple]]:
-        _LOGGER.debug(f"[multipage-crawler] Requesting first site ...")
+    async def _check_for_update(self, session: aiohttp.ClientSession) \
+            -> Tuple[bool, Optional[str], Optional[datetime.datetime], Optional[bytes]]:
+        last_etag = self.last_version_id and self.last_version_id.get("etag")
+        if last_etag:
+            _LOGGER.debug(f"[multipage-crawler] Requesting first site with If-None-Match: {last_etag} ...")
+            headers = {"If-None-Match": last_etag}
+        else:
+            _LOGGER.debug(f"[multipage-crawler] Requesting first site without If-None-Match ...")
+            headers = None
         t1 = time.perf_counter_ns()
-        async with session.get(self._url_first_site) as r:
+        async with session.get(self._url_first_site, headers=headers) as r:
+            if r.status == 304:
+                _LOGGER.debug(f"[multipage-crawler] Got answer in {time.perf_counter_ns() - t1}ns: "
+                              f"{r.status} {r.reason}")
+                return False, None, None, None
             first_site = await r.read()
         t2 = time.perf_counter_ns()
         new_status, new_status_datetime = await self._parser_class.get_status(first_site)
         _LOGGER.debug(f"[multipage-crawler] Got answer in {t2 - t1}ns, status is {repr(new_status)} "
                       f"(old: {repr(self.last_version_id)})")
-        return new_status != self.last_version_id, (new_status, new_status_datetime, first_site)
+        if new_status != (self.last_version_id and self.last_version_id.get("status")):
+            self.last_version_id = {"status": new_status, "etag": r.headers.get(hdrs.ETAG)}
+            return True, new_status, new_status_datetime, first_site
+        return False, None, None, None
 
     async def update(self, session: aiohttp.ClientSession) \
             -> Tuple[bool, Optional[Dict[int, Dict[str, Union[str, List[str]]]]]]:
@@ -51,11 +66,7 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                 _LOGGER.debug(f"[multipage-crawler] Substitution loading finished")
                 return False, None
         async with self._update_substitutions_lock:
-            changed_substitutions, info = await self._check_for_update(session)
-            if info is not None:
-                new_status, new_status_datetime, first_site = info
-            else:
-                new_status, new_status_datetime, first_site = None, None, None
+            changed_substitutions, new_status, new_status_datetime, first_site = await self._check_for_update(session)
             affected_groups = None
             if changed_substitutions or self._storage is None:
                 # if self._storage is None, this means substitutions haven't changed, but the server has been restarted,
@@ -63,7 +74,6 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                 t1 = time.perf_counter_ns()
                 last_site_num, affected_groups = await self._load_data(session, new_status, new_status_datetime,
                                                                        first_site)
-                self.last_version_id = new_status
                 _LOGGER.debug(f"[multipage-crawler] Loaded data in {time.perf_counter_ns()-t1}ns")
             else:
                 changed_substitutions = self._storage.remove_old_days()
