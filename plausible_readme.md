@@ -10,6 +10,8 @@ The following custom goal events are defined:
  * Select
  * Push Subscription: Subscribe
  * Push Subscription: Unsubscribe
+ * Notification
+   - Props: plan ids
  * JavaScript Error
    - Props: Error name and message
  * JavaScript Error (Service Worker)

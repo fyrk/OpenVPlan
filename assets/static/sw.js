@@ -16,7 +16,7 @@ function plausible(eventName, options) {
     if (options && options.props) {
         payload.p = JSON.stringify(options.props)
     }
-    fetch("https://plausible.io/api/event", {
+    return fetch("https://plausible.io/api/event", {
         method: "POST",
         headers: {"Content-Type": "text/plain"},
         body: JSON.stringify(payload)
@@ -275,7 +275,7 @@ self.addEventListener("push", async (event) => {
                 vibrate: [300, 100, 400],
                 data: {
                     plan_id: plan_id,
-                    url: new URL("/" + plan_id + "/", self.location.origin).href,
+                    url: new URL("/" + plan_id + "/?source=Notification", self.location.origin).href,
                     affected_groups_by_day: affectedGroups,
                     notification_id: data.notification_id
                 }
@@ -283,7 +283,7 @@ self.addEventListener("push", async (event) => {
 
             self.registration.showNotification(title, options)
 
-            // TODO (plausible): Send notification received event
+            plausible("Notification", {props: {[plan_id]: "Received"}})
         })
     );
 });
@@ -293,13 +293,11 @@ self.addEventListener("notificationclick", event => {
 
     // open website
     event.waitUntil(Promise.all([
-        self.clients.matchAll({
-            type: "window"
-        }).then(function (clientList) {
+        self.clients.matchAll().then(function (clientList) {
+            const notificationURL = new URL(event.notification.data.url);
             for (let client of clientList) {
                 const url = new URL(client.url);
-                console.log(event.notification.data.url, url.origin + url.pathname);
-                if (url.origin + url.pathname === event.notification.data.url && "focus" in client)
+                if (url.origin + url.pathname === notificationURL.origin + notificationURL.pathname && "focus" in client)
                     return client.focus();
             }
             if (self.clients.openWindow)
@@ -314,7 +312,6 @@ self.addEventListener("notificationclick", event => {
             });
         }),
 
-        // TODO (plausible): Send notification clicked event
-
+        plausible("Notification", {props: {[event.notification.data.plan_id]: "Clicked"}})
     ]));
 });

@@ -1,3 +1,16 @@
+
+/*// remove any tracking-related queries  // doesn't currently work since Plausible script is executed afterwards
+const url = new URL(window.location);
+let change = false;
+for (let p of ["ref", "source", "utm_source", "utm_medium", "utm_campaign"]) {
+    if (url.searchParams.has(p)) {
+        change = true;
+        url.searchParams.delete(p);
+    }
+}
+if (change)
+    history.replaceState(null, "", url)*/
+
 // send features to Plausible
 try {
     let theme = localStorage.getItem("theme");
