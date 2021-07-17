@@ -13,7 +13,7 @@ class settings:
     DEBUG = False
 
     DATA_DIR = "data/"
-    LOGFILE = "logs/website.log"
+    LOGFILE = "data/website.log"
     TELEGRAM_BOT_LOGGER_TOKEN: Optional[str] = None
     TELEGRAM_BOT_LOGGER_CHAT_ID: Optional[Union[int, str]] = None
     TELEGRAM_BOT_LOGGER_USE_FIXED_WIDTH: bool = False

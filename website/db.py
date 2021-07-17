@@ -6,8 +6,6 @@ import sqlite3
 import urllib.parse
 from typing import Iterable
 
-from settings import settings
-
 _LOGGER = logging.getLogger("gawvertretung")
 
 sqlite3.register_converter("JSON", json.loads)
@@ -27,10 +25,10 @@ class SubstitutionPlanDB:
         self._cursor.execute("PRAGMA main.user_version;")
         user_version = self._cursor.fetchone()["user_version"]
         if user_version == 0:
-            self._cursor.execute("CREATE TABLE IF NOT EXISTS push_subscriptions2 "
-                                 "(plan_id TEXT, subscription JSON, selection SELECTION, is_active BOOLEAN,"
-                                 " endpoint_hash TEXT, endpoint_origin TEXT, last_change TIMESTAMP, "
-                                 " unique(plan_id, subscription))")
+            self._cursor.execute("""
+            CREATE TABLE IF NOT EXISTS push_subscriptions2
+            (plan_id TEXT, subscription JSON, selection SELECTION, is_active BOOLEAN, endpoint_hash TEXT,
+             endpoint_origin TEXT, last_change TIMESTAMP, unique(plan_id, subscription))""")
         """if user_version <= 1:
             self._cursor.execute("ALTER TABLE push_subscriptions2 ADD COLUMN dnt_enabled BOOLEAN")
         if user_version <= 2:
@@ -52,11 +50,24 @@ class SubstitutionPlanDB:
                                                    endpoint_origin, last_change FROM push_subscriptions_tmp;
             DROP TABLE push_subscriptions_tmp;""")
             self._cursor.execute("PRAGMA main.user_version = 4;")
+        if user_version <= 4:
+            self._cursor.execute(
+                "CREATE TABLE IF NOT EXISTS last_substitution_version_id (plan_id TEXT unique, version_id TEXT)")
+            self._cursor.execute("PRAGMA main.user_version = 5;")
 
         self._connection.commit()
 
     def close(self):
         self._connection.close()
+
+    def set_substitutions_version_id(self, plan_id: str, version_id: str):
+        self._cursor.execute("REPLACE INTO last_substitution_version_id VALUES (?,?)", (plan_id, version_id))
+        self._connection.commit()
+
+    def get_substitutions_version_id(self, plan_id: str) -> str:
+        self._cursor.execute("SELECT version_id FROM last_substitution_version_id WHERE plan_id=?", (plan_id,))
+        row = self._cursor.fetchone()
+        return row["version_id"] if row is not None else None
 
     def add_push_subscription(self, plan_id: str, subscription: dict, selection: str, is_active: bool):
         selection = selection.upper()

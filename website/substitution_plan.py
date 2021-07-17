@@ -94,12 +94,26 @@ class SubstitutionPlan:
 
         self._index_site = None
         self._serialization_filepath = None
-        self.db: Optional[SubstitutionPlanDB] = None
-        self.client_session: Optional[ClientSession] = None
+        self._db: Optional[SubstitutionPlanDB] = None
+        self._client_session: Optional[ClientSession] = None
         self._app: Optional[web.Application] = None
         self._websockets: MutableSet[web.WebSocketResponse] = WeakSet()
         # affected groups are passed from self._root_handler to self._background_tasks:
         self._affected_groups: Optional[Dict[int, Dict[str, Union[str, List[str]]]]] = None
+
+    def set_db(self, db: SubstitutionPlanDB):
+        if self._db is not None:
+            raise ValueError("db already set")
+        self._db = db
+        self._crawler.last_version_id = self._db.get_substitutions_version_id(self._plan_id)
+        logger.PLAN_NAME_CONTEXTVAR.set(self._plan_id)
+        _LOGGER.debug(f"Last substitution version id is: {self._crawler.last_version_id!r}")
+        logger.PLAN_NAME_CONTEXTVAR.set(None)
+
+    def set_client_session(self, client_session: ClientSession):
+        if self._client_session is not None:
+            raise ValueError("client_session already set")
+        self._client_session = client_session
 
     def create_app(self, static_path: Optional[str] = None) -> web.Application:
         self._app = web.Application()
@@ -112,28 +126,10 @@ class SubstitutionPlan:
             self._app.router.add_static("/", static_path)
         return self._app
 
-    @property
-    def name(self):
-        return self._plan_id
-
-    @property
-    def app(self):
-        return self._app
-
     async def close(self):
         for ws in self._websockets:
             await ws.close()
         self._websockets.clear()
-
-    async def serialize(self, filepath: str):
-        self._crawler.serialize(filepath)
-        self._serialization_filepath = filepath
-
-    async def deserialize(self, filepath: str):
-        self._crawler.deserialize(filepath)
-        self._serialization_filepath = filepath
-        if self._crawler.storage is not None:
-            await self._recreate_index_site()
 
     async def _recreate_index_site(self):
         self._index_site = await self._template().render_async(storage=self._crawler.storage,
@@ -174,7 +170,7 @@ class SubstitutionPlan:
                 else:
                     raise web.HTTPSeeOther(location=request.rel_url.update_query("all"))
 
-            substitutions_have_changed, affected_groups = await self._crawler.update(self.client_session)
+            substitutions_have_changed, affected_groups = await self._crawler.update(self._client_session)
             if settings.DEBUG and "raise500" in request.query:
                 raise ValueError
             if settings.DEBUG and "event" in request.query:
@@ -211,8 +207,7 @@ class SubstitutionPlan:
             if substitutions_have_changed:
                 if selection:
                     await self._recreate_index_site()
-                scheduler = get_scheduler(request)
-                await scheduler.spawn(self._on_new_substitutions(scheduler, affected_groups))
+                await get_scheduler(request).spawn(self._on_new_substitutions(affected_groups))
         except web.HTTPException as e:
             raise e from None
         except Exception:
@@ -245,14 +240,13 @@ class SubstitutionPlan:
                         if "type" in data:
                             if data["type"] == "get_status":
                                 substitutions_have_changed, affected_groups = \
-                                    await self._crawler.update(self.client_session)
+                                    await self._crawler.update(self._client_session)
                                 if affected_groups:
                                     self._affected_groups = affected_groups
                                 await ws.send_json({"type": "status", "status": self._crawler.storage.status})
                                 if substitutions_have_changed:
                                     await self._recreate_index_site()
-                                    scheduler = get_scheduler(request)
-                                    await scheduler.spawn(self._on_new_substitutions(scheduler, affected_groups))
+                                    await get_scheduler(request).spawn(self._on_new_substitutions(affected_groups))
             # no need to remove ws from self._websockets as self._websockets is a WeakSet
         except (asyncio.CancelledError, asyncio.TimeoutError):
             pass
@@ -266,7 +260,7 @@ class SubstitutionPlan:
         # noinspection PyBroadException
         try:
             data = await request.json()
-            self.db.add_push_subscription(self._plan_id, data["subscription"], data["selection"], data["is_active"])
+            self._db.add_push_subscription(self._plan_id, data["subscription"], data["selection"], data["is_active"])
             response = web.json_response({"ok": True})
         except Exception:
             _LOGGER.exception("Subscribing push service failed")
@@ -274,12 +268,12 @@ class SubstitutionPlan:
         return response
 
     # background task on new substitutions
-    async def _on_new_substitutions(self, scheduler, affected_groups):
+    async def _on_new_substitutions(self, affected_groups):
         logger.REQUEST_ID_CONTEXTVAR.set(None)
         # noinspection PyBroadException
         try:
-            # SERIALIZE
-            await self.serialize(self._serialization_filepath)
+            self._db.set_substitutions_version_id(self._plan_id, self._crawler.last_version_id)
+            _LOGGER.debug(f"Changed last substitution version id to: {self._crawler.last_version_id!r}")
 
             # WEBSOCKETS
             _LOGGER.debug(f"Sending update event via WebSocket connection to {len(self._websockets)} clients")
@@ -322,7 +316,7 @@ class SubstitutionPlan:
                             },
                             ttl=86400,
                             curl=True)  # modifications to make this work: see beginning of this file
-                        async with self.client_session.post(endpoint, data=data, headers=headers) as r:
+                        async with self._client_session.post(endpoint, data=data, headers=headers) as r:
                             if r.status >= 400:
                                 # If status code is 404 or 410, the endpoints are unavailable, so delete the
                                 # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
@@ -345,7 +339,7 @@ class SubstitutionPlan:
 
                 def iter_relevant_subscriptions():
                     subscription: sqlite3.Row
-                    for subscription in self.db.iter_active_push_subscriptions(self._plan_id):
+                    for subscription in self._db.iter_active_push_subscriptions(self._plan_id):
                         selection = subscription["selection"]
                         if selection is None:
                             # selection is None when all groups are selected
@@ -364,6 +358,6 @@ class SubstitutionPlan:
                     *(send_push_notification(s, i) for s, i in iter_relevant_subscriptions()))
                 for subscription in subscriptions_to_delete:
                     if subscription is not None:
-                        self.db.delete_push_subscription(subscription)
+                        self._db.delete_push_subscription(subscription)
         except Exception:
             _LOGGER.exception("Exception in on_new_substitutions background task")

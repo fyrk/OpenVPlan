@@ -20,7 +20,7 @@ _LOGGER = logger.get_logger()
 
 env = jinja2.Environment(
     loader=jinja2.FileSystemLoader("assets/templates"),
-    bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(settings.DATA_DIR, "template_cache/")),
+    bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(settings.DATA_DIR)),
     enable_async=True,
     autoescape=True,
     trim_blocks=True,
@@ -73,15 +73,15 @@ async def client_session_context(app: web.Application):
     _LOGGER.debug(f"Create ClientSession (headers: {settings.REQUEST_HEADERS})")
     session = client.ClientSession(headers=settings.REQUEST_HEADERS)
     for substitution_plan in app["substitution_plans"].values():
-        substitution_plan.client_session = session
+        substitution_plan.set_client_session(session)
     yield
     await session.close()
 
 
 async def databases_context(app: web.Application):
-    db = SubstitutionPlanDB(os.path.join(settings.DATA_DIR, "storage/db.sqlite3"))
+    db = SubstitutionPlanDB(os.path.join(settings.DATA_DIR, "db.sqlite3"))
     for substitution_plan in app["substitution_plans"].values():
-        substitution_plan.db = db
+        substitution_plan.set_db(db)
     yield
     db.close()
 
@@ -118,12 +118,11 @@ async def app_factory(dev_mode, start_log_msg):
         crawler_options = plan_config["crawler"].get("options", {})
         parser_options = plan_config["parser"].get("options", {})
         template_options = {**settings.TEMPLATE_OPTIONS, **plan_config.get("template_options", {})}
-        crawler = crawler_class(parser_class, parser_options, **crawler_options)
+        crawler = crawler_class(None,  # last_version_id will be set in SubstitutionPlan.set_db
+                                parser_class, parser_options, **crawler_options)
         plan = SubstitutionPlan(plan_id, crawler, partial(env.get_template, "substitution-plan.min.html"),
                                 partial(env.get_template, "error-500-substitution-plan.min.html"), template_options,
                                 plan_config.get("uppercase_selection", False))
-
-        await plan.deserialize(os.path.join(settings.DATA_DIR, f"substitutions/{plan_id}.pickle"))
 
         app.add_subapp(f"/{plan_id}/",
                        plan.create_app(os.path.abspath("assets/static/" + plan_id) if settings.DEBUG else None))

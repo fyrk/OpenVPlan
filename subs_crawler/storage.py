@@ -9,9 +9,8 @@ from subs_crawler.utils import split_class_name, parse_affected_groups
 
 class SubstitutionStorage:
     def __init__(self, status: str, status_datetime: datetime.datetime):
-        self._last_updated = datetime.datetime.now()
-        self._status = status
-        self._status_datetime = status_datetime
+        self.status = status
+        self.status_datetime = status_datetime
         self._days: SortedDict = SortedDict()
 
     def add_day(self, day: "SubstitutionDay"):
@@ -26,18 +25,6 @@ class SubstitutionStorage:
 
     def iter_days(self):
         yield from self._days.values()
-
-    @property
-    def status(self):
-        return self._status
-
-    @property
-    def status_datetime(self):
-        return self._status_datetime
-
-    @property
-    def last_updated(self):
-        return self._last_updated
 
     def get_new_affected_groups(self, old_storage: Optional["SubstitutionStorage"]) \
             -> Dict[int, Dict[str, Union[str, List[str]]]]:
@@ -60,8 +47,7 @@ class SubstitutionStorage:
         return affected_groups
 
     def remove_old_days(self) -> bool:
-        self._last_updated = datetime.datetime.now()
-        current_timestamp = self._last_updated.timestamp()
+        current_timestamp = datetime.datetime.now().timestamp()
         # noinspection PyTypeChecker
         expiry_times: SortedKeysView = self._days.keys()
         changed = False
@@ -71,8 +57,7 @@ class SubstitutionStorage:
         return changed
 
     def to_data(self, selection=None):
-        return {"last_updated": self._last_updated, "status": self.status,
-                "days": [d.to_data(selection) for d in self._days.values()]}
+        return {"status": self.status, "days": [d.to_data(selection) for d in self._days.values()]}
 
 
 @dataclasses.dataclass
