@@ -15,6 +15,10 @@ sqlite3.register_converter("SELECTION", lambda s: [t.strip() for t in s.decode("
 sqlite3.register_adapter(list, lambda selection: ",".join(selection).encode("utf-8"))
 
 
+def hash_endpoint(endpoint):
+    return hashlib.blake2b(endpoint.encode("utf-8"), digest_size=3).hexdigest()
+
+
 class SubstitutionPlanDB:
     def __init__(self, filepath, **kwargs):
         self._connection = sqlite3.connect(filepath, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES,
@@ -54,7 +58,32 @@ class SubstitutionPlanDB:
             self._cursor.execute(
                 "CREATE TABLE IF NOT EXISTS last_substitution_version_id (plan_id TEXT unique, version_id JSON)")
             self._cursor.execute("PRAGMA main.user_version = 5;")
+        if user_version <= 5:
+            # push_subscriptions2: remove is_active, remove endpoint_origin, remove endpoint_hash, add endpoint,
+            #                      new primary key: (plan_id, endpoint)
+            self._cursor.execute("""
+            CREATE TEMPORARY TABLE push_subscriptions_tmp(plan_id TEXT, endpoint TEXT, subscription JSON,
+                                                          selection SELECTION,
+                                                          last_change TIMESTAMP, unique(plan_id, endpoint))""")
+            for row in self._cursor.execute("SELECT * FROM push_subscriptions2 WHERE is_active=1").fetchall():
+                subscription = row["subscription"]
+                endpoint = subscription["endpoint"]
+                self._cursor.execute(
+                    "REPLACE INTO push_subscriptions_tmp VALUES (?,?,?,?,?)",
+                    (row["plan_id"], endpoint, row["subscription"], row["selection"], row["last_change"]))
+            self._cursor.executescript("""
+            DROP TABLE push_subscriptions2;
+            CREATE TABLE push_subscriptions2(plan_id TEXT, endpoint TEXT, subscription JSON,
+                                             selection SELECTION, last_change TIMESTAMP, unique(plan_id, endpoint));
+            INSERT INTO push_subscriptions2 SELECT plan_id, endpoint, subscription,
+                                                   selection, last_change FROM push_subscriptions_tmp;
+            DROP TABLE push_subscriptions_tmp;
+            """)
+            self._cursor.execute("PRAGMA main.user_version = 6;")
 
+        self._connection.commit()
+
+    def commit(self):
         self._connection.commit()
 
     def close(self):
@@ -69,31 +98,21 @@ class SubstitutionPlanDB:
         row = self._cursor.fetchone()
         return row["version_id"] if row is not None else None
 
-    def add_push_subscription(self, plan_id: str, subscription: dict, selection: str, is_active: bool):
+    def add_push_subscription(self, plan_id: str, subscription: dict, selection: str):
         selection = selection.upper()
         try:
             endpoint = subscription["endpoint"]
-            endpoint_hash = hashlib.blake2b(endpoint.encode("utf-8")).hexdigest()
-            parsed = urllib.parse.urlparse(endpoint)
-            endpoint_origin = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
         except Exception:
             raise ValueError("Wrong subscription object '" + str(subscription) + "'")
-        self._cursor.execute("REPLACE INTO push_subscriptions2 VALUES (?,?,?,?,?,?,?)",
-                             (plan_id, subscription, selection, is_active, endpoint_hash, endpoint_origin,
-                              datetime.datetime.now()))
-        self._connection.commit()
-        _LOGGER.debug(f"Add push subscription {plan_id}-{endpoint_hash[:6]} "
-                      f"(is_active={is_active}, origin={endpoint_origin})")
-        self._cursor.execute("SELECT * FROM push_subscriptions2 WHERE plan_id=? AND subscription=?",
-                             (plan_id, subscription))
-        return self._cursor.fetchone()
+        self._cursor.execute("REPLACE INTO push_subscriptions2 VALUES (?,?,?,?,?)",
+                             (plan_id, endpoint, subscription, selection, datetime.datetime.now()))
+        _LOGGER.debug(f"Add push subscription {plan_id}-{hash_endpoint(endpoint)[:6]}"
+                      f"(origin: {urllib.parse.urlparse(endpoint).netloc})")
 
-    def iter_active_push_subscriptions(self, plan_id: str) -> Iterable[sqlite3.Row]:
-        return self._cursor.execute("SELECT * FROM push_subscriptions2 WHERE plan_id=? AND is_active=1", (plan_id,))
+    def iter_push_subscriptions(self, plan_id: str) -> Iterable[sqlite3.Row]:
+        return self._cursor.execute("SELECT * FROM push_subscriptions2 WHERE plan_id=?", (plan_id,))
 
-    def delete_push_subscription(self, subscription: sqlite3.Row):
-        plan_id = subscription["plan_id"]
-        self._cursor.execute("DELETE FROM push_subscriptions2 WHERE plan_id=? AND subscription=?",
-                             (plan_id, subscription["subscription"]))
-        _LOGGER.debug(f"Deleted push subscription {plan_id}-{subscription['endpoint_hash'][:6]} "
-                      f"(is_active={subscription['is_active']}, origin={subscription['endpoint_origin']})")
+    def delete_push_subscription(self, plan_id: str, endpoint: str):
+        self._cursor.execute("DELETE FROM push_subscriptions2 WHERE plan_id=? AND endpoint=?",
+                             (plan_id, endpoint))
+        _LOGGER.debug(f"Delete push subscription {plan_id}-{hash_endpoint(endpoint)[:6]}")

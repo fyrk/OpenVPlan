@@ -186,7 +186,7 @@ class SubstitutionPlan:
                 selection_str = selection_str.upper()
 
             if not selection:
-                if substitutions_have_changed:
+                if substitutions_have_changed or not self._index_site:
                     await self._recreate_index_site()
                 text = self._index_site
                 headers = RESPONSE_HEADERS
@@ -260,10 +260,14 @@ class SubstitutionPlan:
         # noinspection PyBroadException
         try:
             data = await request.json()
-            self._db.add_push_subscription(self._plan_id, data["subscription"], data["selection"], data["is_active"])
+            if data["is_active"]:
+                self._db.add_push_subscription(self._plan_id, data["subscription"], data["selection"])
+            else:
+                self._db.delete_push_subscription(self._plan_id, data["subscription"]["endpoint"])
+            self._db.commit()
             response = web.json_response({"ok": True})
         except Exception:
-            _LOGGER.exception("Subscribing push service failed")
+            _LOGGER.exception("Modifying push subscription failed")
             response = web.json_response({"ok": False}, status=400)
         return response
 
@@ -339,7 +343,7 @@ class SubstitutionPlan:
 
                 def iter_relevant_subscriptions():
                     subscription: sqlite3.Row
-                    for subscription in self._db.iter_active_push_subscriptions(self._plan_id):
+                    for subscription in self._db.iter_push_subscriptions(self._plan_id):
                         selection = subscription["selection"]
                         if selection is None:
                             # selection is None when all groups are selected
@@ -358,6 +362,7 @@ class SubstitutionPlan:
                     *(send_push_notification(s, i) for s, i in iter_relevant_subscriptions()))
                 for subscription in subscriptions_to_delete:
                     if subscription is not None:
-                        self._db.delete_push_subscription(subscription)
+                        self._db.delete_push_subscription(self._plan_id, subscription["endpoint"])
+                self._db.commit()
         except Exception:
             _LOGGER.exception("Exception in on_new_substitutions background task")
