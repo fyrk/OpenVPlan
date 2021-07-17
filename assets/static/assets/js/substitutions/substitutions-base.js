@@ -1,21 +1,31 @@
-/*function reportError(error, event=null) {
-    fetch("/api/report-error", {
-        method: "post",
-        body: new URLSearchParams({
-            name: error.name,
-            message: (event == null ? undefined : event.message) || error.message,
-            description: error.description,  // non-standard Microsoft property
-            number: error.number, // non-standard Microsoft property
-            filename: (event == null ? undefined : event.filename) || error.fileName,  // error.fileName is non-standard Mozilla property
-            lineno: (event == null ? undefined : event.lineno) || error.lineNumber,  // error.lineNumber is non-standard Mozilla property
-            colno: (event == null ? undefined : event.colno) || error.columnNumber,  // error.columnNumber is non-standard Mozilla property
-            stack: (event == null ? undefined : event.stack) || error.stack  // error.stack is non-standard Mozilla property
-        })
-    }).catch(reason => console.error("reporting error failed", reason))
+function reportError(error, event = null) {
+    try {
+        let name = error.name;
+        let message = (event == null ? undefined : event.message) ||
+            error.message;
+        let description = error.description;  // non-standard Microsoft property
+        let number = error.number; // non-standard Microsoft property
+        let filename = (event == null ? undefined : event.filename) ||
+            error.fileName;  // error.fileName is non-standard Mozilla property
+        let lineno = (event == null ? undefined : event.lineno) ||
+            error.lineNumber;  // error.lineNumber is non-standard Mozilla property
+        let colno = (event == null ? undefined : event.colno) ||
+            error.columnNumber;  // error.columnNumber is non-standard Mozilla property
+        let stack = (event == null ? undefined : event.stack) ||
+            error.stack;  // error.stack is non-standard Mozilla property
+        plausible("JavaScript Error", {
+            props: {
+                [(name || "Generic Error") + ": " + message]: stack + " - " + filename + ":" + lineno + ":" + colno +
+                " " + description + " " + number
+            }
+        });
+    } catch (e) {
+        console.error("reporting error failed", e);
+    }
 }
+
 window.addEventListener("error", e => reportError(e.error, e));  // e.error is experimental, according to MDN
 window.addEventListener("unhandledrejection", e => reportError(e.reason));
-*/ // TODO (plausible)
 
 
 const substitutionPlanType = window.location.pathname.split("/", 2)[1];

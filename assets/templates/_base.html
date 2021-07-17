@@ -23,9 +23,9 @@
     <!-- ###realfavicon-replace### -->
     <meta property="og:image:width" content="500">
     <meta property="og:image:height" content="500">
-    <script defer {% if options.plausible_domain %}data-domain="{{ options.plausible_domain }}" {% endif %}{% if options and options.plausible_endpoint %}data-api="{{ options.plausible_endpoint }}" {% endif %}src="{{ options.plausible_js if options else '' }}"></script>
     <script>window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)}</script>
     {% block scripts %}{% endblock scripts %}
+    <script defer {% if options.plausible_domain %}data-domain="{{ options.plausible_domain }}" {% endif %}{% if options and options.plausible_endpoint %}data-api="{{ options.plausible_endpoint }}" {% endif %}src="{{ options.plausible_js if options else '' }}"></script>
 </head>
 
 <body class="d-flex flex-column">
@@ -62,7 +62,6 @@
         <!--suppress HtmlUnknownTarget -->
         <a href="/about">Impressum & Datenschutzerklärung</a>
     </p>
-    <object data="/assets/img/python-powered.min.svg">python powered</object>
 </footer>
 {% block body_end %}{% endblock %}
 </body>

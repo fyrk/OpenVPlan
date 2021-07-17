@@ -111,7 +111,10 @@ def request_wrapper(request_handler):
 @web.middleware
 async def logging_middleware(request: web.Request, handler):
     REQUEST_ID_CONTEXTVAR.set(secrets.token_hex(4))
-    _logger.info(f"{request.method} {request.path_qs}")
+    url = request.url
+    if "s" in url.query and url.query["s"].strip():
+        url = url.update_query(s="***")
+    _logger.info(f"{request.method} {url.path_qs}")
     t1 = time.perf_counter_ns()
     response: web.Response = await handler(request)
     _logger.info(f"Response status={response.status}, "

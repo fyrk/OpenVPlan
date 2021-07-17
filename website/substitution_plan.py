@@ -50,6 +50,8 @@ csp = {
 }
 if plausible_js := settings.TEMPLATE_OPTIONS.get("plausible_js"):
     csp["script-src"].append(plausible_js)
+if plausible_endpoint := settings.TEMPLATE_OPTIONS.get("plausible_endpoint"):
+    csp["connect-src"].append(plausible_endpoint)
 
 csp_header = ""
 for key, value in csp.items():
