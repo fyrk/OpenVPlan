@@ -49,8 +49,6 @@ if (window.location.hash.startsWith("#timetable:")) {
                 timetable.push(lessons);
                 for (let lesson = 0; lesson < 10; lesson++) {
                     let teacher = timetableStr.substr(day*10*3+lesson*3, 3).trim();
-                    if (teacher === "")
-                        teacher = null;
                     lessons.push(teacher);
                 }
             }
@@ -66,7 +64,7 @@ if (window.location.hash.startsWith("#timetable:")) {
             }
             group = group.toUpperCase();
             let text = (group in timetables) ?
-                ("Die aufgerufenen URL enthält einen Stundenplan für " + group + ". Soll der aktuell gesetzte Stundenplan für " + group + " durch diesen ersetzt werden?")
+                ("Die aufgerufene URL enthält einen Stundenplan für " + group + ". Soll der aktuell gespeicherte Stundenplan für " + group + " durch diesen ersetzt werden?")
                 : ("Die aufgerufene URL enthält einen Stundenplan für " + group + ". Diesen Stundenplan setzen?");
             if (!selection) {
                 text += " Achtung: Der Stundenplan wird erst angewendet, wenn Vertretungen ausgewählt sind.";
@@ -87,6 +85,7 @@ if (window.location.hash.startsWith("#timetable:")) {
                 window.localStorage.setItem(substitutionPlanType + "-timetables", JSON.stringify(timetables));
             }
             window.location.hash = "";
+            plausible("Timetable: Set From Link");
         }
     } catch (e) {
         console.error("Error while retrieving timetable from URL", e);

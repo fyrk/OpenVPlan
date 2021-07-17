@@ -12,6 +12,8 @@ The following custom goal events are defined:
    - Props: plan ids
  * Notification
    - Props: plan ids
+ * Timetable: Copy Link
+ * Timetable: Set From Link
  * JavaScript Error
    - Props: Error name and message
  * JavaScript Error (Service Worker)

@@ -53,7 +53,6 @@ if (selection) {
                         }
                     }
                 }
-                console.log(groupName, affectedGroups, matchingSelections);
                 for (let s of matchingSelections) {
                     if (!(s in substitutions)) {
                         substitutions[s] = {};
@@ -127,11 +126,11 @@ if (selection) {
         let sUpper = s.toUpperCase();
         if (!(sUpper in timetables)) {
             timetables[sUpper] = [
-                [null, null, null, null, null, null, null, null, null, null],
-                [null, null, null, null, null, null, null, null, null, null],
-                [null, null, null, null, null, null, null, null, null, null],
-                [null, null, null, null, null, null, null, null, null, null],
-                [null, null, null, null, null, null, null, null, null, null],
+                Array(10).fill(""),
+                Array(10).fill(""),
+                Array(10).fill(""),
+                Array(10).fill(""),
+                Array(10).fill("")
             ];
         }
         const timetable = timetableTemplate.content.firstElementChild.cloneNode(true);
@@ -146,7 +145,7 @@ if (selection) {
                 for (let day=0; day<5; day++) {
                     for (let lesson=0; lesson<10; lesson++) {
                         let teacher = timetables[sUpper][day][lesson];
-                        if (teacher == null) {
+                        if (!teacher) {
                             timetableStr += "   ";
                         } else {
                             if (teacher.length > 3) {
@@ -176,6 +175,7 @@ if (selection) {
                         copyButton.classList.add("copied");
                         copyButton.title = "Kopiert!";
                         resetButton();
+                        plausible("Timetable: Copy Link");
                     }).catch(() => {
                         copyButton.classList.add("copying-failed");
                         copyButton.title = "Kopieren fehlgeschlagen";
@@ -231,7 +231,7 @@ if (selection) {
                 // noinspection JSValidateTypes
                 input.dataset.lesson = lessonNum;
                 let teacher = timetables[sUpper][weekday][lessonNum-1];
-                if (teacher != null) {
+                if (teacher) {
                     input.value = teacher;
                     input.dataset.oldvalue = teacher;
                     setRelevant(input);
