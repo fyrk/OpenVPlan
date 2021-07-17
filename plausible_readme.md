@@ -8,8 +8,8 @@ The following custom goal events are defined:
  * Features - teachers
    - Props: Notifications, Selection, Theme, Timetables 
  * Select
- * Push Subscription: Subscribe
- * Push Subscription: Unsubscribe
+ * Push Subscription
+   - Props: plan ids
  * Notification
    - Props: plan ids
  * JavaScript Error

@@ -121,12 +121,12 @@ function onNotificationsAvailable(registration) {
                     }
                     setNotificationsInfo(notificationState, registration);
                 });
-            plausible("Push Subscription: Subscribe")
+            plausible("Push Subscription", {props: {[substitutionPlanType]: "Subscribe"}})
         } else {
             if (notificationState === "granted-and-enabled") {
                 setNotificationsInfo("granted-and-disabled", registration);
             }
-            plausible("Push Subscription: Unsubscribe")
+            plausible("Push Subscription", {props: {[substitutionPlanType]: "Unsubscribe"}})
         }
     });
 
