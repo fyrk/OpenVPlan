@@ -3,9 +3,10 @@ import os
 from functools import partial
 from typing import Callable
 
+import aiocron
 import jinja2
 from aiohttp import client, web
-from aiojobs.aiohttp import setup
+from aiojobs.aiohttp import setup, get_scheduler_from_app
 
 import settings
 import subs_crawler
@@ -93,6 +94,13 @@ async def shutdown(app):
     await logger.cleanup()
 
 
+def get_update_subs_func(app, plan):
+    async def update():
+        logger.REQUEST_ID_CONTEXTVAR.set("bg-tasks")
+        await plan.update_substitutions(get_scheduler_from_app(app))
+    return update
+
+
 async def app_factory(dev_mode, start_log_msg):
     await logger.init(settings.LOGFILE)
     _LOGGER.info(start_log_msg)
@@ -123,6 +131,10 @@ async def app_factory(dev_mode, start_log_msg):
         plan = SubstitutionPlan(plan_id, crawler, partial(env.get_template, "substitution-plan.min.html"),
                                 partial(env.get_template, "error-500-substitution-plan.min.html"), template_options,
                                 plan_config.get("uppercase_selection", False))
+
+        update_subs = get_update_subs_func(app, plan)
+        for cron_time in plan_config.get("background_updates", []):
+            aiocron.crontab(cron_time, func=update_subs)
 
         app.add_subapp(f"/{plan_id}/",
                        plan.create_app(os.path.abspath("assets/static/" + plan_id) if settings.DEBUG else None))

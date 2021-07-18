@@ -98,8 +98,6 @@ class SubstitutionPlan:
         self._client_session: Optional[ClientSession] = None
         self._app: Optional[web.Application] = None
         self._websockets: MutableSet[web.WebSocketResponse] = WeakSet()
-        # affected groups are passed from self._root_handler to self._background_tasks:
-        self._affected_groups: Optional[Dict[int, Dict[str, Union[str, List[str]]]]] = None
 
     def set_db(self, db: SubstitutionPlanDB):
         if self._db is not None:
@@ -148,11 +146,19 @@ class SubstitutionPlan:
                 selection = [s.upper() for s in selection]
         return selection, selection_str, selection_qs
 
+    @logger.plan_name_wrapper
+    async def update_substitutions(self, scheduler):
+        _LOGGER.info("Updating substitutions...")
+        substitutions_have_changed, affected_groups = await self._crawler.update(self._client_session)
+        if substitutions_have_changed:
+            await self._recreate_index_site()
+            await scheduler.spawn(self._on_new_substitutions(affected_groups))
+
     # ===================
     # REQUEST HANDLERS
 
     # /
-    @logger.request_wrapper
+    @logger.plan_name_wrapper
     async def _root_handler(self, request: web.Request) -> web.Response:
         # noinspection PyBroadException
         try:
@@ -171,15 +177,15 @@ class SubstitutionPlan:
                     raise web.HTTPSeeOther(location=request.rel_url.update_query("all"))
 
             substitutions_have_changed, affected_groups = await self._crawler.update(self._client_session)
-            if settings.DEBUG and "raise500" in request.query:
-                raise ValueError
-            if settings.DEBUG and "event" in request.query:
-                # in development, simulate new substitutions event by "event" parameter
-                substitutions_have_changed = True
-                affected_groups = json.loads(request.query["event"])
+            if settings.DEBUG:
+                if "raise500" in request.query:
+                    raise ValueError
+                if "event" in request.query:
+                    # in development, simulate new substitutions event by "event" parameter
+                    substitutions_have_changed = True
+                    affected_groups = json.loads(request.query["event"])
             if substitutions_have_changed:
                 _LOGGER.info("SUBSTITUTIONS HAVE CHANGED")
-                self._affected_groups = affected_groups
 
             selection, selection_str, selection_qs = self.parse_selection(request.url)
             if self._uppercase_selection:
@@ -217,7 +223,7 @@ class SubstitutionPlan:
         return response
 
     # /api/wait-for-updates
-    @logger.request_wrapper
+    @logger.plan_name_wrapper
     async def _wait_for_updates_handler(self, request: web.Request):
         ws = web.WebSocketResponse()
         if not ws.can_prepare(request):
@@ -239,14 +245,8 @@ class SubstitutionPlan:
                     else:
                         if "type" in data:
                             if data["type"] == "get_status":
-                                substitutions_have_changed, affected_groups = \
-                                    await self._crawler.update(self._client_session)
-                                if affected_groups:
-                                    self._affected_groups = affected_groups
+                                await self.update_substitutions(get_scheduler(request))
                                 await ws.send_json({"type": "status", "status": self._crawler.storage.status})
-                                if substitutions_have_changed:
-                                    await self._recreate_index_site()
-                                    await get_scheduler(request).spawn(self._on_new_substitutions(affected_groups))
             # no need to remove ws from self._websockets as self._websockets is a WeakSet
         except (asyncio.CancelledError, asyncio.TimeoutError):
             pass
@@ -255,7 +255,7 @@ class SubstitutionPlan:
         return ws
 
     # /api/subscribe-push
-    @logger.request_wrapper
+    @logger.plan_name_wrapper
     async def _subscribe_push_handler(self, request: web.Request):
         # noinspection PyBroadException
         try:
