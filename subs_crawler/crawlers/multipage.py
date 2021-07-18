@@ -33,8 +33,7 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
         self._url_first_site = self._url.format(1)
         self._update_substitutions_lock = asyncio.Lock()
 
-    async def _check_for_update(self, session: aiohttp.ClientSession) \
-            -> Tuple[bool, Optional[str], Optional[datetime.datetime], Optional[bytes]]:
+    async def _check_for_update(self, session: aiohttp.ClientSession) -> Optional[Tuple[str, datetime.datetime, bytes]]:
         last_etag = self.last_version_id and self.last_version_id.get("etag")
         if last_etag:
             _LOGGER.debug(f"[multipage-crawler] Requesting first site with If-None-Match: {last_etag} ...")
@@ -47,7 +46,7 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
             if r.status == 304:
                 _LOGGER.debug(f"[multipage-crawler] Got answer in {time.perf_counter_ns() - t1}ns: "
                               f"{r.status} {r.reason}")
-                return False, None, None, None
+                return None
             first_site = await r.read()
         t2 = time.perf_counter_ns()
         new_status, new_status_datetime = await self._parser_class.get_status(first_site)
@@ -55,8 +54,8 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                       f"(old: {repr(self.last_version_id)})")
         if new_status != (self.last_version_id and self.last_version_id.get("status")):
             self.last_version_id = {"status": new_status, "etag": r.headers.get(hdrs.ETAG)}
-            return True, new_status, new_status_datetime, first_site
-        return False, None, None, None
+            return new_status, new_status_datetime, first_site
+        return None
 
     async def update(self, session: aiohttp.ClientSession) \
             -> Tuple[bool, Optional[Dict[int, Dict[str, Union[str, List[str]]]]]]:
@@ -66,35 +65,51 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                 _LOGGER.debug(f"[multipage-crawler] Substitution loading finished")
                 return False, None
         async with self._update_substitutions_lock:
-            changed_substitutions, new_status, new_status_datetime, first_site = await self._check_for_update(session)
-            affected_groups = None
-            if changed_substitutions or self._storage is None:
-                # if self._storage is None, this means substitutions haven't changed, but the server has been restarted,
-                # so no substitutions are in memory
-                t1 = time.perf_counter_ns()
-                last_site_num, affected_groups = await self._load_data(session, new_status, new_status_datetime,
-                                                                       first_site)
-                _LOGGER.debug(f"[multipage-crawler] Loaded data in {time.perf_counter_ns()-t1}ns")
+            t1 = time.perf_counter_ns()
+            if self._storage is None:
+                # if self._storage is None, this means substitutions haven't necessarily changed, but this is the first
+                # time they are updated since the server started
+                affected_groups, first_etag = await self._load_data(session, None, None, None)
+                self._storage: SubstitutionStorage  # helping the type checker a bit... self._storage is no longer None
+                new_status = self._storage.status
+                if new_status != (self.last_version_id and self.last_version_id.get("status")):
+                    self.last_version_id = {"status": new_status, "etag": first_etag}
+                    changed_substitutions = True
+                else:
+                    changed_substitutions = False
             else:
-                changed_substitutions = self._storage.remove_old_days()
+                res = await self._check_for_update(session)
+                if res is not None:
+                    new_status, new_status_datetime, first_site = res
+                    affected_groups, _ = await self._load_data(session, first_site, new_status, new_status_datetime)
+                    changed_substitutions = True
+                else:
+                    affected_groups = None
+                    changed_substitutions = self._storage.remove_old_days()
+                _LOGGER.debug(f"[multipage-crawler] Loaded data in {time.perf_counter_ns() - t1}ns")
             return changed_substitutions, affected_groups
 
-    async def _load_data(self, session: aiohttp.ClientSession, status: str, status_datetime: datetime.datetime,
-                         first_site: bytes) \
-            -> Optional[Tuple[Optional[int], Optional[Dict[int, Dict[str, Union[str, List[str]]]]]]]:
+    async def _load_data(self, session: aiohttp.ClientSession, first_site: Optional[bytes],
+                         status: Optional[str], status_datetime: Optional[datetime.datetime]) \
+            -> Tuple[Optional[Dict[int, Dict[str, Union[str, List[str]]]]], Optional[str]]:
         async def load_from_website(num):
             _LOGGER.debug(f"[multipage-crawler] {num} Requesting page")
             r = await session.get(self._url.format(num), timeout=self._timeout)
             _LOGGER.debug(f"[multipage-crawler] {num} Got {r.status}")
             if r.status == 200:
-                await load_from_stream(num, r.content, r)
+                content = r.content
+                if num == 1 and first_site is None:
+                    data = await r.content.read()
+                    nonlocal status, status_datetime, first_etag
+                    status, status_datetime = await self._parser_class.get_status(data)
+                    first_etag = r.headers.get(hdrs.ETAG)
+                    content = AsyncBytesIOWrapper(data)
+                await load_from_stream(num, content, r)
 
         async def load_from_stream(num, stream: Stream, request=None):
             nonlocal next_waiting_result, last_site_num
             _LOGGER.debug(f"[multipage-crawler] {num} Parsing")
             parser = self._parser_class(storage, current_timestamp, stream, num, **self._parser_options)
-            # ignore PyTypeChecker because parser.parse is an async generator, not a coroutine
-            # noinspection PyTypeChecker
             next_site = await parser.parse_next_site()
             if next_site == "001":
                 _LOGGER.debug(f"[multipage-crawler] {num} is last site")
@@ -131,9 +146,14 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                 await asyncio.gather(*(asyncio.ensure_future(complete_parse(parse, request))
                                      for num, (parse, request) in results_to_load))
 
+        first_etag = None
+
         last_site_num = None
         current_timestamp = create_date_timestamp(datetime.datetime.now())
-        storage = SubstitutionStorage(status, status_datetime)
+        # storage.status and storage.status_datetime are set later, in case first_site is None and these values aren't
+        # available yet
+        # noinspection PyTypeChecker
+        storage = SubstitutionStorage(None, None)
 
         next_waiting_result = 1
         for start_num in range(1, self._max_site_load_num+1, self._site_load_count):
@@ -164,7 +184,9 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                 if not d.cancelled() and d.exception():
                     raise d.exception()
             if last_site_num is not None:
+                storage.status = status
+                storage.status_datetime = status_datetime
                 new_affected_groups = storage.get_new_affected_groups(self._storage)
                 self._storage = storage
-                return last_site_num, new_affected_groups
+                return new_affected_groups, first_etag
         raise ValueError("Site loading limit (max_site_load_num={self._max_site_load_num}) reached")
