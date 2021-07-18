@@ -4,8 +4,7 @@
 {% block title %}{% if not selection %}{{ options["title"] }}{% else %}{{ selection_str|e }}{% endif %}{% endblock %}
 {% block og_title %}{% if options["title"] %}{{ options["title"] }}{% else %}{{ options["og_title"] }}
 {% endif %}{% endblock %}
-{% block keywords %}{% if options["keywords"] %}{% for kw in options["keywords"] %}, {{ kw }}{% endfor %}
-{% endif %}{% endblock %}
+{% block keywords %}{% if options["keywords"] %}, {{ options["keywords"] }}{% endif %}{% endblock %}
 {% block breadcrumb_list %}{{ c.breadcrumb_list(options["title"], options["id"]) }}{% endblock %}
 
 {% block meta %}
