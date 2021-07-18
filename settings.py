@@ -22,7 +22,8 @@ class settings:
     TEMPLATE_OPTIONS: dict = {
         "plausible_domain": None,
         "plausible_js": "https://plausible.io/js/plausible.js",
-        "plausible_endpoint": None
+        "plausible_endpoint": None,
+        "plausible_public_url": "/plausible"
     }
 
 
