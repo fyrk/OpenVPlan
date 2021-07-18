@@ -213,104 +213,134 @@ self.addEventListener("fetch", event => {
 });
 
 self.addEventListener("push", async (event) => {
+    if (!event.data) {
+        event.waitUntil(Promise.all([
+                self.registration.showNotification("Neue Benachrichtigung", {
+                    icon: "android-chrome-512x512.png",
+                    badge: "monochrome-96x96.png",
+                    lang: "de"
+                }),
+                plausible("Notification", {props: {other: "Received, but without Payload"}})
+            ])
+        );
+        return;
+    }
     const data = event.data.json();
 
-    //let timestamp = data["timestamp"];
-    let plan_id = data["plan_id"];
-
-    // merge all affected groups of previous notifications with the same plan id that are still open
-    let affectedGroups = data["affected_groups_by_day"];
-    console.log("affectedGroups", affectedGroups);
-    for (let day of Object.values(affectedGroups)) {
-        day["groups"] = new Set(day["groups"]);
-    }
-    let currentTimestamp = Date.now()/1000;  // current UTC timestamp in seconds
-    event.waitUntil(
-        self.registration.getNotifications().then(notifications => {
-            for (let n of notifications) {
-                if (n.data && n.data.plan_id === plan_id) {
-                    for (let [expiryTime, day] of Object.entries(n.data.affected_groups_by_day)) {
-                        console.log("expiryTime, currentTimestamp:", expiryTime, currentTimestamp);
-                        if (expiryTime > currentTimestamp) {
-                            console.log("add", day["groups"]);
-                            if (expiryTime in affectedGroups) {
-                                console.log("already in affectedGroups");
-                                day["groups"].forEach(g => affectedGroups[expiryTime]["groups"].add(g));
-                            }
-                            else {
-                                console.log("new day", day);
-                                affectedGroups[expiryTime] = day;
-                            }
-                        }
-                    }
-                    n.close();
-                }
-            }
-            for (let day of Object.values(affectedGroups)) {
-                day["groups"] = Array.from(day["groups"]);
-            }
-
-            let title;
-            let body;
-
-            if (Object.keys(affectedGroups).length === 1) {
-                // there is only one day with new substitutions
-                let day = Object.values(affectedGroups)[0];
-                title = day["name"] + ": Neue Vertretungen";
-                body = day["groups"].join(", ");
-            } else {
-                title = "Neue Vertretungen";
-                body = "";
-                for (let day of Object.values(affectedGroups)) {
-                    body += day["name"] + ": " + day["groups"].join(", ") + "\n";
-                }
-            }
-
-            const options = {
-                body: body,
+    if (data.type === "generic_message") {
+        event.waitUntil(
+            self.registration.showNotification(data.title, {
+                body: data.body || "",
                 icon: "android-chrome-512x512.png",
                 badge: "monochrome-96x96.png",
                 lang: "de",
-                //timestamp: timestamp,
-                vibrate: [300, 100, 400],
                 data: {
-                    plan_id: plan_id,
-                    url: new URL("/" + plan_id + "/?source=Notification", self.location.origin).href,
-                    affected_groups_by_day: affectedGroups,
+                    type: "generic_message"
                 }
-            };
+            })
+        );
+    } else {
+        //let timestamp = data["timestamp"];
+        let plan_id = data["plan_id"];
 
-            self.registration.showNotification(title, options)
+        // merge all affected groups of previous notifications with the same plan id that are still open
+        let affectedGroups = data["affected_groups_by_day"];
+        console.log("affectedGroups", affectedGroups);
+        for (let day of Object.values(affectedGroups)) {
+            day["groups"] = new Set(day["groups"]);
+        }
+        let currentTimestamp = Date.now()/1000;  // current UTC timestamp in seconds
+        event.waitUntil(
+            self.registration.getNotifications().then(notifications => {
+                for (let n of notifications) {
+                    if (n.data && n.data.plan_id === plan_id) {
+                        for (let [expiryTime, day] of Object.entries(n.data.affected_groups_by_day)) {
+                            console.log("expiryTime, currentTimestamp:", expiryTime, currentTimestamp);
+                            if (expiryTime > currentTimestamp) {
+                                console.log("add", day["groups"]);
+                                if (expiryTime in affectedGroups) {
+                                    console.log("already in affectedGroups");
+                                    day["groups"].forEach(g => affectedGroups[expiryTime]["groups"].add(g));
+                                }
+                                else {
+                                    console.log("new day", day);
+                                    affectedGroups[expiryTime] = day;
+                                }
+                            }
+                        }
+                        n.close();
+                    }
+                }
+                for (let day of Object.values(affectedGroups)) {
+                    day["groups"] = Array.from(day["groups"]);
+                }
 
-            plausible("Notification", {props: {[plan_id]: "Received"}})
-        })
-    );
+                let title;
+                let body;
+
+                if (Object.keys(affectedGroups).length === 1) {
+                    // there is only one day with new substitutions
+                    let day = Object.values(affectedGroups)[0];
+                    title = day["name"] + ": Neue Vertretungen";
+                    body = day["groups"].join(", ");
+                } else {
+                    title = "Neue Vertretungen";
+                    body = "";
+                    for (let day of Object.values(affectedGroups)) {
+                        body += day["name"] + ": " + day["groups"].join(", ") + "\n";
+                    }
+                }
+
+                const options = {
+                    body: body,
+                    icon: "android-chrome-512x512.png",
+                    badge: "monochrome-96x96.png",
+                    lang: "de",
+                    //timestamp: timestamp,
+                    vibrate: [300, 100, 400],
+                    data: {
+                        type: "subs_update",
+                        plan_id: plan_id,
+                        url: new URL("/" + plan_id + "/?source=Notification", self.location.origin).href,
+                        affected_groups_by_day: affectedGroups,
+                    }
+                };
+
+                self.registration.showNotification(title, options)
+
+                plausible("Notification", {props: {[plan_id]: "Received"}})
+            })
+        );
+    }
 });
 
 self.addEventListener("notificationclick", event => {
     event.notification.close();
 
-    // open website
-    event.waitUntil(Promise.all([
-        self.clients.matchAll().then(function (clientList) {
-            const notificationURL = new URL(event.notification.data.url);
-            for (let client of clientList) {
-                const url = new URL(client.url);
-                if (url.origin + url.pathname === notificationURL.origin + notificationURL.pathname && "focus" in client)
-                    return client.focus();
-            }
-            if (self.clients.openWindow)
-                return self.clients.openWindow(event.notification.data.url);
-        }),
+    if (event.notification.data.type === "subs_update") {
+        // open website
+        event.waitUntil(Promise.all([
+            self.clients.matchAll().then(function(clientList) {
+                const notificationURL = new URL(event.notification.data.url);
+                for (let client of clientList) {
+                    const url = new URL(client.url);
+                    if (url.origin + url.pathname === notificationURL.origin + notificationURL.pathname && "focus" in
+                        client)
+                        return client.focus();
+                }
+                if (self.clients.openWindow)
+                    return self.clients.openWindow(event.notification.data.url);
+            }),
 
-        // close all notifications
-        self.registration.getNotifications().then(notifications => {
-            notifications.forEach(n => {
-                if (n.data != null && n.data.plan_id === event.notification.data.plan_id)
-                    n.close()
-            });
-        }),
+            // close all notifications
+            self.registration.getNotifications().then(notifications => {
+                notifications.forEach(n => {
+                    if (n.data != null && n.data.plan_id === event.notification.data.plan_id)
+                        n.close()
+                });
+            }),
 
-        plausible("Notification", {props: {[event.notification.data.plan_id]: "Clicked"}})
-    ]));
+            plausible("Notification", {props: {[event.notification.data.plan_id]: "Clicked"}})
+        ]));
+    }
 });

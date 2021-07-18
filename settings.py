@@ -26,7 +26,6 @@ class settings:
         "plausible_public_url": "/plausible"
     }
 
-
     IS_PROXIED = False
 
     TEMPLATE_404: str = "error-404.min.html"
@@ -35,6 +34,7 @@ class settings:
     PUBLIC_VAPID_KEY: Optional[str] = None
     PRIVATE_VAPID_KEY: Optional[str] = None
     VAPID_SUB: Optional[str] = None
+    WEBPUSH_CONTENT_ENCODING: str = "aes128gcm"
 
     REQUEST_HEADERS: dict = {
         hdrs.USER_AGENT: f"Mozilla/5.0 (compatible; GaWVertretungBot/{VERSION}; "

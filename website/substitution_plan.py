@@ -6,7 +6,7 @@ import sqlite3
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import Dict, Iterable, List, MutableSet, Optional, Union, Tuple, Callable
+from typing import Iterable, MutableSet, Optional, Tuple, Callable
 
 import jinja2
 import pywebpush
@@ -257,6 +257,12 @@ class SubstitutionPlan:
             data = await request.json()
             if data["is_active"]:
                 self._db.add_push_subscription(self._plan_id, data["subscription"], data["selection"])
+                #if not await self.send_push_notification(data["subscription"], {
+                #    "type": "generic_message",
+                #    "title": "Benachrichtigungen erfolgreich aktiviert!",
+                #    "body": "GaW Vertretungsplan"
+                #}):
+                #    raise ValueError("Could not send push notification to newly subscribed endpoint")
             else:
                 self._db.delete_push_subscription(self._plan_id, data["subscription"]["endpoint"])
             self._db.commit()
@@ -265,6 +271,42 @@ class SubstitutionPlan:
             _LOGGER.exception("Modifying push subscription failed")
             response = web.json_response({"ok": False}, status=400)
         return response
+
+    async def send_push_notification(self, subscription: dict, data) -> bool:
+        endpoint_hash = hash_endpoint(subscription["endpoint"])
+        _LOGGER.debug(f"Sending push notification to {self._plan_id}-{endpoint_hash[:6]}")
+        # noinspection PyBroadException
+        try:
+            endpoint, data, headers = pywebpush.webpush(
+                subscription, json.dumps(data),
+                vapid_private_key=settings.PRIVATE_VAPID_KEY,
+                vapid_claims={
+                    "sub": settings.VAPID_SUB,
+                    # "aud": endpoint_origin,  # aud is automatically set in webpush()
+                    # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
+                    # be longer than 24 hours from the time the request is made)
+                    "exp": int(time.time()) + 86395
+                },
+                content_encoding=settings.WEBPUSH_CONTENT_ENCODING,
+                ttl=86400,
+                curl=True)  # modifications to make this work: see beginning of this file
+            async with self._client_session.post(endpoint, data=data, headers=headers) as r:
+                if r.status >= 400:
+                    # If status code is 404 or 410, the endpoints are unavailable, so delete the
+                    # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
+                    if r.status in (404, 410):
+                        _LOGGER.debug(f"No longer valid subscription {self._plan_id}-{endpoint_hash[:6]}: "
+                                      f"{r.status} {repr(await r.text())}")
+                        return False
+                    else:
+                        _LOGGER.error(f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]}: "
+                                      f"{r.status} {repr(await r.text())}")
+                else:
+                    _LOGGER.debug(f"Successfully sent push notification to {self._plan_id}-{endpoint_hash[:6]}: "
+                                  f"{r.status} {repr(await r.text())}")
+        except Exception:
+            _LOGGER.exception(f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]}")
+        return True
 
     # background task on new substitutions
     async def _on_new_substitutions(self, affected_groups):
@@ -286,61 +328,13 @@ class SubstitutionPlan:
             if affected_groups:
                 _LOGGER.debug("Sending affected groups via push messages")
 
-                async def send_push_notification(
-                        subscription, common_affected_groups: Dict[int, Dict[str, Union[str, List[str]]]]
-                ) -> Optional[sqlite3.Row]:
-                    endpoint_hash = hash_endpoint(subscription["endpoint"])
-                    _LOGGER.debug(f"Sending push notification to "
-                                  f"{self._plan_id}-{endpoint_hash[:6]}")
-                    # noinspection PyBroadException
-                    try:
-                        data = json.dumps({"affected_groups_by_day": common_affected_groups,
-                                           "plan_id": self._plan_id,
-                                           # status_datetime.timestamp() correctly assumes that datetime is local
-                                           # time (status_datetime has no tzinfo) and returns the correct UTC
-                                           # timestamp
-                                           "timestamp": self._crawler.storage.status_datetime.timestamp()})
-
-                        endpoint, data, headers = pywebpush.webpush(
-                            subscription["subscription"], data,
-                            vapid_private_key=settings.PRIVATE_VAPID_KEY,
-                            vapid_claims={
-                                "sub": settings.VAPID_SUB,
-                                #"aud": endpoint_origin,  # aud is automatically set in webpush()
-                                # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
-                                # be longer than 24 hours from the time the request is made)
-                                "exp": int(time.time()) + 86395
-                            },
-                            ttl=86400,
-                            curl=True)  # modifications to make this work: see beginning of this file
-                        async with self._client_session.post(endpoint, data=data, headers=headers) as r:
-                            if r.status >= 400:
-                                # If status code is 404 or 410, the endpoints are unavailable, so delete the
-                                # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
-                                if r.status in (404, 410):
-                                    _LOGGER.debug(f"No longer valid subscription "
-                                                  f"{self._plan_id}-{endpoint_hash[:6]}: "
-                                                  f"{r.status} {repr(await r.text())}")
-                                    return subscription
-                                else:
-                                    _LOGGER.error(f"Could not send push notification to "
-                                                  f"{self._plan_id}-{endpoint_hash[:6]}: "
-                                                  f"{r.status} {repr(await r.text())}")
-                            else:
-                                _LOGGER.debug(
-                                    f"Successfully sent push notification to {self._plan_id}-{endpoint_hash[:6]}: "
-                                    f"{r.status} {repr(await r.text())}")
-                    except Exception:
-                        _LOGGER.exception(f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]}")
-                    return None
-
                 def iter_relevant_subscriptions():
-                    subscription: sqlite3.Row
-                    for subscription in self._db.iter_push_subscriptions(self._plan_id):
-                        selection = subscription["selection"]
+                    row: sqlite3.Row
+                    for row in self._db.iter_push_subscriptions(self._plan_id):
+                        selection = row["selection"]
                         if selection is None:
                             # selection is None when all groups are selected
-                            yield subscription, affected_groups
+                            yield row["subscription"], affected_groups
                         else:
                             intersection = {}
                             for expiry_time, day in affected_groups.items():
@@ -349,13 +343,28 @@ class SubstitutionPlan:
                                 if common_groups:
                                     intersection[expiry_time] = {"name": day["name"], "groups": common_groups}
                             if intersection:
-                                yield subscription, intersection
+                                yield row["subscription"], intersection
 
-                subscriptions_to_delete: Iterable[sqlite3.Row] = await asyncio.gather(
-                    *(send_push_notification(s, i) for s, i in iter_relevant_subscriptions()))
-                for subscription in subscriptions_to_delete:
-                    if subscription is not None:
-                        self._db.delete_push_subscription(self._plan_id, subscription["endpoint"])
+                timestamp = self._crawler.storage.status_datetime.timestamp()
+
+                async def send_notification(subscription, common_affected_groups):
+                    data = {
+                        "type": "subs_update",
+                        "affected_groups_by_day": common_affected_groups,
+                        "plan_id": self._plan_id,
+                        # status_datetime.timestamp() correctly assumes that datetime is local
+                        # time (status_datetime has no tzinfo) and returns the correct UTC
+                        # timestamp
+                        "timestamp": timestamp
+                    }
+                    if not await self.send_push_notification(subscription, data):
+                        return subscription["endpoint"]
+
+                endpoints_to_delete: Iterable[Optional[str]] = await asyncio.gather(
+                    *(send_notification(s, c) for s, c in iter_relevant_subscriptions()))
+                for endpoint in endpoints_to_delete:
+                    if endpoint is not None:
+                        self._db.delete_push_subscription(self._plan_id, endpoint)
                 self._db.commit()
         except Exception:
             _LOGGER.exception("Exception in on_new_substitutions background task")

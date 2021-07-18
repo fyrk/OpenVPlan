@@ -106,7 +106,7 @@ class SubstitutionPlanDB:
             raise ValueError("Wrong subscription object '" + str(subscription) + "'")
         self._cursor.execute("REPLACE INTO push_subscriptions2 VALUES (?,?,?,?,?)",
                              (plan_id, endpoint, subscription, selection, datetime.datetime.now()))
-        _LOGGER.debug(f"Add push subscription {plan_id}-{hash_endpoint(endpoint)[:6]}"
+        _LOGGER.debug(f"Add push subscription {plan_id}-{hash_endpoint(endpoint)[:6]} "
                       f"(origin: {urllib.parse.urlparse(endpoint).netloc})")
 
     def iter_push_subscriptions(self, plan_id: str) -> Iterable[sqlite3.Row]:
