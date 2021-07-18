@@ -74,20 +74,20 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                 new_status = self._storage.status
                 if new_status != (self.last_version_id and self.last_version_id.get("status")):
                     self.last_version_id = {"status": new_status, "etag": first_etag}
-                    changed_substitutions = True
                 else:
-                    changed_substitutions = False
+                    affected_groups = None
+                substitutions_changed = True
             else:
                 res = await self._check_for_update(session)
                 if res is not None:
                     new_status, new_status_datetime, first_site = res
                     affected_groups, _ = await self._load_data(session, first_site, new_status, new_status_datetime)
-                    changed_substitutions = True
+                    substitutions_changed = True
                 else:
                     affected_groups = None
-                    changed_substitutions = self._storage.remove_old_days()
+                    substitutions_changed = self._storage.remove_old_days()
                 _LOGGER.debug(f"[multipage-crawler] Loaded data in {time.perf_counter_ns() - t1}ns")
-            return changed_substitutions, affected_groups
+            return substitutions_changed, affected_groups
 
     async def _load_data(self, session: aiohttp.ClientSession, first_site: Optional[bytes],
                          status: Optional[str], status_datetime: Optional[datetime.datetime]) \

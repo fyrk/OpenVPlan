@@ -102,9 +102,9 @@ def get_logger():
 
 
 def plan_name_wrapper(request_handler):
-    async def wrapper(self, request: web.Request) -> web.Response:
+    async def wrapper(self, *args, **kwargs) -> web.Response:
         PLAN_NAME_CONTEXTVAR.set(self._plan_id)
-        return await request_handler(self, request)
+        return await request_handler(self, *args, **kwargs)
     return wrapper
 
 

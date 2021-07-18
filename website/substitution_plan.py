@@ -129,10 +129,6 @@ class SubstitutionPlan:
             await ws.close()
         self._websockets.clear()
 
-    async def _recreate_index_site(self):
-        self._index_site = await self._template().render_async(storage=self._crawler.storage,
-                                                               options=self._template_options)
-
     @staticmethod
     def parse_selection(url: yarl.URL) -> Tuple[str, str, str]:
         selection = ""
@@ -147,11 +143,17 @@ class SubstitutionPlan:
         return selection, selection_str, selection_qs
 
     @logger.plan_name_wrapper
-    async def update_substitutions(self, scheduler):
+    async def update_substitutions(self, scheduler, fake_affected_groups=None):
         _LOGGER.info("Updating substitutions...")
-        substitutions_have_changed, affected_groups = await self._crawler.update(self._client_session)
-        if substitutions_have_changed:
-            await self._recreate_index_site()
+        if fake_affected_groups:
+            changed = True
+            affected_groups = fake_affected_groups
+        else:
+            changed, affected_groups = await self._crawler.update(self._client_session)
+        if changed:
+            _LOGGER.info("Substitutions have changed")
+            self._index_site = await self._template().render_async(storage=self._crawler.storage,
+                                                                   options=self._template_options)
             await scheduler.spawn(self._on_new_substitutions(affected_groups))
 
     # ===================
@@ -176,29 +178,27 @@ class SubstitutionPlan:
                 else:
                     raise web.HTTPSeeOther(location=request.rel_url.update_query("all"))
 
-            substitutions_have_changed, affected_groups = await self._crawler.update(self._client_session)
+            fake_affected_groups = None
             if settings.DEBUG:
                 if "raise500" in request.query:
                     raise ValueError
                 if "event" in request.query:
                     # in development, simulate new substitutions event by "event" parameter
-                    substitutions_have_changed = True
-                    affected_groups = json.loads(request.query["event"])
-            if substitutions_have_changed:
-                _LOGGER.info("SUBSTITUTIONS HAVE CHANGED")
+                    fake_affected_groups = json.loads(request.query["event"])
+
+            await self.update_substitutions(get_scheduler(request), fake_affected_groups)
 
             selection, selection_str, selection_qs = self.parse_selection(request.url)
             if self._uppercase_selection:
                 selection_str = selection_str.upper()
 
             if not selection:
-                if substitutions_have_changed or not self._index_site:
-                    await self._recreate_index_site()
                 text = self._index_site
                 headers = RESPONSE_HEADERS
             else:
-                text = await self._template().render_async(storage=self._crawler.storage, selection=selection,
-                                                           selection_str=selection_str, options=self._template_options)
+                text = await self._template().render_async(
+                    storage=self._crawler.storage, options=self._template_options,
+                    selection=selection, selection_str=selection_str)
                 headers = RESPONSE_HEADERS_SELECTION
 
             response = web.Response(text=text, content_type="text/html", charset="utf-8",
@@ -209,11 +209,6 @@ class SubstitutionPlan:
                                 httponly=True, samesite="Lax")
             await response.prepare(request)
             await response.write_eof()
-
-            if substitutions_have_changed:
-                if selection:
-                    await self._recreate_index_site()
-                await get_scheduler(request).spawn(self._on_new_substitutions(affected_groups))
         except web.HTTPException as e:
             raise e from None
         except Exception:
