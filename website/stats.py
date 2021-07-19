@@ -231,6 +231,18 @@ class Stats:
             ca=True
         )
 
+    async def track_ferien(self, request: web.Request, path):
+        if await self._check_dnt(request):
+            return
+        await self._send_to_matomo(
+            request,
+            e_c="Ferien",
+            e_n=path,
+            e_a="Ferien",
+            url=self.anonymize_url(request.headers.get(hdrs.REFERER, "")),
+            ca=True
+        )
+
     async def track_selection_source(self, request: web.Request, plan_name):
         if await self._check_dnt(request):
             return
