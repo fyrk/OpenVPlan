@@ -165,7 +165,7 @@ if ("serviceWorker" in navigator) {
                     onNotificationsAvailable(registration);
                 } else {
                     console.warn("Push Notifications are not supported");
-                    notificationState = "unsupported";
+                    localStorage.setItem(substitutionPlanType + "-notification-state-all", "unsupported");  // for Plausible
                 }
             });
         navigator.serviceWorker.register("/sw.min.js")
@@ -175,5 +175,5 @@ if ("serviceWorker" in navigator) {
     });
 } else {
     console.warn("Service Worker is not supported");
-    notificationState = "unsupported";
+    localStorage.setItem(substitutionPlanType + "-notification-state-all", "unsupported");  // for Plausible
 }
