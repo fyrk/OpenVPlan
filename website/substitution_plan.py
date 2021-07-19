@@ -7,6 +7,7 @@ import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
 from typing import Iterable, MutableSet, Optional, Tuple, Callable
+from urllib.parse import urlparse
 
 import jinja2
 import pywebpush
@@ -274,9 +275,13 @@ class SubstitutionPlan:
 
     async def send_push_notification(self, subscription: dict, data) -> bool:
         endpoint_hash = hash_endpoint(subscription["endpoint"])
-        _LOGGER.debug(f"Sending push notification to {self._plan_id}-{endpoint_hash[:6]}")
         # noinspection PyBroadException
         try:
+            url = urlparse(subscription.get("endpoint"))  # copied from pywebpush.webpush
+            aud = "{}://{}".format(url.scheme, url.netloc)
+
+            _LOGGER.debug(f"Sending push notification to {self._plan_id}-{endpoint_hash[:6]} ({aud})")
+
             endpoint, data, headers = pywebpush.webpush(
                 subscription, json.dumps(data),
                 vapid_private_key=settings.PRIVATE_VAPID_KEY,
@@ -285,7 +290,8 @@ class SubstitutionPlan:
                     # "aud": endpoint_origin,  # aud is automatically set in webpush()
                     # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
                     # be longer than 24 hours from the time the request is made)
-                    "exp": int(time.time()) + 86395
+                    "exp": int(time.time()) + 86395,
+                    "aud": aud
                 },
                 content_encoding=settings.WEBPUSH_CONTENT_ENCODING,
                 ttl=86400,
@@ -295,15 +301,16 @@ class SubstitutionPlan:
                     # If status code is 404 or 410, the endpoints are unavailable, so delete the
                     # subscription. See https://autopush.readthedocs.io/en/latest/http.html#error-codes.
                     if r.status in (404, 410):
-                        _LOGGER.debug(f"No longer valid subscription {self._plan_id}-{endpoint_hash[:6]}: "
-                                      f"{r.status} {repr(await r.text())}")
+                        _LOGGER.debug(f"No longer valid subscription {self._plan_id}-{endpoint_hash[:6]} ({aud}): "
+                                      f"{r.status} {r.reason} {repr(await r.text())}")
                         return False
                     else:
-                        _LOGGER.error(f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]}: "
-                                      f"{r.status} {repr(await r.text())}")
+                        _LOGGER.error(
+                            f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]} ({aud}): "
+                            f"{r.status} {r.reason} {repr(await r.text())}")
                 else:
                     _LOGGER.debug(f"Successfully sent push notification to {self._plan_id}-{endpoint_hash[:6]}: "
-                                  f"{r.status} {repr(await r.text())}")
+                                  f"{r.status} {r.reason} {repr(await r.text())}")
         except Exception:
             _LOGGER.exception(f"Could not send push notification to {self._plan_id}-{endpoint_hash[:6]}")
         return True
