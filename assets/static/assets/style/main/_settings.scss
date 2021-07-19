@@ -89,8 +89,7 @@ $heading-icon-height: 0.8em;
     @extend %heading-icon;
     mask: $path no-repeat 0 0/#{$heading-icon-width} $heading-icon-height;
     @if $position-y {
-        margin-top: -$position-y;
-        margin-bottom: $position-y;
+        vertical-align: $position-y;
     }
 }
 
