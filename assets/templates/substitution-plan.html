@@ -43,7 +43,7 @@
 <div class="box substitutions-box">
     <div class="p-0 mb-3">
         <div class="row">
-            <div class="col-md-6">
+            <div class="{% if day.news %}col-md-6{% else %}col{% endif %}">
                 <div class="day-heading">
                     <span class="day-name pe-1">{{ day.name }}</span>
                     <span class="text-muted date">{{ day.date }}</span>
@@ -57,7 +57,7 @@
                 {% endif %}
             </div>
             {% if day.info %}
-                <div class="col-md-6">
+                <div class="{% if day.news %}col-md-6{% else %}col-md-7 col-lg-8 col-xl-9{% endif %}">
                     {% for title, text in day.info %}
                         <div class="day-info">
                             {% set id %}day-info-checkbox-{{ day.date|replace(".", "_") }}-{{ loop.index0 }}{% endset %}
