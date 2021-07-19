@@ -37,7 +37,10 @@ def parse_affected_groups(class_name: str) -> Tuple[Set[str], Optional[str]]:
     while name:
         match = REGEX_CLASS.match(name)
         if match is None:
-            return {class_name}, None
+            if all(not c.isdigit() for c in name):
+                # names without any digits can also be selected
+                return {strip_par(name)}, strip_par(class_name)
+            return {strip_par(name)}, None
         count += 1
         _, digits, letters = match.groups()
         affected_groups.add(digits)
