@@ -3,11 +3,11 @@
         overflow: hidden;
     }
 
-    .box:nth-child(2), footer {
+    .box:nth-child(2n), footer {
         animation: fall-left 7s linear forwards;
     }
 
-    .box:not(:nth-child(2)), footer {
+    .box:not(:nth-child(2n)), footer {
         animation: fall-right 7.5s linear forwards;
     }
 
