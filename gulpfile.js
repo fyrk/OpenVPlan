@@ -73,7 +73,7 @@ gulp.task("build-sass", () => {
             purgecss({
                 content: [
                     "assets/templates/*.min.html",
-                    "assets/static/assets/js/*.min.js"
+                    "assets/static/assets/*/*.min.js"
                 ],
                 css: [path + srcFile]
             }),
