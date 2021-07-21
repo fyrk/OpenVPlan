@@ -7,10 +7,7 @@ if (new Date() > new Date(2021, 6, 20, 3)) {
     button.addEventListener("click", e => {
         text.hidden = false
         document.documentElement.classList.add("ferien")
-        fetch("/api/event", {
-            method: "post",
-            body: new URLSearchParams({type: "ferien", path: window.location.pathname})
-        })
+        plausible("Ferien")
     })
 
     const text = document.createElement("div")

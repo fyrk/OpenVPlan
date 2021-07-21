@@ -22,3 +22,4 @@ The following custom goal events are defined:
    - Props: path
  * 500
    - Props: path
+ * Ferien

@@ -23,7 +23,8 @@ class settings:
         "plausible_domain": None,
         "plausible_js": "https://plausible.io/js/plausible.js",
         "plausible_endpoint": None,
-        "plausible_public_url": "/plausible"
+        "plausible_public_url": "/plausible",
+        "ferien": True
     }
 
     IS_PROXIED = False
