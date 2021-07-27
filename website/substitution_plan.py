@@ -25,9 +25,10 @@ _LOGGER = logging.getLogger("gawvertretung")
 
 # Time when a "<plan-name>-selection" cookie expires. This is on 29th July, as on this date, summer holidays in Lower
 # Saxony normally take place.
+# Starting at 14h June, the cookie is set until the next year.
 now = datetime.datetime.now()
 SELECTION_COOKIE_EXPIRE = formatdate(time.mktime(
-    datetime.datetime(now.year if now < datetime.datetime(now.year, 7, 29) else now.year + 1, 7, 29).timetuple()))
+    datetime.datetime(now.year if now < datetime.datetime(now.year, 6, 14) else now.year + 1, 7, 29).timetuple()))
 # Time for a cookie which should be deleted (Thu, 01 Jan 1970 00:00:00 GMT)
 DELETE_COOKIE_EXPIRE = formatdate(0)
 
@@ -204,10 +205,12 @@ class SubstitutionPlan:
 
             response = web.Response(text=text, content_type="text/html", charset="utf-8",
                                     headers=headers)
-            response.set_cookie("selection", selection_qs,
-                                expires=SELECTION_COOKIE_EXPIRE, path="/" + self._plan_id + "/",
-                                secure=not settings.DEBUG,  # secure in non-development mode
-                                httponly=True, samesite="Lax")
+            if request.cookies.get("selection", "").strip() != selection_qs:
+                # appropriate cookie is missing, set it
+                response.set_cookie("selection", selection_qs,
+                                    expires=SELECTION_COOKIE_EXPIRE, path="/" + self._plan_id + "/",
+                                    secure=not settings.DEBUG,  # secure in non-development mode
+                                    httponly=True, samesite="Lax")
             await response.prepare(request)
             await response.write_eof()
         except web.HTTPException as e:
