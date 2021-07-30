@@ -23,7 +23,7 @@ class settings:
         "plausible_domain": None,
         "plausible_js": "https://plausible.io/js/plausible.js",
         "plausible_endpoint": None,
-        "plausible_public_url": "/plausible",
+        "plausible_embed_code": "",
         "ferien": True
     }
 
@@ -41,6 +41,8 @@ class settings:
         hdrs.USER_AGENT: f"Mozilla/5.0 (compatible; GaWVertretungBot/{VERSION}; "
                          f"+https://gawvertretung.florian-raediker.de) {http.SERVER_SOFTWARE}"
     }
+
+    ADDITIONAL_CSP_DIRECTIVES = {}
 
     HEADERS_BLOCK_FLOC = True
 

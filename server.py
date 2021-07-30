@@ -30,6 +30,7 @@ env = jinja2.Environment(
 )
 
 TEMPLATE_ABOUT = partial(env.get_template, "about.min.html")
+TEMPLATE_PLAUSIBLE = partial(env.get_template, "plausible.min.html")
 TEMPLATE_ERROR404 = partial(env.get_template, settings.TEMPLATE_404)
 TEMPLATE_ERROR500 = partial(env.get_template, settings.TEMPLATE_500)
 
@@ -53,11 +54,15 @@ async def error_middleware(request: web.Request, handler):
                         charset="utf-8", headers=RESPONSE_HEADERS)
 
 
-def template_handler(template: Callable[[], jinja2.Template]):
+def template_handler(template: Callable[[], jinja2.Template], response_headers: dict = None):
+    if response_headers:
+        response_headers = {**RESPONSE_HEADERS, **response_headers}
+    else:
+        response_headers = RESPONSE_HEADERS
     # noinspection PyUnusedLocal
     async def handler(request: web.Request):
         response = web.Response(text=await template().render_async(options=settings.TEMPLATE_OPTIONS), content_type="text/html",
-                                headers=RESPONSE_HEADERS)
+                                headers=response_headers)
         await response.prepare(request)
         await response.write_eof()
         return response
@@ -150,7 +155,8 @@ async def app_factory(dev_mode, start_log_msg):
     app.add_routes([
         web.get("/", root_handler),
         web.get("/privacy", redirect_handler("/about")),
-        web.get("/about", template_handler(TEMPLATE_ABOUT))
+        web.get("/about", template_handler(TEMPLATE_ABOUT)),
+        web.get("/plausible", template_handler(TEMPLATE_PLAUSIBLE, {"X-Robots-Tag": "noindex"}))
     ])
 
     if settings.DEBUG:

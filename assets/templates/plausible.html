@@ -1,0 +1,10 @@
+{% extends "_base.min.html" %}
+{% import "_common.html" as c %}
+
+{% block title %}{% block og_title %}Plausible{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="box">
+    {{ options.plausible_embed_code|safe }}
+</div>
+{% endblock %}

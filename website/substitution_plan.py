@@ -54,6 +54,12 @@ if plausible_js := settings.TEMPLATE_OPTIONS.get("plausible_js"):
     csp["script-src"].append(plausible_js)
 if plausible_endpoint := settings.TEMPLATE_OPTIONS.get("plausible_endpoint"):
     csp["connect-src"].append(plausible_endpoint)
+for name, value in settings.ADDITIONAL_CSP_DIRECTIVES.items():
+    if type(csp[name]) is not list:
+        csp[name] = [csp[name]]
+    if type(value) is not list:
+        value = [value]
+    csp[name].extend(value)
 
 csp_header = ""
 for key, value in csp.items():

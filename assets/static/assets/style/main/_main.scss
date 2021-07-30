@@ -41,7 +41,17 @@ a {
     filter: var(--btn-close-white-filter); // copied from Bootstrap's _close.scss
 }*/  // no longer required since there are currently no news
 
-object {
+/*! purgecss start ignore */ // iframe is only used by Plausible embed code
+object, iframe {
     // Chrome adds a white background (instead of transparent) to <object> if (prefers-color-scheme: dark). Fix:
     color-scheme: light;
 }
+
+// Plausible embed iframe
+iframe[plausible-embed] {
+    width: 1px; min-width: 100%; height: 1600px; // copied from embed code
+}
+#plausible-ref {
+    font-size: 0.8em;
+}
+/*! purgecss end ignore */
