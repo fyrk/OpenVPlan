@@ -69,6 +69,8 @@ const assetsToCache = [
     "/assets/js/substitutions.min.js",
     "/assets/js/dark-theme.min.js",
     "/assets/js/timetables.min.js",
+    "/assets/ferien/script.min.js",
+    "/assets/ferien/style.css",
     //"/assets/img/python-powered.min.svg", // caching <object src="..."> doesn't work: https://stackoverflow.com/questions/56854918/how-to-interact-with-an-svg-asset-in-an-offline-progressive-web-app
     //"/assets/img/about.min.svg",
     //"/assets/style/about.css",
