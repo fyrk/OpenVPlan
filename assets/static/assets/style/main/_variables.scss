@@ -2,9 +2,6 @@
 $table-group-separator-width: 2px;
 
 // BOOTSTRAP STYLE OVERRIDES
-// same as Bootstrap with system-ui at the start removed:
-$font-family-sans-serif: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-$font-family-base: $font-family-sans-serif;
 $font-size-base: 1rem;
 
 $headings-font-weight: 700;
@@ -16,6 +13,8 @@ $h5-font-size: $font-size-base;
 $h6-font-size: $font-size-base;
 
 $table-cell-padding-x-sm: 0.35rem;
+
+$code-color: initial;
 
 
 // THEME COLORS
@@ -56,6 +55,13 @@ $nav-pills-link-active-bg: var(--primary);
 
 @import "node_modules/bootstrap/scss/functions";
 @import "node_modules/bootstrap/scss/variables";
+
+
+// copied from bootstrap-reboot.scss:
+// Prevent the usage of custom properties since we don't add them to `:root` in reboot
+$font-family-base: $font-family-sans-serif; // stylelint-disable-line scss/dollar-variable-default
+$font-family-code: $font-family-monospace; // stylelint-disable-line scss/dollar-variable-default
+
 
 // In the following color declarations, variables from Bootstrap can't be used because they're overridden above
 // (overriding the values at the end of the file doesn't work - the changes are reflected in the maps).
