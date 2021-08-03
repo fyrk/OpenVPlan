@@ -91,6 +91,7 @@ gulp.task("minify-xml", () => {
     const srcFile = argv.srcFile;
     const destFile = argv.destFile;
     const path = argv.path || "assets/templates/";
+    console.log(srcFile, destFile, path);
     let x = gulp.src(path + srcFile);
     if (destFile === "_base.min.html")
         x = x.pipe(replace("<!-- ###realfavicon-replace### -->", JSON.parse(fs.readFileSync(FAVICON_DATA_FILE)).favicon.html_code));
@@ -99,7 +100,7 @@ gulp.task("minify-xml", () => {
             collapseBooleanAttributes: true,
             collapseWhitespace: true,
             removeComments: true,
-            ignoreCustomFragments: [/<!--bi-([\w-]*)-->/]
+            ignoreCustomFragments: [/<!--bi-([\w-]*)-->/, /<\?(.*?)\?>/]
         }))
         .pipe(rename(destFile))
         .pipe(gulp.dest(path));
