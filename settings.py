@@ -12,8 +12,10 @@ class settings:
 
     DEBUG = False
 
-    DATA_DIR = "data/"
-    LOGFILE = "data/website.log"
+    DATA_DIR = "/var/lib/gawvertretung"
+    CACHE_DIR = "/var/cache/gawvertretung"
+    LOGFILE = "/var/log/gawvertretung/gawvertretung.log"
+
     TELEGRAM_BOT_LOGGER_TOKEN: Optional[str] = None
     TELEGRAM_BOT_LOGGER_CHAT_ID: Optional[Union[int, str]] = None
     TELEGRAM_BOT_LOGGER_USE_FIXED_WIDTH: bool = False

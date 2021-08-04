@@ -17,11 +17,19 @@ from website.substitution_plan import RESPONSE_HEADERS, SubstitutionPlan
 
 os.chdir(os.path.dirname(__file__))
 
+for directory in (
+    settings.DATA_DIR,
+    settings.CACHE_DIR,
+    os.path.dirname(settings.LOGFILE)
+):
+    os.makedirs(directory, exist_ok=True)
+
+
 _LOGGER = logger.get_logger()
 
 env = jinja2.Environment(
     loader=jinja2.FileSystemLoader("assets/templates"),
-    bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(settings.DATA_DIR)),
+    bytecode_cache=jinja2.FileSystemBytecodeCache(os.path.join(settings.CACHE_DIR)),
     enable_async=True,
     autoescape=True,
     trim_blocks=True,

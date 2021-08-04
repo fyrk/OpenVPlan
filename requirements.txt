@@ -2,7 +2,6 @@ aiohttp
 jinja2
 sortedcontainers
 pywebpush
-cryptography
 aiojobs
 yarl
 aiocron
