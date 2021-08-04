@@ -27,7 +27,7 @@
     .box:last-child:not(.title-box) {
         border-bottom-right-radius: $border-radius-lg;
         border-bottom-left-radius: $border-radius-lg;
-        box-shadow: 0 5px 5px 0 #7575754f;
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
     }
 }
 
