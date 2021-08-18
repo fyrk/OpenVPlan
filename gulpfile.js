@@ -77,7 +77,7 @@ const sass = require("gulp-dart-sass");
 const postcss = require("gulp-postcss");
 const autoprefixer = require("autoprefixer");
 const purgecss = require("@fullhuman/postcss-purgecss");
-const replace = require('gulp-replace');
+const replace = require("gulp-replace");
 
 function getBootstrapIcon(name) {
     return fs.readFileSync("node_modules/bootstrap-icons/icons/" + name + ".svg", "utf8")
@@ -143,7 +143,7 @@ gulp.task("minify-xml", () => {
 // ================
 
 // the following is copied from the output of https://realfavicongenerator.net
-const realFavicon = require ('gulp-real-favicon');
+const realFavicon = require("gulp-real-favicon");
 const del = require("del");
 
 // File where the favicon markups are stored
