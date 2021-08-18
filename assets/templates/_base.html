@@ -18,17 +18,16 @@
     <meta property="og:locale" content="de_DE">
     <meta name="color-scheme" content="light dark">
     <script>const a=localStorage.getItem("dark-theme");null!=a&&(localStorage.setItem("theme",a),localStorage.removeItem("dark-theme"));switch(localStorage.getItem("theme")){case "light":document.documentElement.classList.add("light");break;case "dark":document.documentElement.classList.add("dark")}</script>
-    <link href="/assets/style/main.css?v=8" rel="stylesheet">
+    <link href="/assets/style/main.css?v=9" rel="stylesheet">
     {% if options.ferien %}<link href="/assets/ferien/style.css?v=2" rel="stylesheet">{% endif %}
     <!-- the following comment is replaced by gulpfile.js with generated code by realfavicon; the following two properties are missing -->
     <!-- ###realfavicon-replace### -->
     <meta property="og:image:width" content="500">
     <meta property="og:image:height" content="500">
-    {% set use_plausible = options and options.plausible_domain and options.plausible_js %}
-    {% if use_plausible %}<script>window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)}</script>{% endif %}
+    <script>window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)}</script>
     {% block scripts %}{% endblock scripts %}
     {% if options.ferien %}<script defer src="/assets/ferien/script.min.js"></script>{% endif %}
-    {% if use_plausible %}<script defer {% if options.plausible_domain %}data-domain="{{ options.plausible_domain }}" {% endif %}{% if options.plausible_endpoint %}data-api="{{ options.plausible_endpoint }}" {% endif %}src="{{ options.plausible_js }}"></script>{% endif %}
+    {% if options and options.plausible_domain and options.plausible_js %}<script defer {% if options.plausible_domain %}data-domain="{{ options.plausible_domain }}" {% endif %}{% if options.plausible_endpoint %}data-api="{{ options.plausible_endpoint }}" {% endif %}src="{{ options.plausible_js }}"></script>{% endif %}
 </head>
 
 <body class="d-flex flex-column">
