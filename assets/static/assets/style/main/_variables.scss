@@ -1,3 +1,6 @@
+
+$variable-prefix: "";
+
 // CUSTOM VARIABLES
 $table-group-separator-width: 2px;
 
@@ -26,13 +29,13 @@ $primary: #fc8600;
 //    $value: var(--value).
 //    This doesn't work if the color value is somehow processed further in Bootstrap (e.g. with darken()).
 //    If the latter is the case, the line in the following block is commented out and uses of the color inside Bootstrap
-//    are manually overridden inside _theme.scss.
+//    are manually overridden inside _themes.scss.
 // 2. If the value is used as a value for another color, this other color can sometimes be set to var(...).
 
 // 1.
 //$primary: var(--primary);
 //$body-bg: var(--body-bg);
-$body-color: var(--body-color);
+//$body-color: var(--body-color);
 $text-muted: var(--text-muted);
 $input-border-color: var(--input-border-color);
 $input-disabled-bg: var(--input-disabled-bg);
@@ -50,6 +53,8 @@ $form-check-input-checked-color: inherit;
 $form-switch-checked-bg-image: var(--form-switch-checked-bg-image);
 $form-check-radio-checked-bg-image: var(--form-check-radio-checked-bg-image);
 // 2.
+$input-color: var(--body-color);
+$table-color: var(--body-color);
 $nav-pills-link-active-bg: var(--primary);
 
 
