@@ -52,6 +52,8 @@ class settings:
 
     SUBSTITUTION_PLANS: Optional[Dict[str, Dict[str, Dict[str, Any]]]] = None
 
+    ABOUT_HTML: str = ""
+
     __locked = False
 
     def __setattr__(self, key, value):

@@ -114,3 +114,10 @@ s.SUBSTITUTION_PLANS = {
         "uppercase_selection": True
     }
 }
+
+s.ABOUT_HTML = """<h1>Impressum</h1>
+<REPLACE>
+
+<h1>Datenschutzerklärung</h1>
+<REPLACE>
+"""

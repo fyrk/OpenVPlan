@@ -62,15 +62,17 @@ async def error_middleware(request: web.Request, handler):
                         charset="utf-8", headers=RESPONSE_HEADERS)
 
 
-def template_handler(template: Callable[[], jinja2.Template], response_headers: dict = None):
+def template_handler(template: Callable[[], jinja2.Template], response_headers: dict = None, render_args: dict = None):
     if response_headers:
         response_headers = {**RESPONSE_HEADERS, **response_headers}
     else:
         response_headers = RESPONSE_HEADERS
+    if not render_args:
+        render_args = {}
     # noinspection PyUnusedLocal
     async def handler(request: web.Request):
-        response = web.Response(text=await template().render_async(options=settings.TEMPLATE_OPTIONS), content_type="text/html",
-                                headers=response_headers)
+        response = web.Response(text=await template().render_async(options=settings.TEMPLATE_OPTIONS, **render_args),
+                                content_type="text/html", headers=response_headers)
         await response.prepare(request)
         await response.write_eof()
         return response
@@ -163,7 +165,7 @@ async def app_factory(dev_mode, start_log_msg):
     app.add_routes([
         web.get("/", root_handler),
         web.get("/privacy", redirect_handler("/about")),
-        web.get("/about", template_handler(TEMPLATE_ABOUT)),
+        web.get("/about", template_handler(TEMPLATE_ABOUT, render_args={"about_html": settings.ABOUT_HTML})),
         web.get("/plausible", template_handler(TEMPLATE_PLAUSIBLE, {"X-Robots-Tag": "noindex"}))
     ])
 
