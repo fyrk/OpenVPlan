@@ -4,7 +4,7 @@ from typing import Optional, Dict, Any, Union
 from aiohttp import http, hdrs
 
 
-class settings:
+class __Settings:
     VERSION = "5.0"
 
     HOST = "localhost"
@@ -67,6 +67,6 @@ try:
     import local_settings
 except ImportError:
     pass
-settings.__locked = True
+__Settings.__locked = True
 
-settings = settings()
+settings = __Settings()
