@@ -91,13 +91,12 @@ pywebpush.WebPusher.as_curl = lambda s, e, d, h: (e, d, h)
 
 class SubstitutionPlan:
     def __init__(self, plan_id: str, crawler: BaseSubstitutionCrawler, template: Callable[[], jinja2.Template],
-                 error500_template: Callable[[], jinja2.Template], template_options: dict, uppercase_selection: bool):
+                 error500_template: Callable[[], jinja2.Template], render_args: dict, uppercase_selection: bool):
         self._plan_id = plan_id
         self._crawler = crawler
         self._template = template
         self._error500_template = error500_template
-        self._template_options = template_options
-        self._template_options["id"] = self._plan_id
+        self._render_args = render_args
         self._uppercase_selection = uppercase_selection
 
         self._index_site = None
@@ -160,9 +159,10 @@ class SubstitutionPlan:
             changed, affected_groups = await self._crawler.update(self._client_session)
         if changed:
             _LOGGER.info("Substitutions have changed")
-            self._index_site = await self._template().render_async(storage=self._crawler.storage,
-                                                                   options=self._template_options)
+            self._index_site = await self._template().render_async(**self._render_args, storage=self._crawler.storage)
             await scheduler.spawn(self._on_new_substitutions(affected_groups))
+        elif settings.DEBUG:
+            self._index_site = await self._template().render_async(**self._render_args, storage=self._crawler.storage)
 
     # ===================
     # REQUEST HANDLERS
@@ -205,7 +205,7 @@ class SubstitutionPlan:
                 headers = RESPONSE_HEADERS
             else:
                 text = await self._template().render_async(
-                    storage=self._crawler.storage, options=self._template_options,
+                    **self._render_args, storage=self._crawler.storage,
                     selection=selection, selection_str=selection_str)
                 headers = RESPONSE_HEADERS_SELECTION
 
@@ -223,8 +223,9 @@ class SubstitutionPlan:
             raise e from None
         except Exception:
             _LOGGER.exception("Exception occurred while handling request")
-            response = web.Response(text=await self._error500_template().render_async(options=self._template_options),
-                                    status=500, content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
+            response = web.Response(
+                text=await self._error500_template().render_async(**self._render_args),
+                status=500, content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
         return response
 
     # /api/wait-for-updates

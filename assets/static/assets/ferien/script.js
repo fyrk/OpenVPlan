@@ -1,3 +1,5 @@
+//const d = new Date()
+//if (d > new Date(2021, 6, 20, 3) && d < new Date(2021, 9, 2, 0, 0)) {
 if (new Date() > new Date(2021, 6, 20, 3)) {
     const body = document.body
     const button = document.createElement("button")

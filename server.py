@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 from functools import partial
 from typing import Callable
@@ -43,6 +44,22 @@ TEMPLATE_ERROR404 = partial(env.get_template, settings.TEMPLATE_404)
 TEMPLATE_ERROR500 = partial(env.get_template, settings.TEMPLATE_500)
 
 
+_CACHE_BUSTING = None
+
+def template_static(path: str):
+    global _CACHE_BUSTING
+    if settings.DEBUG or _CACHE_BUSTING is None:  # always reload cache_busting.json in debug mode
+        with open("assets/cache_busting.json", "r") as f:
+            _CACHE_BUSTING = json.load(f)
+    if path in _CACHE_BUSTING:
+        return "/" + path + "?v=" + _CACHE_BUSTING[path]
+    _LOGGER.warn(f"Missing cache busting parameter for '{path}'")
+    return "/" + path
+
+
+DEFAULT_RENDER_ARGS = {"options": settings.TEMPLATE_OPTIONS, "static": template_static}
+
+
 @web.middleware
 async def error_middleware(request: web.Request, handler):
     # noinspection PyBroadException
@@ -50,7 +67,7 @@ async def error_middleware(request: web.Request, handler):
         return await handler(request)
     except web.HTTPException as e:
         if e.status == 404:
-            return web.Response(text=await TEMPLATE_ERROR404().render_async(options=settings.TEMPLATE_OPTIONS),
+            return web.Response(text=await TEMPLATE_ERROR404().render_async(**DEFAULT_RENDER_ARGS),
                                 status=404, content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
         raise e from None
     except Exception:
@@ -58,8 +75,8 @@ async def error_middleware(request: web.Request, handler):
     except BaseException as e:
         _LOGGER.exception(f"{request.method} {request.path} BaseException while handling request")
         raise e
-    return web.Response(text=await TEMPLATE_ERROR500().render_async(options=settings.TEMPLATE_OPTIONS), status=500, content_type="text/html",
-                        charset="utf-8", headers=RESPONSE_HEADERS)
+    return web.Response(text=await TEMPLATE_ERROR500().render_async(**DEFAULT_RENDER_ARGS),
+                        status=500, content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
 
 
 def template_handler(template: Callable[[], jinja2.Template], response_headers: dict = None, render_args: dict = None):
@@ -71,7 +88,7 @@ def template_handler(template: Callable[[], jinja2.Template], response_headers: 
         render_args = {}
     # noinspection PyUnusedLocal
     async def handler(request: web.Request):
-        response = web.Response(text=await template().render_async(options=settings.TEMPLATE_OPTIONS, **render_args),
+        response = web.Response(text=await template().render_async(**DEFAULT_RENDER_ARGS, **render_args),
                                 content_type="text/html", headers=response_headers)
         await response.prepare(request)
         await response.write_eof()
@@ -140,11 +157,14 @@ async def app_factory(dev_mode, start_log_msg):
             raise ValueError(f"Invalid parser id '{parser_id}'")
         crawler_options = plan_config["crawler"].get("options", {})
         parser_options = plan_config["parser"].get("options", {})
-        template_options = {**settings.TEMPLATE_OPTIONS, **plan_config.get("template_options", {})}
+        template_options = {**settings.TEMPLATE_OPTIONS, **plan_config.get("template_options", {}), "id": plan_id}
         crawler = crawler_class(None,  # last_version_id will be set in SubstitutionPlan.set_db
                                 parser_class, parser_options, **crawler_options)
-        plan = SubstitutionPlan(plan_id, crawler, partial(env.get_template, "substitution-plan.min.html"),
-                                partial(env.get_template, "error-500-substitution-plan.min.html"), template_options,
+        plan = SubstitutionPlan(plan_id,
+                                crawler,
+                                partial(env.get_template, "substitution-plan.min.html"),
+                                partial(env.get_template, "error-500-substitution-plan.min.html"),
+                                {"options": template_options, "static": template_static},
                                 plan_config.get("uppercase_selection", False))
 
         update_subs = get_update_subs_func(app, plan)

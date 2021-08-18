@@ -5,7 +5,29 @@ const rename = require("gulp-rename");
 const fs = require("fs");
 
 
-const closureCompiler = require("google-closure-compiler").gulp();
+// ================
+// CACHE-BUSTING
+// ================
+
+const buster = require("gulp-buster");
+
+gulp.task("cache-busting",() => {
+    return gulp.src(["assets/static/assets/**/*.min.js","assets/static/assets/**/*.css"])
+        .pipe(buster({
+            fileName: "assets/cache_busting.json",
+            relativePath: "assets/static/"
+        }))
+        .pipe(gulp.dest("."));
+})
+
+
+// ================
+// BUILD-JS
+// ================
+
+const uglify = require("gulp-uglify");
+const wrap = require("gulp-wrap");
+const concat = require("gulp-concat");
 
 const SUBSTITUTIONS_BUNDLE_FILES = [
     "substitutions-base.js",
@@ -17,7 +39,7 @@ const SUBSTITUTIONS_BUNDLE_FILES = [
     "plausible.js"
 ];
 
-gulp.task("build-js", () => {
+gulp.task("__build-js", () => {
     const srcFile = argv.srcFile;
     let destFile = argv.destFile;
     let path = argv.path;
@@ -35,24 +57,21 @@ gulp.task("build-js", () => {
     }
     return s
         .pipe(sourcemaps.init())
-        .pipe(closureCompiler({
-            js_output_file: destFile,
-            assume_function_wrapper: true,
-            isolation_mode: "IIFE",
-            source_map_format: "V3",
-            language_in: "ECMASCRIPT_NEXT_IN",
-            language_out: "ECMASCRIPT_NEXT",
+        .pipe(concat(destFile))
+        .pipe(wrap('!function(){"use strict";<%= contents %>}()'))
+        .pipe(uglify({
+            toplevel: true
         }))
         .pipe(sourcemaps.write(sourceMapDest))
         .pipe(gulp.dest(path));
 })
 
+gulp.task("build-js", gulp.series(["__build-js", "cache-busting"]))
 
-function getBootstrapIcon(name) {
-    return fs.readFileSync("node_modules/bootstrap-icons/icons/" + name + ".svg", "utf8")
-        .replace(/>\s*</g, "><")
-        .replace(/"/g, "'");
-}
+
+// ================
+// BUILD-SASS
+// ================
 
 const sass = require("gulp-dart-sass");
 const postcss = require("gulp-postcss");
@@ -60,7 +79,13 @@ const autoprefixer = require("autoprefixer");
 const purgecss = require("@fullhuman/postcss-purgecss");
 const replace = require('gulp-replace');
 
-gulp.task("build-sass", () => {
+function getBootstrapIcon(name) {
+    return fs.readFileSync("node_modules/bootstrap-icons/icons/" + name + ".svg", "utf8")
+        .replace(/>\s*</g, "><")
+        .replace(/"/g, "'");
+}
+
+gulp.task("__build-sass", () => {
     const srcFile = argv.srcFile;
     const path = argv.path || "assets/static/assets/style/";
     return gulp.src(path + srcFile)
@@ -82,8 +107,14 @@ gulp.task("build-sass", () => {
         .pipe(sourcemaps.write("/"))
         .pipe(replace(/!bi-([\w-]*)/g, match => getBootstrapIcon(match.substr(4))))
         .pipe(gulp.dest(path));
-});
+})
 
+gulp.task("build-sass", gulp.series(["__build-sass", "cache-busting"]))
+
+
+// ================
+// MINIFY-XML
+// ================
 
 const htmlmin = require("gulp-html-minifier-terser");
 
@@ -107,7 +138,10 @@ gulp.task("minify-xml", () => {
 });
 
 
+// ================
 // FAVICON GENERATOR
+// ================
+
 // the following is copied from the output of https://realfavicongenerator.net
 const realFavicon = require ('gulp-real-favicon');
 const del = require("del");

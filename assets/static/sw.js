@@ -72,8 +72,6 @@ const assetsToCache = [
     "/assets/ferien/script.min.js",
     "/assets/ferien/style.css",
     //"/assets/img/python-powered.min.svg", // caching <object src="..."> doesn't work: https://stackoverflow.com/questions/56854918/how-to-interact-with-an-svg-asset-in-an-offline-progressive-web-app
-    //"/assets/img/about.min.svg",
-    //"/assets/style/about.css",
     "/favicon-32x32.png",
     "/android-chrome-192x192.png"
 ];

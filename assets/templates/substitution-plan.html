@@ -15,9 +15,9 @@
     <link rel="manifest" href="app.webmanifest">
 {% endblock %}
 {% block scripts %}
-    <script defer src="/assets/js/substitutions.min.js?v=15"></script>
+    <script defer src="{{ static('assets/js/substitutions.min.js') }}"></script>
     {% if options["supports_timetables"] and selection %}
-        <script defer src="/assets/js/timetables.min.js?v=6"></script>
+        <script defer src="{{ static('assets/js/timetables.min.js') }}"></script>
     {% endif %}
 {% endblock %}
 
