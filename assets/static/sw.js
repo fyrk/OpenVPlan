@@ -1,4 +1,22 @@
 
+/*
+ * GaW-Vertretungsplan
+ * Copyright (C) 2019-2021  Florian Rädiker
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 // the following is inspired by code from (https://github.com/plausible/analytics/blob/0089add5944177bd2352510236a09157dc9d16bf/tracker/src/plausible.js, MIT license)
 // the original code isn't designed to be used with SWs
 //var plausible_ignore = window.localStorage.plausible_ignore;  // TODO: localStorage is not supported by SW

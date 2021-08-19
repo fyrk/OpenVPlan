@@ -1,4 +1,5 @@
 deploy.sh
+assets/static/assets/js/plausible.outbound-links.js
 
 .DS_Store
 node_modules/
