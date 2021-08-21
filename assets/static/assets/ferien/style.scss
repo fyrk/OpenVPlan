@@ -87,3 +87,10 @@
     font-size: 10vw;
     user-select: none;
 }
+
+// don't let #ferien-btn obscure the footer text
+@media (max-width: 900px) {
+    footer {
+        padding-bottom: 8rem; // height + margin-bottom of #ferien-btn
+    }
+}
