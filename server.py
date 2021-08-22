@@ -155,7 +155,7 @@ def get_update_subs_func(app, plan):
 
 
 async def app_factory(start_log_msg):
-    await logger.init(settings.LOGFILE)
+    await logger.init()
     _LOGGER.info(start_log_msg)
 
     app = web.Application(middlewares=[logger.logging_middleware, error_middleware])

@@ -76,10 +76,7 @@ class TelegramBotLogHandler(logging.Handler):
         await self._client_session.close()
 
 
-async def init(filepath):
-    file_handler = logging.handlers.WatchedFileHandler(filepath, encoding="utf-8")
-    file_handler.setFormatter(_log_formatter)
-    _root.addHandler(file_handler)
+async def init():
     if settings.TELEGRAM_BOT_LOGGER_TOKEN:
         global _tg_bot_handler
         _tg_bot_handler = TelegramBotLogHandler(aiohttp.ClientSession(), settings.TELEGRAM_BOT_LOGGER_LEVEL,
