@@ -22,10 +22,9 @@ import sqlite3
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
-from typing import Iterable, MutableSet, Optional, Tuple, Callable
+from typing import Iterable, MutableSet, Optional, Tuple, Callable, Awaitable
 from urllib.parse import urlparse
 
-import jinja2
 import pywebpush
 import yarl
 from aiohttp import ClientSession, web, WSMessage, WSMsgType
@@ -66,9 +65,9 @@ csp = {
     "frame-src": "'self' mailto:",
     "object-src": "'self' mailto:"
 }
-if plausible_js := settings.TEMPLATE_OPTIONS.get("plausible_js"):
+if settings.PLAUSIBLE and (plausible_js := settings.PLAUSIBLE.get("js")):
     csp["script-src"].append(plausible_js)
-if plausible_endpoint := settings.TEMPLATE_OPTIONS.get("plausible_endpoint"):
+if settings.PLAUSIBLE and (plausible_endpoint := settings.PLAUSIBLE.get("endpoint")):
     csp["connect-src"].append(plausible_endpoint)
 for name, value in settings.ADDITIONAL_CSP_DIRECTIVES.items():
     if type(csp[name]) is not list:
@@ -106,14 +105,10 @@ pywebpush.WebPusher.as_curl = lambda s, e, d, h: (e, d, h)
 
 
 class SubstitutionPlan:
-    def __init__(self, plan_id: str, crawler: BaseSubstitutionCrawler, template: Callable[[], jinja2.Template],
-                 error500_template: Callable[[], jinja2.Template], render_args: dict, uppercase_selection: bool):
+    def __init__(self, plan_id: str, crawler: BaseSubstitutionCrawler, render_func: Callable[..., Awaitable[str]]):
         self._plan_id = plan_id
         self._crawler = crawler
-        self._template = template
-        self._error500_template = error500_template
-        self._render_args = render_args
-        self._uppercase_selection = uppercase_selection
+        self._render_func = render_func
 
         self._index_site = None
         self._serialization_filepath = None
@@ -175,10 +170,10 @@ class SubstitutionPlan:
             changed, affected_groups = await self._crawler.update(self._client_session)
         if changed:
             _LOGGER.info("Substitutions have changed")
-            self._index_site = await self._template().render_async(**self._render_args, storage=self._crawler.storage)
+            self._index_site = await self._render_func(storage=self._crawler.storage)
             await scheduler.spawn(self._on_new_substitutions(affected_groups))
         elif settings.DEBUG:
-            self._index_site = await self._template().render_async(**self._render_args, storage=self._crawler.storage)
+            self._index_site = await self._render_func(storage=self._crawler.storage)
 
     # ===================
     # REQUEST HANDLERS
@@ -213,16 +208,13 @@ class SubstitutionPlan:
             await self.update_substitutions(get_scheduler(request), fake_affected_groups)
 
             selection, selection_str, selection_qs = self.parse_selection(request.url)
-            if self._uppercase_selection:
-                selection_str = selection_str.upper()
 
             if not selection:
                 text = self._index_site
                 headers = RESPONSE_HEADERS
             else:
-                text = await self._template().render_async(
-                    **self._render_args, storage=self._crawler.storage,
-                    selection=selection, selection_str=selection_str)
+                text = await self._render_func(storage=self._crawler.storage,
+                                               selection=selection, selection_str=selection_str)
                 headers = RESPONSE_HEADERS_SELECTION
 
             response = web.Response(text=text, content_type="text/html", charset="utf-8",
@@ -235,13 +227,13 @@ class SubstitutionPlan:
                                     httponly=True, samesite="Lax")
             await response.prepare(request)
             await response.write_eof()
-        except web.HTTPException as e:
-            raise e from None
+        except web.HTTPException:
+            raise
         except Exception:
-            _LOGGER.exception("Exception occurred while handling request")
-            response = web.Response(
-                text=await self._error500_template().render_async(**self._render_args),
-                status=500, content_type="text/html", charset="utf-8", headers=RESPONSE_HEADERS)
+            _LOGGER.exception("Exception while handling substitution request")
+            # set info for error handling in server.py
+            request["plan_id"] = self._plan_id
+            raise
         return response
 
     # /api/wait-for-updates

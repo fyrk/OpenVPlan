@@ -31,15 +31,18 @@ s.TELEGRAM_BOT_LOGGER_CHAT_ID = 0  # <REPLACE>
 s.TELEGRAM_BOT_LOGGER_USE_FIXED_WIDTH = False
 s.TELEGRAM_BOT_LOGGER_LEVEL = logging.WARNING
 
-s.TEMPLATE_OPTIONS = {
-    "plausible_domain": "<REPLACE_PLAUSIBLE-DOMAIN>",
-    "plausible_js": "https://<REPLACE_PLAUSIBLE-DOMAIN>/js/plausible.outbound-links.js",
-    "plausible_endpoint": "https://<REPLACE_PLAUSIBLE-DOMAIN>/api/event",
-    "plausible_embed_code": """<iframe plausible-embed src="<REPLACE>" scrolling="no" frameborder="0" loading="lazy"></iframe>
+s.PLAUSIBLE = {
+    "domain": "<REPLACE_PLAUSIBLE-DOMAIN>",
+    "js": "https://<REPLACE_PLAUSIBLE-DOMAIN>/js/plausible.outbound-links.js",
+    "endpoint": "https://<REPLACE_PLAUSIBLE-DOMAIN>/api/event",
+    "embed_code": """<iframe plausible-embed src="<REPLACE>" scrolling="no" frameborder="0" loading="lazy"></iframe>
 <p id="plausible-ref">Stats powered by <a target="_blank" href="https://plausible.io">Plausible Analytics</a></p>
-<script async src="https://<REPLACE_PLAUSIBLE-DOMAIN>/js/embed.host.js"></script>""",
-    "ferien": True
+<script async src="https://<REPLACE_PLAUSIBLE-DOMAIN>/js/embed.host.js"></script>"""
 }
+
+s.ENABLE_FERIEN = False
+s.FERIEN_START = None
+s.FERIEN_END = None
 
 s.ADDITIONAL_CSP_DIRECTIVES = {
     "script-src": "https://<REPLACE_PLAUSIBLE-DOMAIN>/js/embed.host.js",
@@ -125,9 +128,9 @@ s.SUBSTITUTION_PLANS = {
                 "selection_all": "Alle Vertretungen",
                 "notifications_info_all": "Du wirst für alle Vertretungen benachrichtigt. Wähle Kürzel aus, um nur für "
                                           "bestimmte Kürzel benachrichtigt zu werden."
-            }
-        },
-        "uppercase_selection": True
+            },
+            "uppercase_selection": True
+        }
     }
 }
 

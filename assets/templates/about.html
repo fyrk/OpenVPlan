@@ -1,9 +1,8 @@
 {% extends "_base.min.html" %}
-{% import "_common.html" as c %}
 
 {% block title %}{% block og_title %}Impressum & Datenschutzerklärung{% endblock %}{% endblock %}
 {% block keywords %}, Impressum, Datenschutzerklärung{% endblock %}
-{% block breadcrumb_list %}{{ c.breadcrumb_list("Impressum & Datenschutzerklärung", "https://gawvertretung.florian-raediker.de/about") }}{% endblock %}
+{% block breadcrumb_list %}{{ breadcrumb_list("Impressum & Datenschutzerklärung", "about") }}{% endblock %}
 
 {% block content %}
 <div class="box">
