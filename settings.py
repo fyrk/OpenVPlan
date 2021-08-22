@@ -23,32 +23,30 @@ from aiohttp import http, hdrs
 class __Settings:
     VERSION = "5.0"
 
-    HOST = "localhost"
+    PATH = None
+    HOST = "0.0.0.0"
     PORT = 8080
 
     DEBUG = False
 
     DATA_DIR = "/var/lib/gawvertretung"
     CACHE_DIR = "/var/cache/gawvertretung"
-    LOGFILE = "/var/log/gawvertretung/gawvertretung.log"
 
     TELEGRAM_BOT_LOGGER_TOKEN: Optional[str] = None
     TELEGRAM_BOT_LOGGER_CHAT_ID: Optional[Union[int, str]] = None
     TELEGRAM_BOT_LOGGER_USE_FIXED_WIDTH: bool = False
     TELEGRAM_BOT_LOGGER_LEVEL: int = logging.WARNING
 
-    TEMPLATE_OPTIONS: dict = {
-        "plausible_domain": None,
-        "plausible_js": "https://plausible.io/js/plausible.js",
-        "plausible_endpoint": None,
-        "plausible_embed_code": "",
-        "ferien": True
+    PLAUSIBLE: dict = {
+        "domain": None,
+        "js": "https://plausible.io/js/plausible.js",
+        "endpoint": None,
+        "embed_code": ""
     }
 
-    IS_PROXIED = False
-
-    TEMPLATE_404: str = "error-404.min.html"
-    TEMPLATE_500: str = "error-500-all.min.html"
+    ENABLE_FERIEN = True
+    FERIEN_START = None
+    FERIEN_END = None
 
     PUBLIC_VAPID_KEY: Optional[str] = None
     PRIVATE_VAPID_KEY: Optional[str] = None

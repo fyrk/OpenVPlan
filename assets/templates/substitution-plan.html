@@ -1,11 +1,14 @@
 {% extends "_base.min.html" %}
-{% import "_common.min.html" as c %}
 
-{% block title %}{% if not selection %}{{ options["title"] }}{% else %}{{ selection_str|e }}{% endif %}{% endblock %}
-{% block og_title %}{% if options["title"] %}{{ options["title"] }}{% else %}{{ options["og_title"] }}
+{% if subs_options.uppercase_selection %}
+    {% set selection_str = selection_str|upper %}
+{% endif %}
+
+{% block title %}{% if not selection %}{{ subs_options.title }}{% else %}{{ selection_str|e }}{% endif %}{% endblock %}
+{% block og_title %}{% if subs_options.title %}{{ subs_options.title }}{% else %}{{ subs_options.og_title }}
 {% endif %}{% endblock %}
-{% block keywords %}{% if options["keywords"] %}, {{ options["keywords"] }}{% endif %}{% endblock %}
-{% block breadcrumb_list %}{{ c.breadcrumb_list(options["title"], options["id"]) }}{% endblock %}
+{% block keywords %}{% if subs_options.keywords %}, {{ subs_options.keywords }}{% endif %}{% endblock %}
+{% block breadcrumb_list %}{{ breadcrumb_list(subs_options.title, plan_id + "/") }}{% endblock %}
 
 {% block meta %}
     <meta name="description" content="Vertretungsplan für das Gymnasium am Wall Verden">
@@ -16,20 +19,14 @@
 {% endblock %}
 {% block scripts %}
     <script defer src="{{ static('assets/js/substitutions.min.js') }}"></script>
-    {% if options["supports_timetables"] and selection %}
+    {% if subs_options.supports_timetables and selection %}
         <script defer src="{{ static('assets/js/timetables.min.js') }}"></script>
     {% endif %}
-{% endblock %}
-
-{% block navigation %}
-    {{ c.navigation(options["id"]) }}
 {% endblock %}
 
 {% block pre_title %}
     {% if selection %}<input type="checkbox" id="nav-toggle" aria-hidden="true"><span class="selection">{{ selection_str|e }}</span> - {% endif %}
 {% endblock %}
-
-{% block original_data_link %}{{ options["original_data_link"] }}{% endblock %}
 
 {% block content %}
 <div class="box status-box clearfix">
@@ -87,7 +84,7 @@
                 <td rowspan="{{ group.substitutions|length }}"
                     class="group-name{% if is_selectable %} selectable{% endif %}">
                     {%- if is_selectable -%}
-                        <a class="i-bookmark stretched-link" href="?s={{ group.selection_name }}" data-pa='"Select",{"{{ options["id"] }}":"Bookmark"}'></a>
+                        <a class="i-bookmark stretched-link" href="?s={{ group.selection_name }}" data-pa='"Select",{"{{ plan_id }}":"Bookmark"}'></a>
                     {%- endif -%}
                     {{- group.get_html_name()|safe -}}
                 </td>
@@ -113,7 +110,7 @@
             <table class="table table-sm substitutions-table{% if selection %} has-selection{% endif %}">
                 <thead>
                     <tr>
-                        {% for header in options["table_headers"] %}
+                        {% for header in subs_options.table_headers %}
                             <th>{{ header }}</th>
                         {% endfor %}
                     </tr>
@@ -133,27 +130,27 @@
 
 <div class="box">
     <h1 id="settings-heading">Einstellungen</h1>
-    <h2 id="select-heading">{{ options["texts"]["select_heading"]|safe }}</h2>
+    <h2 id="select-heading">{{ subs_options.texts.select_heading|safe }}</h2>
     <form class="form" method="get">
         {% if not selection %}
-            <label for="selectionInput" class="form-label">{{ options["texts"]["select_text"]|safe }}</label>
+            <label for="selectionInput" class="form-label">{{ subs_options.texts.select_text|safe }}</label>
         {% endif %}
         <div class="row">
             <div class="col-9 col-sm-6 col-md-4 col-xl-3">
                 <input type="text" class="form-control" id="selectionInput" name="s" required
                        value="{% if selection %}{{ selection_str|e }}{% endif %}" aria-describedby="selectionHelp">
                 <small id="selectionHelp" class="form-text text-muted">
-                    {{ options["texts"]["selection_help_text"]|safe }}
+                    {{ subs_options.texts.selection_help_text|safe }}
                 </small>
             </div>
             <div class="col-3 col-sm-1 col-md-1">
-                <button type="submit" class="btn btn-primary mb-2" data-pa='"Select",{"{{ options["id"] }}":"Form"}'>OK</button>
+                <button type="submit" class="btn btn-primary mb-2" data-pa='"Select",{"{{ plan_id }}":"Form"}'>OK</button>
             </div>
         </div>
     </form>
     {% if selection %}
         <div class="mt-3 ms-2">
-            <a class="btn btn-primary" href="?all" data-pa='"Select",{"{{ options["id"] }}":"All Button"}'>{{ options["texts"]["selection_all"]|safe }}</a>
+            <a class="btn btn-primary" href="?all" data-pa='"Select",{"{{ plan_id }}":"All Button"}'>{{ subs_options.texts.selection_all|safe }}</a>
         </div>
     {% endif %}
 
@@ -170,7 +167,7 @@
             <input class="form-check-input" type="checkbox" id="toggle-notifications">
             <label class="form-check-label user-select-none" for="toggle-notifications">
                 <template id="notifications-info-none">Benachrichtigungen sind deaktiviert</template>
-                <template id="notifications-info-all">{{ options["texts"]["notifications_info_all"]|safe }}</template>
+                <template id="notifications-info-all">{{ subs_options.texts.notifications_info_all|safe }}</template>
                 <template id="notifications-info-selection">
                     Du wirst für <i>{{ selection_str|e }}</i> benachrichtigt
                 </template>
@@ -188,7 +185,7 @@
         </div>
     </div>
 
-    {% if options["supports_timetables"] %}
+    {% if subs_options.supports_timetables %}
         {% if selection %}
             <template id="timetables-block-template">
                 Für alle ausgewählten Klasse können Lehrer*innenkürzel für jede Stunde eingegeben werden.
