@@ -4,6 +4,12 @@ Favicons apart from realfavicongenerator.net favicons
 
 `monochrome-96x96.png` was created with Inkscape from `favicon-no-background-paths-no-text.svg`.
 
+`favicon.svg` (Inkscape's "Optimized SVG" version of `favicon-paths-no-text.svg`).
+Added for browsers that are still looking for this favicon.
+
+`favicon-64.png` (export from Inkscape).
+Added for browsers that are still looking for this favicon.
+
 
 Settings used to generate the favicon files on realfavicongenerator.net
 =======================================================================
