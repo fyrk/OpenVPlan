@@ -51,6 +51,7 @@ const selection = document.getElementById("selectionInput").value;
 
 // GET TIMETABLE FROM URL
 // The following is not in timetables.js so that it works even with no selection
+document.getElementById("timetables-block").hidden = false;
 if (window.location.hash.startsWith("#timetable:")) {
     try {
         let [, group, timetableStr] = window.location.hash.split(":");

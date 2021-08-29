@@ -191,12 +191,6 @@
 
     {% if subs_options.supports_timetables %}
         {% if selection %}
-            <template id="timetables-block-template">
-                Für alle ausgewählten Klasse können Lehrer*innenkürzel für jede Stunde eingegeben werden.
-                Vertretungen mit dem eingegebenen Kürzel werden hervorgehoben.
-                Der Stundenplan wird ausschließlich im Browser gespeichert und nicht an den Server gesendet.
-                <div id="timetables-container"></div>
-            </template>
             <template id="timetable-template">
                 <div>
                     <h3 class="timetable-name mt-2">
@@ -234,16 +228,21 @@
                 </div>
             </template>
         {% endif %}
-        <div id="timetables-block">
+        <div id="timetables-block" hidden>
             <h2 id="timetables-heading">Stundenpläne</h2>
             {% if not selection %}
                 Wähle Klassen aus, um Stundenpläne für die ausgewählten Klassen eingeben zu können.<br>
                 Vertretungen, die dem Stundenplan entsprechen, werden dann hervorgehoben.
+            {% else %}
+                Für alle ausgewählten Klasse können Lehrer*innenkürzel für jede Stunde eingegeben werden.
+                Vertretungen mit dem eingegebenen Kürzel werden hervorgehoben.
+                Der Stundenplan wird ausschließlich im Browser gespeichert und nicht an den Server gesendet.
+                <div id="timetables-container"></div>
             {% endif %}
         </div>
     {% endif %}
 
-    <template id="themes-block-template">
+    <div id="themes-block" aria-hidden="true" hidden>
         <h2 id="themes-heading">Design</h2>
         <div class="form-check">
             <input class="form-check-input" type="radio" id="themes-system-default" name="theme" checked>
@@ -257,7 +256,6 @@
             <input class="form-check-input" type="radio" id="themes-dark" name="theme">
             <label class="form-check-label" for="themes-dark">Dunkel</label>
         </div>
-    </template>
-    <div id="themes-block" aria-hidden="true"></div>
+    </div>
 </div>
 {%- endblock -%}

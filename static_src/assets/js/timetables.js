@@ -28,7 +28,6 @@ try {
     timetables = {};
 }
 
-const timetablesBlock = document.getElementById("timetables-block");
 if (selection) {
     const substitutions = {};
     for (let substitutionsBox of document.getElementsByClassName("substitutions-box")) {
@@ -115,9 +114,7 @@ if (selection) {
     }
     console.log(substitutions);
 
-    const timetablesBlockTemplate = document.getElementById("timetables-block-template");
     const timetableTemplate = document.getElementById("timetable-template");
-    timetablesBlock.appendChild(timetablesBlockTemplate.content);
     const timetablesContainer = document.getElementById("timetables-container");
     function setRelevant(input, value = null, markRelevant = true) {
         if (!value)

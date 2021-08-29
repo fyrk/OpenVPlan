@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-document.getElementById("themes-block").appendChild(document.getElementById("themes-block-template").content);
+document.getElementById("themes-block").hidden = false;
 
 const html = document.documentElement;
 const systemDefaultRadio = document.getElementById("themes-system-default");
