@@ -5,3 +5,4 @@ pywebpush
 aiojobs
 yarl
 aiocron
+pydantic

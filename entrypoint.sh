@@ -17,8 +17,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-cd /app
 mkdir /static
-cp -r /app/assets/static/* /static
+cp -r /app/static/* /static
 find /static -mindepth 1 -mtime +1 -delete
-python3 server.py
+cd /app
+export PYTHONPATH=$PYTHONPATH:/app/app
+python3 -m app.main

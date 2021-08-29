@@ -1,21 +1,10 @@
 *
 
 !requirements.txt
+!requirements-dev.txt
 !entrypoint.sh
-!server.py
-!settings.py
-!subs_crawler/
-!website/
 
-# assets
-!assets/
-!assets/static/*
-assets/static/sw.js
-assets/static/sw.min.js.map
+!app/
 
-assets/static/assets/*/*
-!assets/static/assets/*/*.min.js
-!assets/static/assets/*/*.min.svg
-!assets/static/assets/*/*.css
-
-assets/other/
+!static/
+static/**/*.map

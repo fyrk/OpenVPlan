@@ -2,18 +2,11 @@ version: "3.8"
 
 services:
   gawvertretung:
-    build:
-      context: .
-      args:
-        mode: dev
-    ports:
-      - "8000:8000"
-      - "8001:8001"
+    image: gawvertretung:latest
     volumes:
-      - .:/app
       - ./data:/var/lib/gawvertretung
     environment:
-      DEBUG: 1
+      DEBUG: 0
       PUBLIC_VAPID_KEY: "<REPLACE>"
       PRIVATE_VAPID_KEY: "<REPLACE>"
       VAPID_SUB: "<REPLACE>"

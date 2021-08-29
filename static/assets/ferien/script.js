@@ -1,0 +1,2 @@
+!function(){"use strict";const e=document.body,n=document.createElement("button");n.id="ferien-btn",n.textContent="🌻",n.classList.add("btn"),n.addEventListener("click",e=>{t.hidden=!1,document.documentElement.classList.add("ferien"),plausible("Ferien")});const t=document.createElement("div");t.id="ferien-text",t.innerHTML="☀️ Schöne Ferien!️<br>🌻",t.hidden=!0,e.appendChild(n),e.insertBefore(t,e.firstElementChild)}();
+//# sourceMappingURL=script.js.map
