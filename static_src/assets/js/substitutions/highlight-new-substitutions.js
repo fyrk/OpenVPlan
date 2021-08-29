@@ -19,7 +19,7 @@
 let seenSubstitutions;
 let status = document.getElementById("status").textContent;
 try {
-    seenSubstitutions = JSON.parse(window.localStorage.getItem(substitutionPlanType + "-seen-substitutions"));
+    seenSubstitutions = JSON.parse(window.localStorage.getItem(planId + "-seen-substitutions"));
     if (seenSubstitutions["status"] !== status) {
         let currentTime = Date.now();
         for (let time of Object.keys(seenSubstitutions["seenSubstitutions"])) {
@@ -75,4 +75,4 @@ for (let substitutionsBox of document.getElementsByClassName("substitutions-box"
     }
 }
 
-window.localStorage.setItem(substitutionPlanType + "-seen-substitutions", JSON.stringify(seenSubstitutions));
+window.localStorage.setItem(planId + "-seen-substitutions", JSON.stringify(seenSubstitutions));

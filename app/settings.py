@@ -16,7 +16,6 @@ class Settings(BaseSettings):
     telegram_bot_logger_use_fixed_width: bool = False
     telegram_bot_logger_level: int = logging.WARNING
 
-    plausible_url: Optional[str] = None
     plausible_domain: Optional[str] = None
     plausible_js: str = "https://plausible.io/js/plausible.js"
     plausible_endpoint: Optional[str] = None
@@ -53,6 +52,6 @@ class Settings(BaseSettings):
     def plausible(self):
         if not self._plausible:
             object.__setattr__(self, "_plausible",
-                               dict(url=self.plausible_url, domain=self.plausible_domain, js=self.plausible_js,
+                               dict(domain=self.plausible_domain, js=self.plausible_js,
                                     endpoint=self.plausible_endpoint, embed_link=self.plausible_embed_link))
         return self._plausible

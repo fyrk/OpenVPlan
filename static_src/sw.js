@@ -126,7 +126,6 @@ self.addEventListener("activate", event => {
 // from https://serviceworke.rs/strategy-network-or-cache_service-worker_doc.html (MIT license)
 self.addEventListener("fetch", event => {
     const url = new URL(event.request.url);
-    console.log("requested", event.request.url, url.pathname);
     if (url.pathname === "/") {
         event.respondWith(Response.redirect("/students/"))
     } else if (planPaths.includes(url.pathname)) {
@@ -139,10 +138,8 @@ self.addEventListener("fetch", event => {
                     console.log("timeout", url.pathname);
                     reject();
                 }, 1000);*/
-                console.log("fetching", event.request);
                 fetch(event.request).then(response => {
                     //clearTimeout(timeout);
-                    console.log("fetch successful", event.request.url);
                     fulfill(response.clone());
                     // save this version of the plan in cache
                     caches.open(CACHE).then(cache => cache.put(url.pathname, response));
@@ -153,7 +150,6 @@ self.addEventListener("fetch", event => {
                         if (matching)
                             return matching
                         else {
-                            console.log("no match for", event.request);
                             return Promise.reject("no-match");
                         }
                     })
@@ -169,19 +165,16 @@ self.addEventListener("fetch", event => {
                 caches.open(CACHE).then(cache => cache.match(event.request).then(response => {
                     if (response) {
                         // an up-to-date item is in the cache
-                        console.log("cache has up-to-date response for", event.request.url);
                         resolve(response);
                         return;
                     }
                     fetch(event.request).then(async response => {
-                        console.log("cache is missing up-to-date response, fetching for", event.request.url);
                         resolve(response.clone());
 
                         // delete all items in the cache that have the same pathname - they're outdated because they
                         // haven't got the same cache busting parameter
                         await cache.delete(event.request, {ignoreSearch: true, ignoreVary: true}).then(value => console.log("deleted", value, event.request.url));
 
-                        console.log("putting in cache:", event.request.url);
                         // save this new up-to-date version in the cache
                         await cache.put(event.request, response);
                     }).catch(() => {
@@ -220,8 +213,6 @@ self.addEventListener("fetch", event => {
                             return Promise.reject("no-match");
                         }
                     }))));*/
-    } else {
-        console.log("not using SW for request");
     }
 });
 

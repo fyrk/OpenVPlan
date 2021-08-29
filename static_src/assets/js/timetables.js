@@ -17,11 +17,11 @@
  */
 
 const selection = document.getElementById("selectionInput").value;
-const substitutionPlanType = window.location.pathname.split("/", 2)[1];
+const planId = window.location.pathname.split("/", 2)[1];
 
 let timetables;
 try {
-    timetables = JSON.parse(window.localStorage.getItem(substitutionPlanType + "-timetables"));
+    timetables = JSON.parse(window.localStorage.getItem(planId + "-timetables"));
     if (!timetables)
         timetables = {};
 } catch {
@@ -174,7 +174,7 @@ if (selection) {
                         }
                     }
                 }
-                linkInput.value = new URL("/" + substitutionPlanType + "/#timetable:" + sUpper + ":" + btoa(timetableStr), window.location.origin).href;
+                linkInput.value = new URL("/" + planId + "/#timetable:" + sUpper + ":" + btoa(timetableStr), window.location.origin).href;
                 linkInput.addEventListener("click", e => e.target.select());
                 let copyTimeout = null;
                 copyButton.addEventListener("click", () => {
@@ -240,7 +240,7 @@ if (selection) {
                     timetables[e.target.dataset.selection]
                         [parseInt(e.target.dataset.weekday)]
                         [parseInt(e.target.dataset.lesson)-1] = e.target.value.toUpperCase();
-                    window.localStorage.setItem(substitutionPlanType + "-timetables", JSON.stringify(timetables));
+                    window.localStorage.setItem(planId + "-timetables", JSON.stringify(timetables));
                 });
                 input.dataset.selection = sUpper;
                 // noinspection JSValidateTypes

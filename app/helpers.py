@@ -142,7 +142,7 @@ def set_response_headers(app: web.Application):
             csp["script-src"].append(static_host)"""
 
     if (plausible := settings.plausible) and plausible.get("url") and plausible.get("domain") and plausible.get("js"):
-        csp["script-src"].append(plausible["url"]+"/js/"+plausible["js"])
+        csp["script-src"].append(plausible["js"])
     if settings.plausible and (plausible_endpoint := settings.plausible.get("endpoint")):
         csp["connect-src"].append(plausible_endpoint)
     for name, value in settings.additional_csp_directives.items():

@@ -164,23 +164,27 @@
             unterstützt.
         </div>
         <div class="form-check form-switch mt-3" id="toggle-notifications-wrapper" hidden>
-            <input class="form-check-input" type="checkbox" id="toggle-notifications">
-            <label class="form-check-label user-select-none" for="toggle-notifications">
-                <template id="notifications-info-none">Benachrichtigungen sind deaktiviert</template>
-                <template id="notifications-info-all">{{ subs_options.texts.notifications_info_all|safe }}</template>
-                <template id="notifications-info-selection">
-                    Du wirst für <i>{{ selection_str|e }}</i> benachrichtigt
-                </template>
-                <template id="notifications-info-blocked">
-                    <span class="text-danger">Du hast Benachrichtigungen vom Vertretungsplan blockiert. Erlaube
-                        Benachrichtigungen in den Einstellungen deines Browsers.</span>
-                </template>
-                <template id="notifications-info-failed">
+            <input class="form-check-input" type="checkbox" id="notifications-toggle">
+            <label class="form-check-label user-select-none" for="notifications-toggle">
+                <span class="notification-state" data-n="disabled">Benachrichtigungen sind deaktiviert</span>
+                <span class="notification-state" data-n="unsubscribing">Benachrichtigungen werden deaktiviert...</span>
+                <span class="notification-state" data-n="subscribing" hidden>Benachrichtigungen werden aktiviert...</span>
+                <span class="notification-state" data-n="enabled" hidden>
+                    {% if selection_str %}
+                        Du wirst für <i>{{ selection_str|e }}</i> benachrichtigt
+                    {% else %}
+                        {{ subs_options.texts.notifications_info_all|safe }}
+                    {% endif %}
+                </span>
+                <span class="notification-state text-danger" data-n="blocked" hidden>
+                    Du hast Benachrichtigungen vom Vertretungsplan blockiert.
+                    Erlaube Benachrichtigungen in den Einstellungen deines Browsers.
+                </span>
+                <span class="notification-state" data-n="failed" hidden>
                     Das Aktivieren von Benachrichtigungen ist fehlgeschlagen.
                     Lade die Seite neu oder verwende einen anderen Browser.
                     Um Benachrichtigungen aktivieren zu können, muss eine Internetverbindung bestehen.
-                </template>
-                <span id="notifications-info">Benachrichtigungen sind deaktiviert</span>
+                </span>
             </label>
         </div>
     </div>

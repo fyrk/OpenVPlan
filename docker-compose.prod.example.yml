@@ -17,9 +17,8 @@ services:
       TELEGRAM_BOT_LOGGER_USE_FIXED_WIDTH: 0
       TELEGRAM_BOT_LOGGER_LEVEL: 30  # logging.WARNING
 
-      PLAUSIBLE_URL: "https://plausible.io"
       PLAUSIBLE_DOMAIN: "<REPLACE>"
-      PLAUSIBLE_JS: "plausible.outbound-links.js"
+      PLAUSIBLE_JS: "https://plausible.io/js/plausible.outbound-links.local.js"
       PLAUSIBLE_ENDPOINT: null
       PLAUSIBLE_EMBED_LINK: null
 

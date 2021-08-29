@@ -46,7 +46,7 @@ window.addEventListener("error", e => reportError(e.error, e));  // e.error is e
 window.addEventListener("unhandledrejection", e => reportError(e.reason));
 
 
-const substitutionPlanType = window.location.pathname.split("/", 2)[1];
+const planId = window.location.pathname.split("/", 2)[1];
 const selection = document.getElementById("selectionInput").value;
 
 // GET TIMETABLE FROM URL
@@ -74,7 +74,7 @@ if (window.location.hash.startsWith("#timetable:")) {
         if (valid) {
             let timetables;
             try {
-                timetables = JSON.parse(window.localStorage.getItem(substitutionPlanType + "-timetables"));
+                timetables = JSON.parse(window.localStorage.getItem(planId + "-timetables"));
                 if (!timetables)
                     timetables = {};
             } catch {
@@ -100,7 +100,7 @@ if (window.location.hash.startsWith("#timetable:")) {
             }
             if (confirm(text)) {
                 timetables[group] = timetable;
-                window.localStorage.setItem(substitutionPlanType + "-timetables", JSON.stringify(timetables));
+                window.localStorage.setItem(planId + "-timetables", JSON.stringify(timetables));
             }
             window.location.hash = "";
             plausible("Timetable: Set From Link");
