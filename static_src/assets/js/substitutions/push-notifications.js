@@ -84,7 +84,7 @@ function setNotificationsInfo(state, registration) {
             toggleNotifications.checked = true;
             toggleNotifications.disabled = false;
             if (selection !== "") {
-                notificationsInfo.innerHTML = notificationsInfo_selection.innerHTML.replace("{selection}", selection);
+                notificationsInfo.innerHTML = notificationsInfo_selection.innerHTML;
             } else {
                 notificationsInfo.innerHTML = notificationsInfo_all.innerHTML;
             }

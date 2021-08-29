@@ -23,6 +23,7 @@ const fs = require("fs");
 
 
 const ASSETS_PATH = "static_src/";
+const DEST = "static/";
 
 const SUBSTITUTIONS_BUNDLE_FILES = [
     "substitutions-base.js",
@@ -35,11 +36,9 @@ const SUBSTITUTIONS_BUNDLE_FILES = [
 ];
 
 const JS_SRC = ["static_src/**/*.js", "!"+ASSETS_PATH+"assets/js/substitutions/*.js", "!static_src/other/**/*.js"];
-const JS_SUBSTITUTIONS_SRC = SUBSTITUTIONS_BUNDLE_FILES.map(f => ASSETS_PATH+"/js/substitutions/" + f);
+const JS_SUBSTITUTIONS_SRC = SUBSTITUTIONS_BUNDLE_FILES.map(f => ASSETS_PATH+"/assets/js/substitutions/" + f);
 const SASS_SRC = ASSETS_PATH+"assets/**/*.scss";
 const HTML_SRC = ["app/templates/*.html", "!app/templates/*.min.html"];
-
-const DEST = "static/";
 
 const SOURCEMAP_SOURCE_ROOT = "../../static_src";
 
@@ -69,14 +68,14 @@ const wrap = require("gulp-wrap");
 const concat = require("gulp-concat");
 
 
-function buildJS(src) {
+function buildJS(src, dest=DEST) {
     return src
         .pipe(wrap('!function(){"use strict";<%= contents %>}()'))
         .pipe(uglify({
             toplevel: true
         }))
         .pipe(sourcemaps.write(".", {includeContent: false, sourceRoot: SOURCEMAP_SOURCE_ROOT}))
-        .pipe(gulp.dest(DEST));
+        .pipe(gulp.dest(dest));
 }
 
 gulp.task("build-js", () => {
@@ -87,7 +86,7 @@ gulp.task("build-js", () => {
 gulp.task("build-substitutions-js", () => {
     return buildJS(gulp.src(JS_SUBSTITUTIONS_SRC, {base: ASSETS_PATH})
         .pipe(sourcemaps.init())
-        .pipe(concat("substitutions.js")));
+        .pipe(concat("substitutions.js")), DEST+"assets/js/");
 })
 
 
