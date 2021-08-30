@@ -17,6 +17,7 @@
 import datetime
 import json
 
+import yarl
 from aiohttp import web
 
 
@@ -128,7 +129,7 @@ def set_response_headers(app: web.Application):
         "object-src": ["'self'", "mailto:"]
     }
 
-    if app["settings"].debug:
+    if settings.debug:
         csp["script-src"].append("http://localhost:8001/livereload.js")
         # if static files are served by aiohttp-devtools from localhost:8001
         """# aiohttp-devtools serves assets from localhost:8001
@@ -141,10 +142,10 @@ def set_response_headers(app: web.Application):
             csp["img-src"].append(static_host)
             csp["script-src"].append(static_host)"""
 
-    if (plausible := settings.plausible) and plausible.get("url") and plausible.get("domain") and plausible.get("js"):
-        csp["script-src"].append(plausible["js"])
-    if settings.plausible and (plausible_endpoint := settings.plausible.get("endpoint")):
-        csp["connect-src"].append(plausible_endpoint)
+    if (plausible := settings.plausible) and plausible.get("domain") and (plausible_js := plausible.get("js")):
+        csp["script-src"].append(plausible_js)
+        csp["connect-src"].append(plausible.get("endpoint") or
+                                  (str(yarl.URL(plausible_js).origin())+"/api/event"))
     for name, value in settings.additional_csp_directives.items():
         if type(csp[name]) is not list:
             csp[name] = [csp[name]]

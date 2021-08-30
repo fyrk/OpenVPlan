@@ -17,5 +17,5 @@ RUN mkdir /var/log/gawvertretung && ln -sf /dev/stdout /var/log/gawvertretung/ga
 COPY . .
 
 COPY entrypoint.sh "/"
-EXPOSE 8080
+EXPOSE 8000
 CMD [ "/entrypoint.sh" ]
