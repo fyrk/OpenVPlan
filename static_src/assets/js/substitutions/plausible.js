@@ -31,19 +31,14 @@ if (change)
 // send features to Plausible
 try {
     let theme = localStorage.getItem("theme");
-    if (theme === "system-default") {
-        theme = "system-" + (
-            (window.matchMedia("(prefers-color-scheme: dark)").matches)
-                ? "dark"
-                : "light");
-    } else if (!theme) {
-        theme = "unknown";
+    if (theme === "system-default" || !theme) {
+        theme = "system-" + (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     }
 
     plausible("Features - " + planId, {
         props: {
             Selection: selection ? (selection.match(/,/g) || []).length + 1 : 0,
-            Notifications: localStorage.getItem(planId + "-notification-state-plausible"),
+            Notifications: localStorage.getItem(planId + "-notification-state-pa") || "unknown",
             Theme: theme,
             Timetables: null,  // TODO
         }
