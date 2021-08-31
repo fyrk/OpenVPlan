@@ -32,6 +32,7 @@ from aiojobs.aiohttp import get_scheduler_from_app
 
 from . import log_helper
 from .db import hash_endpoint, SubstitutionPlanDB
+from .settings import Settings
 from .subs_crawler.crawlers.base import BaseSubstitutionCrawler
 from .subs_crawler.utils import split_selection
 
@@ -239,7 +240,7 @@ class SubstitutionPlan:
 
     async def send_push_notification(self, app: web.Application, subscription: dict, data) -> bool:
         logger = app["logger"]
-        settings = app["settings"]
+        settings: Settings = app["settings"]
 
         endpoint_hash = hash_endpoint(subscription["endpoint"])
         # noinspection PyBroadException
@@ -251,16 +252,16 @@ class SubstitutionPlan:
 
             endpoint, data, headers = pywebpush.webpush(
                 subscription, json.dumps(data),
-                vapid_private_key=settings.PRIVATE_VAPID_KEY,
+                vapid_private_key=settings.private_vapid_key,
                 vapid_claims={
-                    "sub": settings.VAPID_SUB,
+                    "sub": settings.vapid_sub,
                     # "aud": endpoint_origin,  # aud is automatically set in webpush()
                     # 86400s=24h, but 5s less because otherwise, requests sometimes fail (exp must not
                     # be longer than 24 hours from the time the request is made)
                     "exp": int(time.time()) + 86395,
                     "aud": aud
                 },
-                content_encoding=settings.WEBPUSH_CONTENT_ENCODING,
+                content_encoding=settings.webpush_content_encoding,
                 ttl=86400,
                 curl=True)  # modifications to make this work: see beginning of this file
             async with app["client_session"].post(endpoint, data=data, headers=headers) as r:

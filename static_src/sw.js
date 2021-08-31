@@ -33,7 +33,7 @@ function plausible(eventName, options) {
     if (options && options.props) {
         payload.p = JSON.stringify(options.props)
     }
-    return fetch("https://plausible.io/api/event", {
+    return fetch("https://plausible.florian-raediker.de/api/event", {
         method: "POST",
         headers: {"Content-Type": "text/plain"},
         body: JSON.stringify(payload)

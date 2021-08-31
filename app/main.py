@@ -52,6 +52,9 @@ BACKGROUND_UPDATES = [
 
 async def db_context(app):
     app["db"] = SubstitutionPlanDB(os.path.join(DATA_DIR, "db.sqlite3"))
+    subs_plan: SubstitutionPlan
+    for subs_plan in app["substitution_plans"].values():
+        subs_plan.on_db_init(app)
     yield
     app["db"].close()
 
