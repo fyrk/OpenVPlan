@@ -61,8 +61,9 @@ async def db_context(app):
 
 async def client_session_context(app):
     request_headers = app["settings"].request_headers
-    app["logger"].debug(f"Create ClientSession (headers: {request_headers})")
-    app["client_session"] = client.ClientSession(headers=request_headers)
+    timeout = app["settings"].request_timeout
+    app["logger"].debug(f"Create ClientSession headers: {request_headers}, timeout: {timeout}s")
+    app["client_session"] = client.ClientSession(headers=request_headers, timeout=client.ClientTimeout(total=timeout))
     yield
     await app["client_session"].close()
 

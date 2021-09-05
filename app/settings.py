@@ -36,6 +36,7 @@ class Settings(BaseSettings):
         hdrs.USER_AGENT: f"Mozilla/5.0 (compatible; GaWVertretungBot/{__version__}; "
                          f"+https://gawvertretung.florian-raediker.de) {http.SERVER_SOFTWARE}"
     }
+    request_timeout: float = 10
 
     additional_csp_directives: dict = {}
 
