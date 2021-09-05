@@ -127,6 +127,16 @@ class SubstitutionPlan:
     async def _root_handler(self, request: web.Request) -> web.Response:
         # noinspection PyBroadException
         try:
+            redirect = False
+            new_url = request.rel_url
+
+            campaign = request.query.get("utm_campaign") or request.query.get("mtm_campaign")
+            if campaign == "pwa_homescreen":
+                new_query = {key: value for key, value in request.rel_url.query.items() if key not in ["utm_campaign", "mtm_campaign"] or value != "pwa_homescreen"}
+                new_query["ref"] = "PWA"
+                new_url = new_url.with_query(new_query)
+                redirect = True
+
             if "all" not in request.query and "s" not in request.query:
                 # "<plan-id>-selection" is the name of the cookie previously used to store the selection
                 selection = None
@@ -135,11 +145,14 @@ class SubstitutionPlan:
                 elif self._plan_id + "-selection" in request.cookies \
                         and (s := request.cookies[self._plan_id + "-selection"].strip()):
                     selection = s
-                # use 'update_query' so that existing query doesn't change for e.g. "mtm_campaign" to work
                 if selection is not None:
-                    raise web.HTTPSeeOther(location=request.rel_url.update_query(s=selection))
+                    new_url = new_url.update_query(s=selection)
                 else:
-                    raise web.HTTPSeeOther(location=request.rel_url.update_query("all"))
+                    new_url = new_url.update_query("all")
+                redirect = True
+
+            if redirect:
+                raise web.HTTPSeeOther(location=new_url)
 
             fake_affected_groups = None
             if request.app["settings"].debug:
