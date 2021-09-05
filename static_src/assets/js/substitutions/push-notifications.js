@@ -159,7 +159,7 @@ function onNotificationsAvailable(registration) {
 navigator.serviceWorker.register("/sw.js").catch(e => reportError(e));
 
 window.addEventListener("load", () => {
-    if (!("serviceWorker" in navigator)) {
+    if (!("serviceWorker" in navigator) || !navigator.serviceWorker) {
         setPlausibleState("unsupported (Service Worker)");
         return;
     }
