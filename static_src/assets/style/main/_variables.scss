@@ -124,7 +124,9 @@ $light-colors: (
 
     "substitutions-table-new-subs-bg": rgba($primary, 0.2),
 
-    "themes-heading-icon": escape-svg(url('data:image/svg+xml,!bi-sun-fill'))
+    "themes-heading-icon": escape-svg(url('data:image/svg+xml,!bi-sun-fill')),
+
+    "btn-close-filter": none
 );
 
 // dark
@@ -162,5 +164,7 @@ $dark-colors: (
 
     "substitutions-table-new-subs-bg": rgba(222 222 222 / 9%),
 
-    "themes-heading-icon": escape-svg(url('data:image/svg+xml,!bi-moon-fill'))
+    "themes-heading-icon": escape-svg(url('data:image/svg+xml,!bi-moon-fill')),
+
+    "btn-close-filter": $btn-close-white-filter
 );

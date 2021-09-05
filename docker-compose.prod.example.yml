@@ -23,6 +23,8 @@ services:
       PLAUSIBLE_EMBED_LINK: null
       PLAUSIBLE_EMBED_JS: "https://plausible.io/js/embed.host.js"
 
+      NEWS: '{}'
+
       ENABLE_FERIEN: 0
       FERIEN_START: ""
       FERIEN_END: ""

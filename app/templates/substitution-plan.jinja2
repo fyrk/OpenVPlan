@@ -34,6 +34,13 @@
     <span class="float-end" id="online-status"></span>
 </div>
 
+{% for news_id, news in (news or {}).items() %}
+    <div class="box news" data-news-id="{{ news_id }}">
+        <button type="button" class="btn-close float-end" aria-label="Schließen"></button>
+        {{ news|safe }}
+    </div>
+{% endfor %}
+
 
 {% for day in storage.iter_days() %}
 {% set day_loop = loop %}

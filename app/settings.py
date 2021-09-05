@@ -1,3 +1,19 @@
+#  GaW-Vertretungsplan
+#  Copyright (C) 2019-2021  Florian Rädiker
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Affero General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Affero General Public License for more details.
+#
+#  You should have received a copy of the GNU Affero General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import datetime
 import logging
 from typing import Optional, Union, Any, Dict
@@ -10,7 +26,7 @@ __version__ = "5.0"
 
 class Settings(BaseSettings):
     debug: bool = False
-    static_path: str = "static"
+
     telegram_bot_logger_token: Optional[str] = None
     telegram_bot_logger_chat_id: Optional[Union[int, str]] = None
     telegram_bot_logger_use_fixed_width: bool = False
@@ -21,6 +37,8 @@ class Settings(BaseSettings):
     plausible_endpoint: Optional[str] = None
     plausible_embed_link: str = ""
     plausible_embed_js: str = "https://plausible.io/js/embed.host.js"
+
+    news: Optional[dict] = None
 
     enable_ferien: bool = True
     ferien_start: datetime.datetime = None

@@ -27,6 +27,7 @@ const DEST = "static/";
 
 const SUBSTITUTIONS_BUNDLE_FILES = [
     "substitutions-base.js",
+    "news.js",
     "grey-substitutions.js",
     "highlight-new-substitutions.js",
     "push-notifications.js",

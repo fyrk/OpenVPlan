@@ -58,10 +58,9 @@ a {
     max-width: 1140px;
 }
 
-/*.btn-close {
-    float: right;
-    filter: var(--btn-close-white-filter); // copied from Bootstrap's _close.scss
-}*/  // no longer required since there are currently no news
+.btn-close {
+    filter: var(--btn-close-filter);
+}
 
 /*! purgecss start ignore */ // iframe is only used by Plausible embed code
 object, iframe {
