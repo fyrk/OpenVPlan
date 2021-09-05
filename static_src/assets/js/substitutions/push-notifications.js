@@ -156,22 +156,22 @@ function onNotificationsAvailable(registration) {
 }
 
 
-navigator.serviceWorker.register("/sw.js").catch(e => reportError(e));
-
 window.addEventListener("load", () => {
     if (!("serviceWorker" in navigator) || !navigator.serviceWorker) {
         setPlausibleState("unsupported (Service Worker)");
         return;
     }
-    navigator.serviceWorker.ready.then(registration => {
-        if (!("Notification" in window)) {
-            setPlausibleState("unsupported (Notification)");
-            return;
-        }
-        if (!("PushManager" in window)) {
-            setPlausibleState("unsupported (PushManager)");
-            return;
-        }
-        onNotificationsAvailable(registration);
-    }).catch(e => reportError(e));
+    navigator.serviceWorker.register("/sw.js")
+        .then(registration => {
+            if (!("Notification" in window)) {
+                setPlausibleState("unsupported (Notification)");
+                return;
+            }
+            if (!("PushManager" in window)) {
+                setPlausibleState("unsupported (PushManager)");
+                return;
+            }
+            onNotificationsAvailable(registration);
+        })
+        .catch(e => reportError(e));
 });

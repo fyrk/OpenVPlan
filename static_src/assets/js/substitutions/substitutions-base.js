@@ -18,24 +18,24 @@
 
 function reportError(error, event = null) {
     try {
-        let name = error.name;
-        let message = (event == null ? undefined : event.message) ||
+        const name = error.name;
+        const message = (event == null ? undefined : event.message) ||
             error.message;
-        let description = error.description;  // non-standard Microsoft property
-        let number = error.number; // non-standard Microsoft property
-        let filename = (event == null ? undefined : event.filename) ||
+        const description = error.description;  // non-standard Microsoft property
+        const number = error.number; // non-standard Microsoft property
+        const filename = (event == null ? undefined : event.filename) ||
             error.fileName;  // error.fileName is non-standard Mozilla property
-        let lineno = (event == null ? undefined : event.lineno) ||
+        const lineno = (event == null ? undefined : event.lineno) ||
             error.lineNumber;  // error.lineNumber is non-standard Mozilla property
-        let colno = (event == null ? undefined : event.colno) ||
+        const colno = (event == null ? undefined : event.colno) ||
             error.columnNumber;  // error.columnNumber is non-standard Mozilla property
-        let stack = (event == null ? undefined : event.stack) ||
+        const stack = (event == null ? undefined : event.stack) ||
             error.stack;  // error.stack is non-standard Mozilla property
+        const key = (name || "Generic Error") + ": " + message;
+        const value = stack + " - " + filename + ":" + lineno + ":" + colno + " " + description + " " + number;
+        console.log("report error", key, value);
         plausible("JavaScript Error", {
-            props: {
-                [(name || "Generic Error") + ": " + message]: stack + " - " + filename + ":" + lineno + ":" + colno +
-                " " + description + " " + number
-            }
+            props: { [key]: value }
         });
     } catch (e) {
         console.error("reporting error failed", e);
@@ -60,8 +60,8 @@ if (window.location.hash.startsWith("#timetable:")) {
         timetableStr = atob(timetableStr);
         let valid = true;
         let timetable;
-        if (timetableStr.length !== 3*10*5) {  // 3 chars per lesson, 10 lessons per day, 5 days
-            console.warn("Timetable in URL has wrong length:", timetableStr.length, "instead of", 3*10*5, timetableStr);
+        if (timetableStr.length !== 3 * 10 * 5) {  // 3 chars per lesson, 10 lessons per day, 5 days
+            console.warn("Timetable in URL has wrong length:", timetableStr.length, "instead of", 3 * 10 * 5, timetableStr);
             valid = false;
         } else {
             timetable = [];
@@ -69,7 +69,7 @@ if (window.location.hash.startsWith("#timetable:")) {
                 let lessons = [];
                 timetable.push(lessons);
                 for (let lesson = 0; lesson < 10; lesson++) {
-                    let teacher = timetableStr.substr(day*10*3+lesson*3, 3).trim();
+                    let teacher = timetableStr.substr(day * 10 * 3 + lesson * 3, 3).trim();
                     lessons.push(teacher);
                 }
             }
