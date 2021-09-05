@@ -21,6 +21,7 @@ services:
       PLAUSIBLE_JS: "https://plausible.io/js/plausible.outbound-links.local.js"
       PLAUSIBLE_ENDPOINT: null
       PLAUSIBLE_EMBED_LINK: null
+      PLAUSIBLE_EMBED_JS: "https://plausible.io/js/embed.host.js"
 
       ENABLE_FERIEN: 0
       FERIEN_START: ""

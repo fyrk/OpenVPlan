@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     plausible_js: str = "https://plausible.io/js/plausible.js"
     plausible_endpoint: Optional[str] = None
     plausible_embed_link: str = ""
+    plausible_embed_js: str = "https://plausible.io/js/embed.host.js"
 
     enable_ferien: bool = True
     ferien_start: datetime.datetime = None
@@ -53,5 +54,6 @@ class Settings(BaseSettings):
         if not self._plausible:
             object.__setattr__(self, "_plausible",
                                dict(domain=self.plausible_domain, js=self.plausible_js,
-                                    endpoint=self.plausible_endpoint, embed_link=self.plausible_embed_link))
+                                    endpoint=self.plausible_endpoint,
+                                    embed_link=self.plausible_embed_link, embed_js=self.plausible_embed_js))
         return self._plausible
