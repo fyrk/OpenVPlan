@@ -38,7 +38,7 @@ const SUBSTITUTIONS_BUNDLE_FILES = [
 const JS_SRC = ["static_src/**/*.js", "!"+ASSETS_PATH+"assets/js/substitutions/*.js", "!static_src/other/**/*.js"];
 const JS_SUBSTITUTIONS_SRC = SUBSTITUTIONS_BUNDLE_FILES.map(f => ASSETS_PATH+"/assets/js/substitutions/" + f);
 const SASS_SRC = ASSETS_PATH+"assets/**/*.scss";
-const HTML_SRC = ["app/templates/*.html", "!app/templates/*.min.html"];
+const HTML_SRC = ["app/templates/*.jinja2"];
 
 const SOURCEMAP_SOURCE_ROOT = "../../static_src";
 
