@@ -321,7 +321,7 @@ self.addEventListener("push", async (event) => {
 self.addEventListener("notificationclick", event => {
     event.notification.close();
 
-    if (event.notification.data.type === "subs_update") {
+    if (event.notification.data && event.notification.data.type === "subs_update") {
         // open website
         event.waitUntil(Promise.all([
             self.clients.matchAll().then(function(clientList) {
