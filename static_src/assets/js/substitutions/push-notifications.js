@@ -161,17 +161,16 @@ window.addEventListener("load", () => {
         setPlausibleState("unsupported (Service Worker)");
         return;
     }
-    navigator.serviceWorker.register("/sw.js")
-        .then(registration => {
-            if (!("Notification" in window)) {
-                setPlausibleState("unsupported (Notification)");
-                return;
-            }
-            if (!("PushManager" in window)) {
-                setPlausibleState("unsupported (PushManager)");
-                return;
-            }
-            onNotificationsAvailable(registration);
-        })
-        .catch(e => reportError(e));
+    navigator.serviceWorker.ready.then(registration => {
+        if (!("Notification" in window)) {
+            setPlausibleState("unsupported (Notification)");
+            return;
+        }
+        if (!("PushManager" in window)) {
+            setPlausibleState("unsupported (PushManager)");
+            return;
+        }
+        onNotificationsAvailable(registration);
+    }).catch(e => reportError(e));
+    navigator.serviceWorker.register("/sw.js").catch(e => reportError(e));
 });
