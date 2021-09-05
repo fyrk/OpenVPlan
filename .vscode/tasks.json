@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run docker-compose up",
+            "type": "docker-compose",
+            "dockerCompose": {
+                "up": {
+                    "detached": true,
+                    "build": true,
+                    "services": [
+                        "gawvertretung"
+                    ]
+                },
+                "files": [
+                    "${workspaceFolder}/docker-compose.dev.yml",
+                    "${workspaceFolder}/docker-compose.dev.secret.yml"
+                ]
+            }
+        },
+        {
+            "type": "gulp",
+            "task": "watch",
+            "group": "build",
+            "problemMatcher": [],
+            "label": "gulp: watch",
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        }
+    ]
+}
