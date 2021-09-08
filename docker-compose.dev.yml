@@ -36,8 +36,8 @@ services:
       NEWS: '{}'
 
       ENABLE_FERIEN: 0
-      FERIEN_START: ""
-      FERIEN_END: ""
+      FERIEN_START: null
+      FERIEN_END: null
 
       ADDITIONAL_CSP_DIRECTIVES: '{
         "script-src": "https://<REPLACE_PLAUSIBLE-DOMAIN>/js/embed.host.js",
