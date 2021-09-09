@@ -263,11 +263,9 @@ self.addEventListener("push", async (event) => {
                             if (expiryTime > currentTimestamp) {
                                 console.log("add", day["groups"]);
                                 if (expiryTime in affectedGroups) {
-                                    console.log("already in affectedGroups");
                                     day["groups"].forEach(g => affectedGroups[expiryTime]["groups"].add(g));
-                                }
-                                else {
-                                    console.log("new day", day);
+                                } else {
+                                    day["groups"] = new Set(day["groups"]);
                                     affectedGroups[expiryTime] = day;
                                 }
                             }
