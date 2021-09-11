@@ -172,6 +172,7 @@ class SubstitutionPlan:
             else:
                 text = await self._render_func(storage=self._crawler.storage,
                                                selection=selection, selection_str=selection_str)
+                headers = headers.copy()
                 headers["X-Robots-Tag"] = "noindex"
 
             response = web.Response(text=text, content_type="text/html", charset="utf-8",
