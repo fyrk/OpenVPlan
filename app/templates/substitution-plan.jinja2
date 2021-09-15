@@ -23,11 +23,6 @@
 {% endblock %}
 
 {% block content %}
-<div class="box status-box clearfix">
-    <span>Stand: <span id="status">{{ storage.status }}</span></span>
-    <span class="float-end" id="online-status"></span>
-</div>
-
 {% for news_id, news in (news or {}).items() %}
     <div class="box news" data-news-id="{{ news_id }}">
         <button type="button" class="btn-close float-end" aria-label="Schließen"></button>
@@ -35,6 +30,11 @@
     </div>
 {% endfor %}
 
+
+<div class="box status-box clearfix">
+    <span>Stand: <span id="status">{{ storage.status }}</span></span>
+    <span class="float-end" id="online-status"></span>
+</div>
 
 {% for day in storage.iter_days() %}
 {% set day_loop = loop %}
