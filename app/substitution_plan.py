@@ -21,6 +21,7 @@ import sqlite3
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
+from functools import partial
 from typing import Iterable, MutableSet, Optional, Tuple, Callable, Awaitable, List
 from urllib.parse import urlparse
 
@@ -52,13 +53,25 @@ pywebpush.WebPusher.as_curl = lambda s, e, d, h: (e, d, h)
 
 
 class SubstitutionPlan:
-    def __init__(self, plan_id: str, crawler: BaseSubstitutionCrawler, render_func: Callable[..., Awaitable[str]]):
+    def __init__(self, app: web.Application, plan_id: str, crawler: BaseSubstitutionCrawler, render_func: Callable[..., Awaitable[str]], subs_options: dict):
         self._plan_id = plan_id
         self._crawler = crawler
-        self._render_func = render_func
+        self._render_func = partial(render_func, "substitution-plan.min.html",
+                                    app=app, plan_id=plan_id, subs_options=subs_options)
 
         self._index_site = None
         self._websockets: MutableSet[web.WebSocketResponse] = WeakSet()
+
+        template_options = app["settings"].template_options
+
+        self._webmanifest_text = json.dumps({
+            "name": f"{subs_options['title']} - {template_options['title']}",
+            "short_name": template_options["title_small"],
+            "description": subs_options["description"],
+            "start_url": f"/{plan_id}/?ref=PWA",
+            "display": "standalone", 
+            **app["settings"].additional_webmanifest_content
+        }, separators=(",", ":"))
 
     def on_db_init(self, app: web.Application):
         self._crawler.last_version_id = app["db"].get_substitutions_version_id(self._plan_id)
@@ -66,16 +79,14 @@ class SubstitutionPlan:
         app["logger"].debug(f"Last substitution version id is: {self._crawler.last_version_id!r}")
         log_helper.PLAN_NAME_CONTEXTVAR.set(None)
 
-    def create_app(self, background_updates: List[str], static_path: Optional[str] = None) -> web.Application:
+    def create_app(self, background_updates: List[str]) -> web.Application:
         app = web.Application()
         app.add_routes([
             web.get("/", self._root_handler),
+            web.get("/app.webmanifest", self._webmanifest),
             web.get("/api/wait-for-updates", self._wait_for_updates_handler),
             web.post("/api/subscribe-push", self._subscribe_push_handler)
         ])
-
-        if static_path:
-            app.router.add_static("/", static_path)
 
         async def update():
             log_helper.REQUEST_ID_CONTEXTVAR.set("bg-tasks")
@@ -191,6 +202,10 @@ class SubstitutionPlan:
             request["plan_id"] = self._plan_id
             raise
         return response
+    
+    # /app.webmanifest
+    async def _webmanifest(self, request: web.Request):
+        return web.Response(text=self._webmanifest_text, content_type="application/manifest+json", charset="utf-8")
 
     # /api/wait-for-updates
     @log_helper.plan_name_wrapper

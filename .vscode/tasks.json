@@ -14,7 +14,7 @@
                 },
                 "files": [
                     "${workspaceFolder}/docker-compose.dev.yml",
-                    "${workspaceFolder}/docker-compose.dev.secret.yml"
+                    "${workspaceFolder}/docker-compose-conf.secret.yml"
                 ]
             }
         },

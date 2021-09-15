@@ -117,7 +117,7 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                 if num == 1 and first_site is None:
                     data = await r.content.read()
                     nonlocal status, status_datetime, first_etag
-                    status, status_datetime = await self._parser_class.get_status(data)
+                    status, status_datetime = await self._parser_class.get_status(data)  # pylint: disable=unused-variable
                     first_etag = r.headers.get(hdrs.ETAG)
                     content = AsyncBytesIOWrapper(data)
                 await load_from_stream(num, content, r)
@@ -186,10 +186,10 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
                          for num in range(start_num, end_num)]
             _LOGGER.debug(f"[multipage-crawler] Loading pages {start_num} to {end_num-1}")
             try:
-                done, pending = await asyncio.wait_for(asyncio.wait(loads, return_when=asyncio.FIRST_EXCEPTION),
+                done, pending = await asyncio.wait_for(asyncio.wait(loads, return_when=asyncio.FIRST_EXCEPTION),  # pylint: disable=unused-variable
                                                        timeout=1.0)
             except Exception as e:
-                _LOGGER.error("[multipage-crawler] Got exception")
+                _LOGGER.exception("[multipage-crawler] Got exception")
                 for l in loads:
                     l.cancel()
                 raise e

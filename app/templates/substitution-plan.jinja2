@@ -5,14 +5,8 @@
 {% endif %}
 
 {% block title %}{% if not selection %}{{ subs_options.title }}{% else %}{{ selection_str|e }}{% endif %}{% endblock %}
-{% block og_title %}{% if subs_options.title %}{{ subs_options.title }}{% else %}{{ subs_options.og_title }}
-{% endif %}{% endblock %}
-{% block keywords %}{% if subs_options.keywords %}, {{ subs_options.keywords }}{% endif %}{% endblock %}
+{% block og_title %}{{ subs_options.og_title or subs_options.title }}{% endblock %}
 {% block breadcrumb_list %}{{ breadcrumb_list(subs_options.title, plan_id + "/") }}{% endblock %}
-
-{% block meta %}
-    <meta name="description" content="Vertretungsplan für das Gymnasium am Wall Verden">
-{% endblock %}
 {% block manifest_link %}
     <!--suppress HtmlUnknownTarget -->
     <link rel="manifest" href="app.webmanifest">

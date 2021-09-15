@@ -73,7 +73,10 @@ function buildJS(src, dest=DEST) {
     return src
         .pipe(wrap('!function(){"use strict";<%= contents %>}()'))
         .pipe(uglify({
-            toplevel: true
+            toplevel: true,
+            output: {
+                comments: /^!/
+            }
         }))
         .pipe(sourcemaps.write(".", {includeContent: false, sourceRoot: SOURCEMAP_SOURCE_ROOT}))
         .pipe(gulp.dest(dest));

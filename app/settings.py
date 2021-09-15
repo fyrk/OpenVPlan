@@ -16,12 +16,23 @@
 
 import datetime
 import logging
-from typing import Optional, Union, Any, Dict
+from typing import Optional, Union, Any, Dict, List, TypedDict
 
 from aiohttp import hdrs, http
 from pydantic import BaseSettings
 
 __version__ = "5.0"
+
+
+class _CrawlerParserDefinition(TypedDict):
+    name: str
+    options: dict
+
+
+class SubsPlanDefinition(TypedDict):
+    crawler: _CrawlerParserDefinition
+    parser: _CrawlerParserDefinition
+    template_options: Dict[str, Any]
 
 
 class Settings(BaseSettings):
@@ -39,6 +50,19 @@ class Settings(BaseSettings):
     plausible_embed_js: str = "https://plausible.io/js/embed.host.js"
 
     news: Optional[dict] = None
+
+    title: str = "OpenVPlan"
+    title_big: str = "OpenVPlan"
+    title_middle: str = "OpenVPlan"
+    title_small: str = "OpenVPlan"
+
+    meta_keywords: str = ""
+
+    html_meta: str = ""
+
+    footer_html: str = ""
+
+    additional_webmanifest_content: dict = {}
 
     enable_ferien: bool = True
     ferien_start: datetime.datetime = None
@@ -60,9 +84,9 @@ class Settings(BaseSettings):
 
     headers_block_floc: bool = True
 
-    default_plan_id: Optional[str] = None
+    default_plan_id: str = None
 
-    substitution_plans: Dict[str, Dict[str, Dict[str, Any]]] = None
+    substitution_plans: Dict[str, SubsPlanDefinition] = {}
 
     about_html: str = ""
 
@@ -76,3 +100,14 @@ class Settings(BaseSettings):
                                     endpoint=self.plausible_endpoint,
                                     embed_link=self.plausible_embed_link, embed_js=self.plausible_embed_js))
         return self._plausible
+    
+    _template_options = None
+    
+    @property
+    def template_options(self):
+        if not self._template_options:
+            object.__setattr__(self, "_template_options",
+                               dict(title=self.title, title_big=self.title_big, title_middle=self.title_middle, title_small=self.title_small,
+                                    html_meta=self.html_meta, footer_html=self.footer_html,
+                                    plans=[{"id": plan_id, "name": config["template_options"]["title"]} for plan_id, config in self.substitution_plans.items()]))
+        return self._template_options

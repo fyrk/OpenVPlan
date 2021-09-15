@@ -3,34 +3,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}{% endblock %} - Vertretungsplan GaW Verden</title>
+    <title>{% block title %}{% endblock %} - {{ options.title }}</title>
     {% macro breadcrumb_list(name, path) %}
         <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"gawvertretung.florian-raediker.de","item":"https://gawvertretung.florian-raediker.de"},{"@type":"ListItem","position":2,"name":"{{ name }}","item":"https://gawvertretung.florian-raediker.de/{{ path }}"}]}</script>
     {% endmacro %}
     {% block breadcrumb_list %}{% endblock %}
     {% block manifest_link %}{% endblock %}
-    <meta name="apple-mobile-web-app-title" content="GaW VPlan">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="GaW VPlan">
-    <meta name="keywords" content="Gymnasium am Wall, GaW Verden, Vertretung, Vertretungsplan, Schule{% block keywords %}{% endblock %}">
-    {% block meta %}{% endblock %}
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ static('apple-touch-icon.png', false) }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ static('favicon-32x32.png', false) }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ static('favicon-16x16.png', false) }}">
-    <link rel="mask-icon" href="{{ static('safari-pinned-tab.svg', false) }}" color="#e67b10">
-    <meta property="og:image" content="{{ static('open-graph.png', false) }}">
-    <meta property="og:image:width" content="500">
-    <meta property="og:image:height" content="500">
-    <meta name="apple-mobile-web-app-title" content="GaW VPlan">
-    <meta name="application-name" content="GaW VPlan">
-    <meta name="msapplication-TileColor" content="#e67b10">
-    <meta name="msapplication-TileImage" content="{{ static('/mstile-144x144.png', false) }}">
-    <meta name="theme-color" content="#e67b10">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://gawvertretung.florian-raediker.de">
-    <meta property="og:title" content="{% block og_title %}{% endblock %} - Vertretungsplan GaW Verden">
-    <meta property="og:locale" content="de_DE">
+    <meta name="description" content="{{ (subs_options.description or options.description) if subs_options else options.description }}">
+    <meta name="keywords" content="{{ (subs_options.keywords or options.keywords) if subs_options else options.keywords }}">
+    <meta property="og:title" content="{% block og_title %}{% endblock %} - {{ options.title }}">
     <meta name="color-scheme" content="light dark">
+    {{ options.html_meta|safe }}
     <script>const a=localStorage.getItem("dark-theme");null!=a&&(localStorage.setItem("theme",a),localStorage.removeItem("dark-theme"));switch(localStorage.getItem("theme")){case "light":document.documentElement.classList.add("light");break;case "dark":document.documentElement.classList.add("dark")}</script>
     <link href="{{ static('assets/style/main.css') }}" rel="stylesheet">
     {% if ferien %}<link href="{{ static('assets/ferien/style.css') }}" rel="stylesheet">{% endif %}
@@ -47,14 +30,15 @@
         <div class="box title-box">
             {% block title_bar %}
                 {% block pre_title %}{% endblock %}
-                <span class="title-big">Vertretungsplan Gymnasium am Wall Verden</span>
-                <span class="title-middle">GaW Vertretungsplan</span>
-                <span class="title-small">GaW VPlan</span>
+                <span class="title-big">{{ options.title_big }}</span>
+                <span class="title-middle">{{ options.title_middle }}</span>
+                <span class="title-small">{{ options.title_small }}</span>
             {% endblock %}
             {% block navigation %}
                 <nav class="nav nav-pills flex-sm-row justify-content-around">
-                    <a class="nav-item nav-link{% if plan_id == 'students' %} active{% endif %}" href="/students/">Schüler*innen</a>
-                    <a class="nav-item nav-link{% if plan_id == 'teachers' %} active{% endif %}" href="/teachers/">Lehrer*innen</a>
+                    {% for plan in options.plans %}
+                        <a class="nav-item nav-link{% if plan.id == plan_id %} active{% endif %}" href="/{{ plan.id }}/">{{ plan.name }}</a>
+                    {% endfor %}
                 </nav>
             {% endblock %}
         </div>
@@ -64,15 +48,10 @@
     </main>
 </div>
 <footer>
+    {{ options.footer_html|safe }}
     <p>
-        Dies ist eine inoffizielle Alternative zum originalen Vertretungsplan; die Daten stammen von gaw-verden.de.<br>
-        Alle Angaben ohne Gewähr.
-    </p>
-    <p>
-        Programmiert von Florian Rädiker.
-    </p>
-    <p>
-        Diese Webseite ist open-source. Der Quellcode kann <a href="https://github.com/FlorianRaediker/GaW-Vertretungsplan" target="_blank" rel="noopener" class="external">auf GitHub</a> eingesehen werden.
+        Programmiert von Florian Rädiker.<br>
+        Diese Webseite ist open-source. Der Quellcode kann <a href="https://github.com/FlorianRaediker/GaW-Vertretungsplan" target="_blank" rel="noopener" class="external">auf GitHub</a> eingesehen werden (AGPLv3-Lizenz).
     </p>
     <p>
         <!--suppress HtmlUnknownTarget -->

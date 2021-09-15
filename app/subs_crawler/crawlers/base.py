@@ -30,7 +30,6 @@ class BaseSubstitutionCrawler(ABC):
     _STORAGE_VERSION = b"\x01"
 
     _storage: "SubstitutionStorage"
-    storage: "SubstitutionStorage"
 
     def __init__(self, last_version_id,
                  parser_class: Type[BaseSubstitutionParser], parser_options: Dict[str, Any]):
@@ -41,7 +40,7 @@ class BaseSubstitutionCrawler(ABC):
         self._storage: Optional[SubstitutionStorage] = None
 
     @property
-    def storage(self):
+    def storage(self) -> "SubstitutionStorage":
         return self._storage
 
     @abstractmethod

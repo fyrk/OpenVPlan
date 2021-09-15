@@ -41,26 +41,25 @@ function plausible(eventName, options) {
 }
 
 function reportError(error, event = null) {
-    console.error("reporting error", error, event);
     try {
-        let name = error.name;
-        let message = (event == null ? undefined : event.message) ||
+        const name = error.name;
+        const message = (event == null ? undefined : event.message) ||
             error.message;
-        let description = error.description;  // non-standard Microsoft property
-        let number = error.number; // non-standard Microsoft property
-        let filename = (event == null ? undefined : event.filename) ||
+        const description = error.description;  // non-standard Microsoft property
+        const number = error.number; // non-standard Microsoft property
+        const filename = (event == null ? undefined : event.filename) ||
             error.fileName;  // error.fileName is non-standard Mozilla property
-        let lineno = (event == null ? undefined : event.lineno) ||
+        const lineno = (event == null ? undefined : event.lineno) ||
             error.lineNumber;  // error.lineNumber is non-standard Mozilla property
-        let colno = (event == null ? undefined : event.colno) ||
+        const colno = (event == null ? undefined : event.colno) ||
             error.columnNumber;  // error.columnNumber is non-standard Mozilla property
-        let stack = (event == null ? undefined : event.stack) ||
+        const stack = (event == null ? undefined : event.stack) ||
             error.stack;  // error.stack is non-standard Mozilla property
+        const key = (name || "Generic Error") + ": " + message;
+        const value = stack + " - " + filename + ":" + lineno + ":" + colno + " " + description + " " + number;
+        console.log("report error", key, value);
         plausible("JavaScript Error (Service Worker)", {
-            props: {
-                [(name || "Generic Error") + ": " + message]: stack + " - " + filename + ":" + lineno + ":" + colno +
-                " " + description + " " + number
-            }
+            props: { [key]: value }
         });
     } catch (e) {
         console.error("reporting error failed", e);
@@ -73,10 +72,17 @@ self.addEventListener("unhandledrejection", e => reportError(e.reason));
 
 const CACHE = "gawvertretung-v1";
 
-const planPaths = [
-    "/students/",
-    "/teachers/"
-];
+const defaultPlanPath = "##empty##"
+/*!
+default-plan-path
+*/;  // replaced by main.py
+
+const planPaths = []
+/*!
+plan-paths
+*/;  // replaced by main.py
+
+
 
 const assetsToCache = [
     "/assets/style/main.css",
@@ -84,9 +90,9 @@ const assetsToCache = [
     "/assets/js/timetables.js",
     "/assets/ferien/style.css",
     "/assets/ferien/script.js",
-    //"/assets/img/python-powered.min.svg", // caching <object src="..."> doesn't work: https://stackoverflow.com/questions/56854918/how-to-interact-with-an-svg-asset-in-an-offline-progressive-web-app
-    "/favicon-32x32.png",
-    "/android-chrome-192x192.png"
+/*!
+assets-to-cache
+*/  // not yet replaced by main.py
 ];
 
 self.addEventListener("install", event => {
@@ -127,7 +133,9 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
     const url = new URL(event.request.url);
     if (url.pathname === "/") {
-        event.respondWith(Response.redirect("/students/"))
+        if (defaultPlanPath && defaultPlanPath !== "##empty##") {
+            event.respondWith(Response.redirect(defaultPlanPath));
+        }
     } else if (planPaths.includes(url.pathname)) {
         // network-then-cache because plans need to be up-to-date
         event.respondWith(
@@ -147,11 +155,7 @@ self.addEventListener("fetch", event => {
             }).catch(() =>
                 caches.open(CACHE).then(cache =>
                     cache.match(url.pathname, {ignoreSearch: true}).then(matching => {
-                        if (matching)
-                            return matching
-                        else {
-                            return Promise.reject("no-match");
-                        }
+                        return matching ? matching : Promise.reject("no-match");
                     })
                 )
             )
@@ -184,35 +188,6 @@ self.addEventListener("fetch", event => {
                 }))
             )
         )
-        /*new Promise((fulfill, reject) => {
-                // currently, using a timeout might not display the most recent substitutions
-                // more work is needed, especially with WebSocket connection in updates.js
-                /*const timeout = setTimeout(() => {
-                    console.log("timeout", url.pathname);
-                    reject();
-                }, 1000);* /
-                console.log("fetching", event.request);
-                fetch(event.request).then(response => {
-                    //clearTimeout(timeout);
-                    console.log("fetch successful", event.request.url);
-                    fulfill(response.clone());
-                    if ((url.pathname !== "/students/" && url.pathname !== "/teachers/") || url.search !== "") {
-                        console.log("saving response in cache", event.request.url);
-                        caches.open(CACHE).then(cache => cache.put(new Request(url.pathname), response))
-                    } else {
-                        console.log("not saving in cache", event.request.url);
-                    }
-                }, reject);
-            }).catch(() => caches.open(CACHE)
-                .then(cache => cache.match(event.request, {ignoreSearch: true})
-                    .then(matching => {
-                        if (matching)
-                            return matching
-                        else {
-                            console.log("no match for", event.request);
-                            return Promise.reject("no-match");
-                        }
-                    }))));*/
     }
 });
 

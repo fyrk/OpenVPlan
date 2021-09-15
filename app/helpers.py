@@ -51,7 +51,8 @@ async def render_template(name: str, app: web.Application, **kwargs):
             not (settings.ferien_start < datetime.datetime.now() < settings.ferien_end):
         ferien = False
     return await app["jinja2_env"].get_template(name).render_async(
-        static=lambda path,cb=True: static_url(app, path, cb), plausible=settings.plausible, ferien=ferien, news=settings.news,
+        static=lambda path,cb=True: static_url(app, path, cb), plausible=settings.plausible, ferien=ferien, news=settings.news, 
+        options=settings.template_options,
         **kwargs)
 
 

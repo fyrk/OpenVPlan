@@ -26,7 +26,7 @@ from . import log_helper
 from . import subs_crawler
 from .db import SubstitutionPlanDB
 from .helpers import set_response_headers, error_middleware, render_template, redirect_handler, get_template_handler
-from .settings import Settings
+from .settings import Settings, SubsPlanDefinition
 from .substitution_plan import SubstitutionPlan
 
 THIS_DIR = Path(__file__).parent
@@ -102,9 +102,19 @@ async def cleanup(app):
 
 
 async def create_app():
-    app = web.Application(middlewares=[log_helper.logging_middleware, error_middleware])
+    static_path = THIS_DIR / "../static"
 
     settings = Settings()
+
+    if os.path.exists("/static/sw.js"):  # doesn't exist in development, i.e. if entrypoint.sh isn't executed
+        with open(static_path / "sw.js", "r") as f1, open("/static/sw.js", "w") as f2:
+            f2.write(f1.read()
+                .replace('"##empty##"\n/*!\ndefault-plan-path\n*/', f'"/{settings.default_plan_id}/"')
+                .replace("[]\n/*!\nplan-paths\n*/", "["+",".join(f'"/{plan_id}/"' for plan_id in settings.substitution_plans)+"]"))
+
+
+    app = web.Application(middlewares=[log_helper.logging_middleware, error_middleware])
+
 
     app["settings"] = settings
 
@@ -117,7 +127,6 @@ async def create_app():
     if settings.debug:
         logger_.info("RUNNING IN DEBUG MODE")
 
-    static_path = str(THIS_DIR / "../static")
 
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(str(THIS_DIR / "templates")),
@@ -156,28 +165,25 @@ async def create_app():
     app["subapps"] = []
 
     for plan_id, plan_config in settings.substitution_plans.items():
+        plan_config: SubsPlanDefinition
         crawler_id = plan_config["crawler"]["name"]
         try:
             crawler_class = subs_crawler.CRAWLERS[crawler_id]
         except KeyError:
-            raise ValueError(f"Invalid crawler id '{crawler_id}")
+            raise ValueError(f"Invalid crawler name '{crawler_id}")
         parser_id = plan_config["parser"]["name"]
         try:
             parser_class = subs_crawler.PARSERS[parser_id]
         except KeyError:
-            raise ValueError(f"Invalid parser id '{parser_id}'")
-        crawler_options = plan_config["crawler"].get("options", {})
-        parser_options = plan_config["parser"].get("options", {})
-        template_options = plan_config.get("template_options", {})
+            raise ValueError(f"Invalid parser name '{parser_id}'")
+        crawler_options = plan_config["crawler"]["options"]
+        parser_options = plan_config["parser"]["options"]
+        template_options = plan_config["template_options"]
         crawler = crawler_class(None,  # last_version_id will be set in SubstitutionPlan.set_db
                                 parser_class, parser_options, **crawler_options)
-        plan = SubstitutionPlan(
-            plan_id,
-            crawler,
-            partial(render_template, "substitution-plan.min.html",
-                    app=app, plan_id=plan_id, subs_options=template_options))
+        plan = SubstitutionPlan(app, plan_id, crawler, render_template, template_options)
 
-        subapp = plan.create_app(BACKGROUND_UPDATES, static_path+"/"+plan_id if settings.debug else None)
+        subapp = plan.create_app(BACKGROUND_UPDATES)
         app["subapps"].append(subapp)
         app.add_subapp(f"/{plan_id}/", subapp)
 
@@ -210,10 +216,8 @@ async def create_app():
             web.static("/node_modules", str(THIS_DIR.parent / "node_modules")),
             web.static("/static_src", str(THIS_DIR.parent / "static_src")),
 
-            web.static("/", static_path)
+            web.static("/", str(static_path))
         ])
-
-        print("SOURCES", static_path, str(THIS_DIR.parent))
 
     app["logger"].info("Server initialized")
 
