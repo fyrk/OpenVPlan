@@ -23,14 +23,20 @@ try {
     seenNews = [];
 }
 
+const props = {};
 for (const newsBox of document.getElementsByClassName("news")) {
-    if (seenNews.includes(newsBox.dataset.newsId)) {
+    const newsId = newsBox.dataset.newsId;
+    if (seenNews.includes(newsId)) {
         newsBox.hidden = true;
+        props[newsId] = "hidden";
     } else {
         newsBox.querySelector(".btn-close").addEventListener("click", () => {
             newsBox.hidden = true;
-            seenNews.push(newsBox.dataset.newsId);
+            seenNews.push(newsId);
             localStorage.setItem("seen-news", JSON.stringify(seenNews));
+            plausible("News: Dismiss", {props: {[newsId]: "Close"}})
         });
+        props[newsId] = "visible";
     }
 }
+plausible("News", {props: props});
