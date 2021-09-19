@@ -163,7 +163,6 @@ def set_response_headers(app: web.Application):
     headers = {
         "Content-Security-Policy": csp_header,
         "Strict-Transport-Security": "max-age=63072000",
-        "Referrer-Policy": "same-origin",
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
         "X-XSS-Protection": "1",
