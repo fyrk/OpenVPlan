@@ -1,4 +1,4 @@
-# Plausible Settings for GaW-Vertretungsplan
+# Plausible Settings for OpenVPlan
 
 ## Goals
 The following custom goal events are defined:

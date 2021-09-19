@@ -1,9 +1,9 @@
-# GaW-Vertretungsplan
+# OpenVPlan
 Vertretungsplan für das Gymnasium am Wall Verden.
 
 ## License
 ```
-GaW-Vertretungsplan
+OpenVPlan
 Copyright (C) 2019-2021  Florian Rädiker
 
 This program is free software: you can redistribute it and/or modify
@@ -19,3 +19,4 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
+DO NOT modify the attribution part in the footer, leave it as it is.

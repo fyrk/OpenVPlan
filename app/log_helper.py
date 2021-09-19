@@ -1,4 +1,4 @@
-#  GaW-Vertretungsplan
+#  OpenVPlan
 #  Copyright (C) 2019-2021  Florian Rädiker
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ from aiohttp import web
 
 from .settings import Settings
 
-_logger = logging.getLogger("gawvertretung")
+_logger = logging.getLogger("openvplan")
 
 PLAN_NAME_CONTEXTVAR = contextvars.ContextVar("plan_name")
 REQUEST_ID_CONTEXTVAR = contextvars.ContextVar("request_id")

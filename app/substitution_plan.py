@@ -1,4 +1,4 @@
-#  GaW-Vertretungsplan
+#  OpenVPlan
 #  Copyright (C) 2019-2021  Florian Rädiker
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -255,7 +255,7 @@ class SubstitutionPlan:
                             {
                                 "type": "generic_message",
                                 "title": "Benachrichtigungen erfolgreich aktiviert!",
-                                "body": "GaW Vertretungsplan"
+                                "body": request.app["settings"].title
                             }):
                         raise ValueError("Could not send push notification to newly subscribed endpoint")
             else:

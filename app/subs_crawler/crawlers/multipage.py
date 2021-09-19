@@ -1,4 +1,4 @@
-#  GaW-Vertretungsplan
+#  OpenVPlan
 #  Copyright (C) 2019-2021  Florian Rädiker
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ from ..parsers.base import AsyncBytesIOWrapper, BaseMultiPageSubstitutionParser,
 from ..storage import SubstitutionStorage
 from ..utils import create_date_timestamp
 
-_LOGGER = logging.getLogger("gawvertretung")
+_LOGGER = logging.getLogger("openvplan")
 
 
 class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):

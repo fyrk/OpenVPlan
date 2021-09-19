@@ -9,7 +9,7 @@
                     "detached": true,
                     "build": true,
                     "services": [
-                        "gawvertretung"
+                        "openvplan"
                     ]
                 },
                 "files": [

@@ -1,4 +1,4 @@
-#  GaW-Vertretungsplan
+#  OpenVPlan
 #  Copyright (C) 2019-2021  Florian Rädiker
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@ from functools import partial
 from pathlib import Path
 
 import jinja2
+import yarl
 from aiohttp import web, client, hdrs
 from aiojobs.aiohttp import setup as aiojobs_setup
 
@@ -31,8 +32,8 @@ from .substitution_plan import SubstitutionPlan
 
 THIS_DIR = Path(__file__).parent
 
-DATA_DIR = "/var/lib/gawvertretung"
-CACHE_DIR = "/var/cache/gawvertretung"
+DATA_DIR = "/var/lib/openvplan"
+CACHE_DIR = "/var/cache/openvplan"
 
 for directory in (
     DATA_DIR,
@@ -106,12 +107,20 @@ async def create_app():
 
     settings = Settings()
 
+    with open(static_path / "sw.js", "r") as f:
+        sw = f.read()
+        for key, default_value, replacement in (
+            ("default-plan-path", '"##empty##"', f'"/{settings.default_plan_id}/"'),
+            ("plan-paths", "[]", "["+",".join(f'"/{plan_id}/"' for plan_id in settings.substitution_plans)+"]"),
+            ("plausible-domain", '""', '"'+settings.plausible_domain+'"'),
+            ("plausible-endpoint", '""', '"'+(settings.plausible_endpoint or (str(yarl.URL(settings.plausible_js).origin()) + "/api/event"))+'"')
+        ):
+            search = f"{default_value}\n/*!\n{key}\n*/"
+            assert search in sw
+            sw = sw.replace(search, replacement)
     if os.path.exists("/static/sw.js"):  # doesn't exist in development, i.e. if entrypoint.sh isn't executed
-        with open(static_path / "sw.js", "r") as f1, open("/static/sw.js", "w") as f2:
-            f2.write(f1.read()
-                .replace('"##empty##"\n/*!\ndefault-plan-path\n*/', f'"/{settings.default_plan_id}/"')
-                .replace("[]\n/*!\nplan-paths\n*/", "["+",".join(f'"/{plan_id}/"' for plan_id in settings.substitution_plans)+"]"))
-
+        with open("/static/sw.js", "w") as f:
+            f.write(sw)
 
     app = web.Application(middlewares=[log_helper.logging_middleware, error_middleware])
 
@@ -209,9 +218,16 @@ async def create_app():
             if "log" in request.query:
                 app["logger"].error("Test error")
             raise ValueError
-        app.add_routes([web.get("/test500", test500_handler)])
+
+        async def sw_handler(request: web.Request):
+            print("SW requested")
+            return web.Response(text=sw, content_type="text/javascript")
 
         app.add_routes([
+            web.get("/test500", test500_handler),
+            
+            web.get("/sw.js", sw_handler),
+
             # for source files referenced in sourcemaps:
             web.static("/node_modules", str(THIS_DIR.parent / "node_modules")),
             web.static("/static_src", str(THIS_DIR.parent / "static_src")),

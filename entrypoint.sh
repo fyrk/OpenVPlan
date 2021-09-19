@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# GaW-Vertretungsplan
+# OpenVPlan
 # Copyright (C) 2019-2021  Florian Rädiker
 #
 # This program is free software: you can redistribute it and/or modify

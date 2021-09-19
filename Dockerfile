@@ -12,7 +12,7 @@ COPY requirements-dev.txt requirements-dev.txt
 RUN if [ "$mode" = "dev" ] ; then pip3 install -r requirements-dev.txt ; fi
 
 # thanks, nginx
-RUN mkdir /var/log/gawvertretung && ln -sf /dev/stdout /var/log/gawvertretung/gawvertretung.log
+RUN mkdir /var/log/openvplan && ln -sf /dev/stdout /var/log/openvplan/openvplan.log
 
 COPY . .
 

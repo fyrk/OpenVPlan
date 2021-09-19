@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{% endblock %} - {{ options.title }}</title>
     {% macro breadcrumb_list(name, path) %}
-        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"gawvertretung.florian-raediker.de","item":"https://gawvertretung.florian-raediker.de"},{"@type":"ListItem","position":2,"name":"{{ name }}","item":"https://gawvertretung.florian-raediker.de/{{ path }}"}]}</script>
+        <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"{{ options.domain }}","item":"https://{{ options.domain }}"},{"@type":"ListItem","position":2,"name":"{{ name }}","item":"https://{{ options.domain }}/{{ path }}"}]}</script>
     {% endmacro %}
     {% block breadcrumb_list %}{% endblock %}
     {% block manifest_link %}{% endblock %}
@@ -51,7 +51,7 @@
     {{ options.footer_html|safe }}
     <p>
         Programmiert von Florian Rädiker.<br>
-        Diese Webseite ist open-source. Der Quellcode kann <a href="https://github.com/FlorianRaediker/GaW-Vertretungsplan" target="_blank" rel="noopener" class="external">auf GitHub</a> eingesehen werden (AGPLv3-Lizenz).
+        Diese Webseite ist open-source. Der Quellcode kann <a href="https://github.com/FlorianRaediker/OpenVPlan" target="_blank" rel="noopener" class="external">auf GitHub</a> eingesehen werden (AGPLv3-Lizenz).
     </p>
     <p>
         <!--suppress HtmlUnknownTarget -->

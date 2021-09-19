@@ -1,5 +1,5 @@
 /*
- * GaW-Vertretungsplan
+ * OpenVPlan
  * Copyright (C) 2019-2021  Florian Rädiker
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,6 +16,32 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+const CACHE = "gawvertretung-v1";
+
+
+// the following values are replaced by main.py
+
+const defaultPlanPath = "##empty##"
+/*!
+default-plan-path
+*/;
+
+const planPaths = []
+/*!
+plan-paths
+*/;
+
+const plausibleDomain = ""
+/*!
+plausible-domain
+*/;
+
+const plausibleEndpoint = ""
+/*!
+plausible-endpoint
+*/;
+
+
 // the following is inspired by code from (https://github.com/plausible/analytics/blob/0089add5944177bd2352510236a09157dc9d16bf/tracker/src/plausible.js, MIT license)
 // the original code isn't designed to be used with SWs
 //var plausible_ignore = window.localStorage.plausible_ignore;  // TODO: localStorage is not supported by SW
@@ -23,7 +49,7 @@ function plausible(eventName, options) {
     const payload = {
         n: eventName,
         u: self.location.toString(),
-        d: "gawvertretung.florian-raediker.de",
+        d: plausibleDomain,
         r: null,
         //w: 0
     }
@@ -33,7 +59,7 @@ function plausible(eventName, options) {
     if (options && options.props) {
         payload.p = JSON.stringify(options.props)
     }
-    return fetch("https://plausible.florian-raediker.de/api/event", {
+    return fetch(plausibleEndpoint, {
         method: "POST",
         headers: {"Content-Type": "text/plain"},
         body: JSON.stringify(payload)
@@ -68,20 +94,6 @@ function reportError(error, event = null) {
 
 self.addEventListener("error", e => reportError(e.error, e));  // e.error is experimental, according to MDN
 self.addEventListener("unhandledrejection", e => reportError(e.reason));
-
-
-const CACHE = "gawvertretung-v1";
-
-const defaultPlanPath = "##empty##"
-/*!
-default-plan-path
-*/;  // replaced by main.py
-
-const planPaths = []
-/*!
-plan-paths
-*/;  // replaced by main.py
-
 
 
 const assetsToCache = [

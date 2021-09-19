@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  gawvertretung:
+  openvplan:
     environment:
       DEBUG: 0  # MUST BE 0 IN PRODUCTION
 
@@ -21,6 +21,7 @@ services:
       TELEGRAM_BOT_LOGGER_USE_FIXED_WIDTH: 0
       TELEGRAM_BOT_LOGGER_LEVEL: 30  # logging.WARNING
 
+      DOMAIN: "example.org"  # REPLACE
 
       TITLE: "OpenVPlan"
       TITLE_BIG: "OpenVPlan"

@@ -1,7 +1,6 @@
 {
-  "name": "gawvertretung",
+  "name": "openvplan",
   "version": "1.0.0",
-  "description": "Vertretungsplan für das Gymnasium am Wall Verden",
   "private": true,
   "repository": {
     "type": "git",
@@ -10,7 +9,7 @@
   "keywords": [
     "substitution-plan",
     "vertretungsplan",
-    "gymnasium-am-wall-verden"
+    "website"
   ],
   "author": "Florian Rädiker",
   "scripts": {

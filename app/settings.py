@@ -1,4 +1,4 @@
-#  GaW-Vertretungsplan
+#  OpenVPlan
 #  Copyright (C) 2019-2021  Florian Rädiker
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -36,6 +36,13 @@ class SubsPlanDefinition(TypedDict):
 
 
 class Settings(BaseSettings):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if hdrs.USER_AGENT not in self.request_headers:
+            self.request_headers[hdrs.USER_AGENT] = f"Mozilla/5.0 (compatible; OpenVPlanBot/{__version__}; +https://{self.domain}) {http.SERVER_SOFTWARE}"
+
+
     debug: bool = False
 
     telegram_bot_logger_token: Optional[str] = None
@@ -49,7 +56,7 @@ class Settings(BaseSettings):
     plausible_embed_link: str = ""
     plausible_embed_js: str = "https://plausible.io/js/embed.host.js"
 
-    news: Optional[dict] = None
+    domain: str = ""
 
     title: str = "OpenVPlan"
     title_big: str = "OpenVPlan"
@@ -64,6 +71,8 @@ class Settings(BaseSettings):
 
     additional_webmanifest_content: dict = {}
 
+    news: Optional[dict] = None
+
     enable_ferien: bool = True
     ferien_start: datetime.datetime = None
     ferien_end: datetime.datetime = None
@@ -74,10 +83,7 @@ class Settings(BaseSettings):
     webpush_content_encoding: str = "aes128gcm"
     send_welcome_push_message: bool = False
 
-    request_headers: dict = {
-        hdrs.USER_AGENT: f"Mozilla/5.0 (compatible; GaWVertretungBot/{__version__}; "
-                         f"+https://gawvertretung.florian-raediker.de) {http.SERVER_SOFTWARE}"
-    }
+    request_headers: dict = {}
     request_timeout: float = 10
 
     additional_csp_directives: dict = {}
@@ -107,7 +113,7 @@ class Settings(BaseSettings):
     def template_options(self):
         if not self._template_options:
             object.__setattr__(self, "_template_options",
-                               dict(title=self.title, title_big=self.title_big, title_middle=self.title_middle, title_small=self.title_small,
+                               dict(domain=self.domain, title=self.title, title_big=self.title_big, title_middle=self.title_middle, title_small=self.title_small,
                                     html_meta=self.html_meta, footer_html=self.footer_html,
                                     plans=[{"id": plan_id, "name": config["template_options"]["title"]} for plan_id, config in self.substitution_plans.items()]))
         return self._template_options

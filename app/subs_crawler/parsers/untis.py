@@ -1,4 +1,4 @@
-#  GaW-Vertretungsplan
+#  OpenVPlan
 #  Copyright (C) 2019-2021  Florian Rädiker
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,7 @@ from ..parsers.base import BaseMultiPageSubstitutionParser, Stream
 from ..storage import Substitution, SubstitutionDay, SubstitutionGroup, SubstitutionStorage
 from ..utils import create_date_timestamp, get_lesson_num, split_class_name
 
-_LOGGER = logging.getLogger("gawvertretung")
+_LOGGER = logging.getLogger("openvplan")
 
 _REGEX_STATUS = re.compile(br"Stand: (\d\d\.\d\d\.\d\d\d\d \d\d:\d\d)")
 _REGEX_TITLE = re.compile(r"(\d+.\d+.\d\d\d\d) (\w+), Woche (\w+)")
