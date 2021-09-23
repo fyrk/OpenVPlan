@@ -3,7 +3,7 @@
 ## Goals
 The following custom goal events are defined:
  * Outbound Link: Click
- * Features - <plan id>:
+ * Features - `<plan id>`:
    - Props: Notifications, Selection, Theme, Timetables
  * Select
  * Push Subscription
