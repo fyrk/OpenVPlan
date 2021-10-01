@@ -24,7 +24,9 @@ try {
 }
 
 const props = {};
+const hasNews = false;
 for (const newsBox of document.getElementsByClassName("news")) {
+    hasNews = true;
     const newsId = newsBox.dataset.newsId;
     if (seenNews.includes(newsId)) {
         newsBox.hidden = true;
@@ -39,4 +41,5 @@ for (const newsBox of document.getElementsByClassName("news")) {
         props[newsId] = "visible";
     }
 }
-plausible("News", {props: props});
+if (hasNews)
+    plausible("News", {props: props});
