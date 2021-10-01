@@ -309,31 +309,32 @@ self.addEventListener("push", async (event) => {
 
 self.addEventListener("notificationclick", event => {
     event.notification.close();
-
-    if (event.notification.data && event.notification.data.type === "subs_update") {
+    const data = event.notification.data;
+    if (data && data.type === "subs_update") {
         // open website
         event.waitUntil(Promise.all([
             self.clients.matchAll().then(function(clientList) {
-                const notificationURL = new URL(event.notification.data.url);
+                const notificationURL = new URL(data.url);
                 for (let client of clientList) {
                     const url = new URL(client.url);
-                    if (url.origin + url.pathname === notificationURL.origin + notificationURL.pathname && "focus" in
-                        client)
+                    if (url.origin + url.pathname === notificationURL.origin + notificationURL.pathname && "focus" in client) {
+                        plausible("Notification", {props: {[data.plan_id]: "Clicked (" + data.notification_count + ", focus)"}})
                         return client.focus();
+                    }
                 }
-                if (self.clients.openWindow)
-                    return self.clients.openWindow(event.notification.data.url);
+                if (self.clients.openWindow) {
+                    plausible("Notification", {props: {[data.plan_id]: "Clicked (" + data.notification_count + ", open)"}})
+                    return self.clients.openWindow(data.url);
+                }
             }),
 
             // close all notifications
             self.registration.getNotifications().then(notifications => {
                 notifications.forEach(n => {
-                    if (n.data != null && n.data.plan_id === event.notification.data.plan_id)
+                    if (n.data != null && n.data.plan_id === data.plan_id)
                         n.close()
                 });
             }),
-
-            plausible("Notification", {props: {[event.notification.data.plan_id]: "Clicked (" + event.notification.data.notification_count + ")"}})
         ]));
     }
 });

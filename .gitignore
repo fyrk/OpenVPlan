@@ -2,6 +2,14 @@ deploy.sh
 *.secret.*
 static/assets/js/plausible.outbound-links.local.js
 
+# favicon files etc.:
+static/*.png
+static/*.ico
+static/browserconfig.xml
+static/favicon.svg
+static/safari-pinned-tab.svg
+static/manifest.webapp
+
 .DS_Store
 node_modules/
 
