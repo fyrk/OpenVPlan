@@ -68,7 +68,7 @@ class SubstitutionPlan:
             "name": f"{subs_options['title']} - {template_options['title']}",
             "short_name": template_options["title_small"],
             "description": subs_options["description"],
-            "start_url": f"/{plan_id}/?ref=PWA",
+            "start_url": f"/{plan_id}/?ref=PWA+({plan_id})",
             "display": "standalone", 
             **app["settings"].additional_webmanifest_content
         }, separators=(",", ":"))
@@ -144,8 +144,11 @@ class SubstitutionPlan:
             campaign = request.query.get("utm_campaign") or request.query.get("mtm_campaign")
             if campaign == "pwa_homescreen":
                 new_query = {key: value for key, value in request.rel_url.query.items() if key not in ["utm_campaign", "mtm_campaign"] or value != "pwa_homescreen"}
-                new_query["ref"] = "PWA"
+                new_query["ref"] = f"PWA ({self._plan_id})"
                 new_url = new_url.with_query(new_query)
+                redirect = True
+            elif request.query.get("ref") == "PWA":
+                new_url = new_url.update_query(ref=f"PWA ({self._plan_id})")
                 redirect = True
 
             if "all" not in request.query and "s" not in request.query:
