@@ -243,6 +243,7 @@ self.addEventListener("push", async (event) => {
         let currentTimestamp = Date.now()/1000;  // current UTC timestamp in seconds
         event.waitUntil(
             self.registration.getNotifications().then(notifications => {
+                let notificationCount = 1;
                 for (let n of notifications) {
                     if (n.data && n.data.plan_id === plan_id) {
                         for (let [expiryTime, day] of Object.entries(n.data.affected_groups_by_day)) {
@@ -258,6 +259,8 @@ self.addEventListener("push", async (event) => {
                             }
                         }
                         n.close();
+                        if (n.data.notification_count)
+                            notificationCount += n.data.notification_count;
                     }
                 }
                 for (let day of Object.values(affectedGroups)) {
@@ -292,6 +295,7 @@ self.addEventListener("push", async (event) => {
                         plan_id: plan_id,
                         url: new URL("/" + plan_id + "/?source=Notification", self.location.origin).href,
                         affected_groups_by_day: affectedGroups,
+                        notification_count: notificationCount,
                     }
                 };
 
@@ -329,7 +333,7 @@ self.addEventListener("notificationclick", event => {
                 });
             }),
 
-            plausible("Notification", {props: {[event.notification.data.plan_id]: "Clicked"}})
+            plausible("Notification", {props: {[event.notification.data.plan_id]: "Clicked (" + event.notification.data.notification_count + ")"}})
         ]));
     }
 });

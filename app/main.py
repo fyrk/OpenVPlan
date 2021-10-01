@@ -107,8 +107,9 @@ async def create_app():
 
     settings = Settings()
 
-    with open(static_path / "sw.js", "r") as f:
-        sw = f.read()
+    def get_sw():
+        with open(static_path / "sw.js", "r") as f:
+            sw = f.read()
         for key, default_value, replacement in (
             ("default-plan-path", '"##empty##"', f'"/{settings.default_plan_id}/"'),
             ("plan-paths", "[]", "["+",".join(f'"/{plan_id}/"' for plan_id in settings.substitution_plans)+"]"),
@@ -118,9 +119,12 @@ async def create_app():
             search = f"{default_value}\n/*!\n{key}\n*/"
             assert search in sw
             sw = sw.replace(search, replacement)
+        return sw
+
+    
     if os.path.exists("/static/sw.js"):  # doesn't exist in development, i.e. if entrypoint.sh isn't executed
         with open("/static/sw.js", "w") as f:
-            f.write(sw)
+            f.write(get_sw())
 
     app = web.Application(middlewares=[log_helper.logging_middleware, error_middleware])
 
@@ -220,8 +224,7 @@ async def create_app():
             raise ValueError
 
         async def sw_handler(request: web.Request):
-            print("SW requested")
-            return web.Response(text=sw, content_type="text/javascript")
+            return web.Response(text=get_sw(), content_type="text/javascript")
 
         app.add_routes([
             web.get("/test500", test500_handler),
