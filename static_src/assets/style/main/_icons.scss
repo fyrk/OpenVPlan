@@ -41,21 +41,3 @@
     );
     margin-left: 0.25em;
 }
-
-.i-bookmark::before {
-    @extend %icon-primary;
-    @include icon(
-                    url("data:image/svg+xml,!bi-bookmark"),
-            $width: 0.8125em,
-            $height: 0.8125em
-    );
-    vertical-align: -0.085em;
-    margin-right: 0.25em;
-}
-
-.i-reload::before {
-    @include icon(
-        url("data:image/svg+xml,!bi-bookmark")
-    );
-    margin-right: 0.25em;
-}

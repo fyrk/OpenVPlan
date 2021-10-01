@@ -164,6 +164,22 @@ $day-info-heading-font-size: 1.1rem;
     .group-name.selectable {
         position: relative;
     }
+
+    .group-name.selectable a::before {
+        @extend %icon-primary;
+        @include icon(
+                        url("data:image/svg+xml,!bi-bookmark"),
+                $width: 0.8125em,
+                $height: 0.8125em
+        );
+        vertical-align: -0.085em;
+        margin-right: 0.25em;
+    }
+
+    .group-name.selectable:hover a::before {
+        mask: url("data:image/svg+xml,!bi-bookmark-fill") no-repeat 0 0/0.8125em 0.8125em;
+    }
+    
 }
 /*! purgecss end ignore */
 
