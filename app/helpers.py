@@ -17,6 +17,7 @@
 import asyncio
 import datetime
 import json
+from functools import partial
 
 import yarl
 from aiohttp import web
@@ -44,15 +45,19 @@ def static_url(app: web.Application, static_file_path: str, cache_busting: bool 
 
 async def render_template(name: str, app: web.Application, **kwargs):
     settings = app["settings"]
+
     if app["settings"].debug or app["cache_busting"] is None:  # always reload cache_busting.json in debug mode
         with open(app["cache_busting_path"], "r") as f:
             app["cache_busting"] = json.load(f)
+
     ferien = settings.enable_ferien
     if ferien and settings.ferien_start and settings.ferien_end and \
             not (settings.ferien_start < datetime.datetime.now() < settings.ferien_end):
         ferien = False
+
     return await app["jinja2_env"].get_template(name).render_async(
         static=lambda path,cb=True: static_url(app, path, cb), plausible=settings.plausible, ferien=ferien, news=settings.news, 
+        json_dumps=partial(json.dumps, separators=(",", ":")),
         options=settings.template_options,
         **kwargs)
 
