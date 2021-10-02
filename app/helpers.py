@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import asyncio
 import datetime
 import json
 
@@ -68,6 +69,8 @@ async def error_middleware(request: web.Request, handler):
             return web.Response(text=await render_template("error-404.min.html", request.app),
                                 status=404, content_type="text/html", charset="utf-8",
                                 headers=request.app["response_headers"])
+        raise
+    except asyncio.CancelledError:
         raise
     except Exception:
         logger.exception(f"{request.method} {request.path} Exception while handling request")
