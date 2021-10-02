@@ -8,7 +8,7 @@
         <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"{{ options.domain }}","item":"https://{{ options.domain }}"},{"@type":"ListItem","position":2,"name":"{{ name }}","item":"https://{{ options.domain }}/{{ path }}"}]}</script>
     {% endmacro %}
     {% block breadcrumb_list %}{% endblock %}
-    {% block manifest_link %}{% endblock %}
+    {% block additional_meta %}{% endblock %}
     <meta name="description" content="{{ (subs_options.description or options.description) if subs_options else options.description }}">
     <meta name="keywords" content="{{ (subs_options.keywords or options.keywords) if subs_options else options.keywords }}">
     <meta property="og:title" content="{% block og_title %}{% endblock %} - {{ options.title }}">

@@ -7,9 +7,10 @@
 {% block title %}{% if not selection %}{{ subs_options.title }}{% else %}{{ selection_str|e }}{% endif %}{% endblock %}
 {% block og_title %}{{ subs_options.og_title or subs_options.title }}{% endblock %}
 {% block breadcrumb_list %}{{ breadcrumb_list(subs_options.title, plan_id + "/") }}{% endblock %}
-{% block manifest_link %}
+{% block additional_meta %}
     <!--suppress HtmlUnknownTarget -->
     <link rel="manifest" href="app.webmanifest">
+    <link rel="canonical" href="/{{ plan_id }}/">
 {% endblock %}
 {% block scripts %}
     <script defer src="{{ static('assets/js/substitutions.js') }}"></script>
