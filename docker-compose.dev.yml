@@ -13,5 +13,6 @@ services:
       - "8000:8000"
       - "8001:8001"
     volumes:
-      - .:/app
-      - ./data:/var/lib/openvplan
+      - ".:/app"
+      - "./config:/config:ro"
+      - "./data:/var/lib/openvplan"

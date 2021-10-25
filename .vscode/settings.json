@@ -1,2 +1,11 @@
 {
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "prod_db.sqlite3",
+            "database": "${workspaceFolder:OpenVPlan}/_dev.secret./prod_db.sqlite3"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
 }

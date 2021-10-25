@@ -1,5 +1,6 @@
 aiohttp
 jinja2
+json5
 sortedcontainers
 pywebpush
 aiojobs

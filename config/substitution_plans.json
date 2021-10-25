@@ -1,0 +1,85 @@
+{
+  "default": "students",
+
+  "students": {
+    "crawler": {
+      "name": "multipage",
+      "options": {
+        "url": "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm"
+      }
+    },
+    "parser": {
+      "name": "untis",
+      "options": {
+        "encoding": "iso-8859-1",
+        "lesson_column": 3
+      }
+    },
+    "template_options": {
+      "title": "Schüler*innen",
+      "description": "Schüler*innen-Vertretungsplan für das Gymnasium am Wall Verden",
+      "keywords": "Gymnasium am Wall, GaW Verden, Vertretung, Vertretungsplan, Schule, Schüler, Klassen, Schüler*innen",
+      "supports_timetables": true,
+      "table_headers": [
+        "Kla",
+        "Lehrer",
+        "Vertr",
+        "Stunde",
+        "Fach",
+        "Raum",
+        "Vertr von",
+        "Hinweis"
+      ],
+      "original_data_link": "https://gaw-verden.de/images/vertretung/klassen/subst_001.htm",
+      "texts": {
+        "select_heading": "Klassen auswählen",
+        "select_text": "Einzelne Klassen können mit dem Lesezeichen-Symbol ausgewählt werden.<br>Mehrere Klassen oder Klassen, für die es gerade keine Vertretungen gibt, können hier ausgewählt werden:",
+        "selection_help_text": "Mehrere Klassen durch Kommata trennen",
+        "selection_all": "Alle Klassen",
+        "notifications_info_all": "Du wirst für alle Klassen benachrichtigt. Wähle Klassen aus, um nur für bestimmte Klassen benachrichtigt zu werden."
+      }
+    }
+  },
+  "teachers": {
+    "crawler": {
+      "name": "multipage",
+      "options": {
+        "url": "https://gaw-verden.de/images/vertretung/lehrer/subst_{:03}.htm"
+      }
+    },
+    "parser": {
+      "name": "untis",
+      "options": {
+        "encoding": "iso-8859-1",
+        "lesson_column": 1,
+        "class_column": 2,
+        "group_name_is_class": false
+      }
+    },
+    "template_options": {
+      "title": "Lehrer*innen",
+      "description": "Lehrer*innen-Vertretungsplan für das Gymnasium am Wall Verden",
+      "keywords": "Gymnasium am Wall, GaW Verden, Vertretung, Vertretungsplan, Schule, Lehrer, Lehrer*innen",
+      "supports_timetables": false,
+      "table_headers": [
+        "Vertr",
+        "Stunde",
+        "Klasse",
+        "Lehrer*in",
+        "Fach",
+        "Raum",
+        "Vertr von",
+        "Hinweis"
+      ],
+      "original_data_link": "https://gaw-verden.de/images/vertretung/lehrer/subst_001.htm",
+      "texts": {
+        "select_heading": "Kürzel auswählen",
+        "select_text": "Einzelne Lehrer*innenkürzel können mit dem Lesezeichen-Symbol ausgewählt werden.<br>Mehrere Kürzel oder Kürzel, für die es gerade keine Vertretungen gibt, können hier ausgewählt werden:",
+        "selection_help_text": "Mehrere Kürzel durch Kommata trennen",
+        "selection_all": "Alle Vertretungen",
+        "notifications_info_all": "Du wirst für alle Vertretungen benachrichtigt. Wähle Kürzel aus, um nur für bestimmte Kürzel benachrichtigt zu werden."
+      },
+      "uppercase_selection": true
+    }
+  }
+}
