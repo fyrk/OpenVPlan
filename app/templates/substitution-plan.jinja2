@@ -24,7 +24,7 @@
 {% endblock %}
 
 {% block content %}
-{% for news_id, news in (news or {}).items() %}
+{% for news_id, news in (news or {}).items() if ":" not in news_id or news_id.startswith(plan_id+":") %}
     <div class="box news" data-news-id="{{ news_id }}">
         <button type="button" class="btn-close float-end" aria-label="Schließen"></button>
         {{ news|safe }}
