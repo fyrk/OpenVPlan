@@ -200,7 +200,6 @@ class SubstitutionPlan:
         except web.HTTPException:
             raise
         except Exception:
-            request.app["logger"].exception("Exception while handling substitution request")
             # set info for error handling in helpers.py's error_middleware
             request["plan_id"] = self._plan_id
             raise
