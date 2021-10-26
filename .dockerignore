@@ -1,10 +1,15 @@
 *
 
+!app/
+!static/
+!config/
+!entrypoint.sh
+!LICENSE
 !requirements.txt
 !requirements-dev.txt
-!entrypoint.sh
 
-!app/
-
-!static/
+app/templates/*.jinja2
 static/**/*.map
+
+**/__pycache__/
+**/.DS_Store
