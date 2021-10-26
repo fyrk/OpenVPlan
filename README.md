@@ -7,10 +7,9 @@ For an example, see [gaw-vertretung.de](https://gaw-vertretung.de).
  * Neatly display substitutions from Untis subst_???.htm plans ([example](https://gaw-verden.de/images/vertretung/klassen/subst_001.htm))
  * Groups (class, teacher etc.) can be selected
  * Send browser push notifications on new substitutions
- * Gray out substitutions that are no longer relevant
  * Works offline
  * Installable as a [Progressive Web App](https://en.wikipedia.org/wiki/Progressive_web_application)
- * If a timetable is provided, relevant substitutions are highlighted. Timetables are stored in the browser and are never sent to the server.
+ * Users can provide timetables, and relevant substitutions will be highlighted. Timetables are stored in the browser and are never sent to the server.
  * Light and dark theme
  * Supports privacy-friendly web analytics with [Plausible](https://plausible.io)
 
@@ -28,7 +27,7 @@ An example configuration for [Docker Compose](https://docs.docker.com/compose/) 
 $ docker-compose -f docker-compose.prod.example.yml up -d
 ```
 
-This will start OpenVPlan as well as nginx listening on localhost, port 80. For the nginx configuration, see `nginx-openvplan.conf`. Nginx passes requests to the OpenVPlan container and serves static files (provided by OpenVPlan through the `openvplan_static` volume). The website is now available at http://localhost.
+This will start OpenVPlan as well as nginx listening on localhost:80. For the nginx configuration, see `nginx-openvplan.conf`. Nginx passes requests to the OpenVPlan container and serves static files (provided by OpenVPlan through the `openvplan_static` volume). The website is now available at http://localhost.
 
 Note that for most features to work, the site *must* be served over HTTPS. The nginx configuration should be changed accordingly (listen on port 443, redirect non-HTTPS traffic). (HTTP on localhost is usually treated as secure by browsers.)
 
@@ -43,7 +42,7 @@ The following environment variables are available. Some are already present in `
 | Name | Default | Description |
 | ---- | ------- | ----------- |
 | DEBUG  | 0 | Must be 0 in production. If 1, various development features are enabled, like serving static files directly. |
-| DOMAIN | example.org | The website's domain, *without* the protocol or path                                                             |
+| DOMAIN | example.org | The website's domain, *without* the protocol or path |
 
 #### HTML
 | Name | Default | Description |
@@ -55,7 +54,7 @@ The following environment variables are available. Some are already present in `
 #### Push Notifications
 | Name | Default | Description |
 | ---- | ------- | ----------- |
-| PUBLIC_VAPID_KEY<br>PRIVATE_VAPID_KEY<br>VAPID_SUB | null | These settings are required for push notifications. For information on how to generate PUBLIC_VAPID_KEY and PRIVATE_VAPID_KEY, see for example [here](https://stackoverflow.com/a/62872791/13365167). VAPID_SUB is an email address in the form `mailto:hello@example.org` |
+| PUBLIC_VAPID_KEY<br>PRIVATE_VAPID_KEY<br>VAPID_SUB | null | These settings are required for push notifications. For information on how to generate PUBLIC_VAPID_KEY and PRIVATE_VAPID_KEY, see for example [here](https://stackoverflow.com/a/62872791/13365167). VAPID_SUB is an email address in the form `mailto:hello@example.org`. |
 | WEBPUSH_CONTENT_ENCODING | aes128gcm | Content encoding to use for push notifications. See [pywebpush's documentation](https://github.com/web-push-libs/pywebpush#sending-data-using-webpush-one-call). |
 | SEND_WELCOME_PUSH_MESSAGE | 0 | Wheather to send a push message when a user subscribed. |
 
@@ -77,7 +76,7 @@ The server can send you messages whenever an error is logged via a Telegram Bot.
 | TELEGRAM_BOT_LOGGER_LEVEL | 30 | Minimum level (Python's logging module) for messages. The default is `logging.WARNING` (30). |
 
 ### Configuration files
-Configuration files are placed in the container's `/config` directory via volumes. Example configuration files are provided in this repositorie's `config/` directory. These files are already placed in the container's `/config` directory in `docker-compose.prod.example.yml`.
+Configuration files are placed in the container's `/config` directory via volumes. Example configuration files are provided in this repository's `config/` directory. These files are already placed in the container's `/config` directory in `docker-compose.prod.example.yml`.
 
 #### substitution_plans.json
 This is where all substitution plans are defined. For an example, see config/substitution_plans.json.
