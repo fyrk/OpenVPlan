@@ -40,7 +40,7 @@ try {
             Selection: selection ? (selection.match(/,/g) || []).length + 1 : 0,
             Notifications: localStorage.getItem(planId + "-notification-state-pa") || "unknown",
             Theme: theme,
-            Timetables: null,  // TODO
+            //Timetables: null,  // TODO
         }
     })
 } catch (e) {
