@@ -51,6 +51,7 @@ def config_settings(settings: BaseSettings):
 
     secrets_path = Path("/config").expanduser()
 
+
     if not secrets_path.exists():
         warnings.warn(f'directory "{secrets_path}" does not exist')
         return secrets
@@ -176,6 +177,9 @@ class Settings(BaseSettings):
         for key, value in v.items():
             if key != "default" and type(value) == str:
                 raise ValueError(f'Invalid substitution plan definition for "{key}"')
-        if values["default_plan_id"] and "default" in v.items():
+        if values["default_plan_id"] and "default" in v:
             raise ValueError("default_plan_id is present in substitution_plans, but is already defined")
+        if not values["default_plan_id"] and "default" not in v:
+            print(v)
+            raise ValueError("No default_plan_id is specified")
         return v

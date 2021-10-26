@@ -102,29 +102,40 @@ async def cleanup(app):
     await log_helper.cleanup()
 
 
-async def create_app():
-    static_path = THIS_DIR / "../static"
+STATIC_PATH_SRC = Path("/app/static")
+STATIC_PATH = Path("/static")
 
+def replace_static_file(path, replacements):
+    with open(STATIC_PATH_SRC / path, "r") as f:
+        content = f.read()
+    for key, default_value, replacement in replacements:
+        search = f"{default_value}\n/*!\n{key}\n*/"
+        assert search in content
+        content = content.replace(search, replacement)
+    return content
+
+
+async def create_app():
     settings = Settings()
 
-    def get_sw():
-        with open(static_path / "sw.js", "r") as f:
-            sw = f.read()
-        for key, default_value, replacement in (
+    STATIC_FILES_REPLACE = (
+        ("sw.js", (
             ("default-plan-path", '"##empty##"', f'"/{settings.default_plan_id}/"'),
             ("plan-paths", "[]", "["+",".join(f'"/{plan_id}/"' for plan_id in settings.substitution_plans)+"]"),
             ("plausible-domain", '""', '"'+settings.plausible_domain+'"'),
             ("plausible-endpoint", '""', '"'+(settings.plausible_endpoint or (str(yarl.URL(settings.plausible_js).origin()) + "/api/event"))+'"')
-        ):
-            search = f"{default_value}\n/*!\n{key}\n*/"
-            assert search in sw
-            sw = sw.replace(search, replacement)
-        return sw
-
+        )),    
+        ("assets/js/substitutions.js", (
+            ("public-vapid-key", '""', f'"{settings.public_vapid_key}"'),
+        ))
+    )
     
-    if os.path.exists("/static/sw.js"):  # doesn't exist in development, i.e. if entrypoint.sh isn't executed
-        with open("/static/sw.js", "w") as f:
-            f.write(get_sw())
+    if not settings.debug:
+        # in debug mode, these files are served by aiohttp and their content doesn't need to be replaced here, see below
+        for path, replacements in STATIC_FILES_REPLACE:
+            content = replace_static_file(path, replacements)
+            with open(STATIC_PATH / path, "w") as f:
+                f.write(content)
 
     app = web.Application(middlewares=[log_helper.logging_middleware, error_middleware])
 
@@ -223,19 +234,24 @@ async def create_app():
                 app["logger"].error("Test error")
             raise ValueError
 
-        async def sw_handler(request: web.Request):
-            return web.Response(text=get_sw(), content_type="text/javascript")
+        def get_static_replaced_handler(path, replacements):
+            async def handler(request: web.Request):
+                return web.Response(text=replace_static_file(path, replacements), content_type="text/javascript")
+            return handler
+        
+        app.add_routes(
+            web.get("/"+path, get_static_replaced_handler(path, replacements))
+            for path, replacements in STATIC_FILES_REPLACE
+        )
 
         app.add_routes([
             web.get("/test500", test500_handler),
-            
-            web.get("/sw.js", sw_handler),
 
             # for source files referenced in sourcemaps:
             web.static("/node_modules", str(THIS_DIR.parent / "node_modules")),
             web.static("/static_src", str(THIS_DIR.parent / "static_src")),
 
-            web.static("/", str(static_path))
+            web.static("/", str(STATIC_PATH_SRC))
         ])
 
     app["logger"].info("Server initialized")

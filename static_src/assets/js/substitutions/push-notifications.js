@@ -48,7 +48,10 @@ function base64UrlToUint8Array(base64UrlData) {
 function subscribePush(registration, isActive) {
     return registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: base64UrlToUint8Array("BDu6tTwQHFlGb36-pLCzwMdgumSlyj_vqMR3I1KahllZd3v2se-LM25vhP3Yv_y0qXYx_KPOVOD2EYTaJaibzo8")
+        applicationServerKey: base64UrlToUint8Array(""
+/*!
+public-vapid-key
+*/)
     }).then(subscription => {
         return fetch("api/subscribe-push", {
             method: "post",
