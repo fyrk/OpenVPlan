@@ -6,3 +6,37 @@ services:
     volumes:
       - "./config:/config:ro"
       - "./data:/var/lib/openvplan"
+      - "openvplan_static:/static/"  # on startup, OpenVPlan writes static files to /static
+    environment:
+      DEBUG: 0  # MUST BE 0 IN PRODUCTION
+
+      DOMAIN: "example.org"  # REPLACE
+
+      TITLE: "OpenVPlan"
+      TITLE_BIG: "OpenVPlan"
+      TITLE_MIDDLE: "OpenVPlan"
+      TITLE_SMALL: "OpenVPlan"
+
+      META_DESCRIPTION: "OpenVPlan"
+      META_KEYWORDS: "OpenVPlan"
+
+      PUBLIC_VAPID_KEY: ""  # REPLACE
+      PRIVATE_VAPID_KEY: ""  # REPLACE
+      VAPID_SUB: ""  # REPLACE
+
+      PLAUSIBLE_DOMAIN: null  # REPLACE
+      PLAUSIBLE_JS: "https://plausible.io/js/plausible.outbound-links.js"
+
+      TELEGRAM_BOT_LOGGER_TOKEN: null  # REPLACE
+      TELEGRAM_BOT_LOGGER_CHAT_ID: ""  # REPLACE
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - "./config/:/config/"
+      - "./nginx-openvplan.conf:/etc/nginx/conf.d/default.conf:ro"
+      - "openvplan_static:/var/www/openvplan_static/:ro"
+
+volumes:
+  openvplan_static:

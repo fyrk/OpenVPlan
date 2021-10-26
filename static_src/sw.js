@@ -46,6 +46,7 @@ plausible-endpoint
 // the original code isn't designed to be used with SWs
 //var plausible_ignore = window.localStorage.plausible_ignore;  // TODO: localStorage is not supported by SW
 function plausible(eventName, options) {
+    if (!plausibleDomain) return;
     const payload = {
         n: eventName,
         u: self.location.toString(),

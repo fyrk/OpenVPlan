@@ -11,8 +11,7 @@
     "parser": {
       "name": "untis",
       "options": {
-        "encoding": "iso-8859-1",
-        "lesson_column": 3
+        "encoding": "iso-8859-1"
       }
     },
     "template_options": {
@@ -51,7 +50,6 @@
       "name": "untis",
       "options": {
         "encoding": "iso-8859-1",
-        "lesson_column": 1,
         "class_column": 2,
         "group_name_is_class": false
       }

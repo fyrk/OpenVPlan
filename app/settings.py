@@ -109,26 +109,15 @@ class Settings(BaseSettings):
         
         object.__setattr__(self, "plausible",
                            dict(domain=self.plausible_domain, js=self.plausible_js,
-                                endpoint=self.plausible_endpoint,
-                                embed_link=self.plausible_embed_link, embed_js=self.plausible_embed_js))
+                                endpoint=self.plausible_endpoint))
         
         object.__setattr__(self, "template_options",
-                           dict(domain=self.domain, title=self.title, title_big=self.title_big, title_middle=self.title_middle, title_small=self.title_small,
+                           dict(domain=self.domain, 
+                                title=self.title, title_big=self.title_big, title_middle=self.title_middle, title_small=self.title_small,
                                 html_head=self.html_head, footer_html=self.footer_html,
                                 plans=[{"id": plan_id, "name": config["template_options"]["title"]} for plan_id, config in self.substitution_plans.items()]))
 
     debug: bool = False
-
-    telegram_bot_logger_token: Optional[str] = None
-    telegram_bot_logger_chat_id: Optional[Union[int, str]] = None
-    telegram_bot_logger_use_fixed_width: bool = False
-    telegram_bot_logger_level: int = logging.WARNING
-
-    plausible_domain: Optional[str] = None
-    plausible_js: str = "https://plausible.io/js/plausible.js"
-    plausible_endpoint: Optional[str] = None
-    plausible_embed_link: str = ""
-    plausible_embed_js: str = "https://plausible.io/js/embed.host.js"
 
     domain: str = ""
 
@@ -137,17 +126,27 @@ class Settings(BaseSettings):
     title_middle: str = "OpenVPlan"
     title_small: str = "OpenVPlan"
 
+    meta_description: str = ""
     meta_keywords: str = ""
-
-    enable_ferien: bool = True
-    ferien_start: datetime.datetime = None
-    ferien_end: datetime.datetime = None
 
     public_vapid_key: Optional[str] = None
     private_vapid_key: Optional[str] = None
     vapid_sub: Optional[str] = None
     webpush_content_encoding: str = "aes128gcm"
     send_welcome_push_message: bool = False
+
+    plausible_domain: Optional[str] = None
+    plausible_js: str = "https://plausible.io/js/plausible.outbound-links.js"
+    plausible_endpoint: Optional[str] = None
+
+    telegram_bot_logger_token: Optional[str] = None
+    telegram_bot_logger_chat_id: Optional[Union[int, str]] = None
+    telegram_bot_logger_use_fixed_width: bool = False
+    telegram_bot_logger_level: int = logging.WARNING
+
+    enable_ferien: bool = False
+    ferien_start: datetime.datetime = None
+    ferien_end: datetime.datetime = None
 
     request_headers: Dict[str, str] = {}
     request_timeout: float = 10

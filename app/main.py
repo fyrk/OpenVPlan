@@ -122,7 +122,7 @@ async def create_app():
         ("sw.js", (
             ("default-plan-path", '"##empty##"', f'"/{settings.default_plan_id}/"'),
             ("plan-paths", "[]", "["+",".join(f'"/{plan_id}/"' for plan_id in settings.substitution_plans)+"]"),
-            ("plausible-domain", '""', '"'+settings.plausible_domain+'"'),
+            ("plausible-domain", '""', '"'+(settings.plausible_domain or "")+'"'),
             ("plausible-endpoint", '""', '"'+(settings.plausible_endpoint or (str(yarl.URL(settings.plausible_js).origin()) + "/api/event"))+'"')
         )),    
         ("assets/js/substitutions.js", (

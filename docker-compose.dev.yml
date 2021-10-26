@@ -16,3 +16,5 @@ services:
       - ".:/app"
       - "./config:/config:ro"
       - "./data:/var/lib/openvplan"
+    environment:
+      DEBUG: 1  # MUST BE 0 IN PRODUCTION
