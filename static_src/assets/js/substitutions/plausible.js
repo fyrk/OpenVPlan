@@ -56,6 +56,15 @@ registerAnalyticsEvents(document.querySelectorAll("a[data-pa]"), handleLinkEvent
 // Handle button form events - those that have data-analytics
 registerAnalyticsEvents(document.querySelectorAll("button[data-pa]"), handleFormEvent);
 
+// start - added by me
+registerAnalyticsEvents([document.getElementById("btn-selection-submit")], event => {
+    event.target.setAttribute("data-pa",
+        document.getElementById("selectionInput").value.trim() ?
+            `"Select",{"${planId}":"Form"}` : `"Select",{"${planId}":"All (Form)"}`);
+    handleFormEvent(event);
+});
+// end - added by me
+
 /**
 * Iterate Elements and add event listener
 *
@@ -126,6 +135,6 @@ function registerEvent(data) {
     //plausible(...events);
 
     // changed by me to:
-    let d = data.split(",");
+    const d = data.split(",");
     plausible(JSON.parse(d[0]), d[1] ? {props: JSON.parse(d[1])} : null);
 }
