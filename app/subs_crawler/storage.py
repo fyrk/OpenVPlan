@@ -99,14 +99,9 @@ class SubstitutionDay:
     def __lt__(self, other: "SubstitutionDay"):
         return self.expiry_time < other.expiry_time
 
-    def iter_groups(self, selection: Optional[Iterable[str]]):
-        if not selection:
-            for group in self._groups:
-                yield group
-        else:
-            for group in self._groups:
-                if group.is_selected(selection):
-                    yield group
+    @property
+    def groups(self):
+        return self._groups
 
     def get_new_affected_groups(self, old_day: Optional["SubstitutionDay"]) -> List[str]:
         res = []
@@ -163,13 +158,15 @@ class SubstitutionGroup:
         if not self.name:
             return False  # sort substitutions without a class last
         return self._split_name.__lt__(other._split_name)
-
-    def is_selected(self, selection=None):
-        if not self.name:
-            return True  # always include substitutions without a class
-        if not self.affected_groups:
-            return False
-        return any(s in self.affected_groups for s in selection)
+    
+    def get_selected_substitutions(self, selection=None):
+        if (
+            not selection or
+            not self.name  # always include substitutions without a class
+            or any(s in self.affected_groups for s in selection)
+        ):
+            return self.substitutions
+        return [subs for subs in self.substitutions if subs.is_selected(selection)]
 
     def get_html_name(self):
         return ("<strike>" + self.name + "</strike>") if self.striked else self.name
@@ -191,6 +188,27 @@ class SubstitutionGroup:
 class Substitution:
     data: Tuple[str, ...]
     lesson_num: Optional[int] = dataclasses.field(default=None)
+
+    affected_groups: Optional[List[str]] = dataclasses.field(init=False, compare=False)
+
+    name_is_class: dataclasses.InitVar[bool] = True
+    affected_groups_columns: dataclasses.InitVar[List[int]] = []
+
+    def __post_init__(self, name_is_class, affected_groups_columns):
+        affected_groups = set()
+        if affected_groups_columns:
+            for column in affected_groups_columns:
+                content = self.data[column-1]
+                if name_is_class:
+                    affected_groups.update(parse_affected_groups(content)[0])
+                else:
+                    affected_groups.add(content)
+        object.__setattr__(self, "affected_groups", affected_groups)
+
+    def is_selected(self, selection=None):
+        if not self.affected_groups:
+            return True
+        return any(s in self.affected_groups for s in selection)
 
     def to_data(self):
         return self.data
