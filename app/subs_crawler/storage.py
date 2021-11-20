@@ -195,19 +195,21 @@ class Substitution:
     affected_groups_columns: dataclasses.InitVar[List[int]] = []
 
     def __post_init__(self, name_is_class, affected_groups_columns):
-        affected_groups = set()
         if affected_groups_columns:
+            affected_groups = set()
             for column in affected_groups_columns:
                 content = self.data[column-1]
                 if name_is_class:
                     affected_groups.update(parse_affected_groups(content)[0])
                 else:
                     affected_groups.add(content)
+        else:
+            affected_groups = None
         object.__setattr__(self, "affected_groups", affected_groups)
 
     def is_selected(self, selection=None):
-        if not self.affected_groups:
-            return True
+        if self.affected_groups is None:
+            return False
         return any(s in self.affected_groups for s in selection)
 
     def to_data(self):
