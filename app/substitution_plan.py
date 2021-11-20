@@ -219,6 +219,7 @@ class SubstitutionPlan:
 
         self._websockets.add(ws)
         try:
+            await ws.send_json({"type": "status", "status": self._crawler.storage.status})
             msg: WSMessage
             async for msg in ws:
                 request.app["logger"].debug("WebSocket: Got message " + str(msg))

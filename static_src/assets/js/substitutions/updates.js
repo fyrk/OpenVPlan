@@ -35,24 +35,19 @@ function onUpdating() {
     onlineStatus.classList.add("updating");
     onlineStatus.classList.remove("online", "offline");
 }
-function createWebSocket(openCallback=null) {
+function createWebSocket() {
     webSocket = new WebSocket(
         (window.location.protocol === "http:" ? "ws:" : "wss:") + "//" +
         window.location.host + window.location.pathname + "api/wait-for-updates");
 
     webSocket.addEventListener("open", event => {
-        console.log("WebSocket opened", event);
         onOnline();
-        if (openCallback)
-            openCallback(event.target);
     });
     webSocket.addEventListener("close", event => {
-        console.log("WebSocket closed", event);
         onOffline();
     });
     webSocket.addEventListener("message", event => {
         const msg = JSON.parse(event.data);
-        console.log("WebSocket message", msg);
         switch (msg.type) {
             /*case "heartbeat":
                 clearTimeout(disconnectTimeout);
@@ -80,7 +75,7 @@ function updateWebSocket() {
     if (webSocket.readyState === webSocket.OPEN) {
         webSocket.send(JSON.stringify({type: "get_status"}));
     } else {
-        createWebSocket(ws => ws.send(JSON.stringify({type: "get_status"})));
+        createWebSocket();
     }
 }
 
