@@ -27,9 +27,9 @@ An example configuration for [Docker Compose](https://docs.docker.com/compose/) 
 $ docker-compose -f docker-compose.prod.example.yml up -d
 ```
 
-This will start OpenVPlan as well as nginx listening on localhost:80. For the nginx configuration, see `nginx-openvplan.conf`. Nginx passes requests to the OpenVPlan container and serves static files (provided by OpenVPlan through the `openvplan_static` volume). The website is now available at http://localhost.
+This will start OpenVPlan listening on http://localhost:8000. For production, use a reverse proxy like [traefik](https://hub.docker.com/_/traefik) or [nginx](https://hub.docker.com/_/nginx).
 
-Note that for most features to work, the site *must* be served over HTTPS. The nginx configuration should be changed accordingly (listen on port 443, redirect non-HTTPS traffic). (HTTP on localhost is usually treated as secure by browsers.)
+Note that for most features to work, the site *must* be served over HTTPS. (HTTP on localhost is usually treated as secure by browsers.)
 
 ## Configuration
 Simple settings can be changed through environment variables in the docker-compose file.

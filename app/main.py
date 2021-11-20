@@ -131,7 +131,7 @@ async def create_app():
     )
     
     if not settings.debug:
-        # in debug mode, these files are served by aiohttp and their content doesn't need to be replaced here, see below
+        # in debug mode, this is done whenever a file is requested, see below
         for path, replacements in STATIC_FILES_REPLACE:
             content = replace_static_file(path, replacements)
             with open(STATIC_PATH / path, "w") as f:
@@ -252,6 +252,10 @@ async def create_app():
             web.static("/static_src", str(THIS_DIR.parent / "static_src")),
 
             web.static("/", str(STATIC_PATH_SRC))
+        ])
+    else:
+        app.add_routes([
+            web.static("/", str(STATIC_PATH))
         ])
 
     app["logger"].info("Server initialized")
