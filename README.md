@@ -56,7 +56,7 @@ The following environment variables are available. Some are already present in `
 | ---- | ------- | ----------- |
 | PUBLIC_VAPID_KEY<br>PRIVATE_VAPID_KEY<br>VAPID_SUB | null | These settings are required for push notifications. For information on how to generate PUBLIC_VAPID_KEY and PRIVATE_VAPID_KEY, see for example [here](https://stackoverflow.com/a/62872791/13365167). VAPID_SUB is an email address in the form `mailto:hello@example.org`. |
 | WEBPUSH_CONTENT_ENCODING | aes128gcm | Content encoding to use for push notifications. See [pywebpush's documentation](https://github.com/web-push-libs/pywebpush#sending-data-using-webpush-one-call). |
-| SEND_WELCOME_PUSH_MESSAGE | 0 | Wheather to send a push message when a user subscribed. |
+| SEND_WELCOME_PUSH_MESSAGE | 0 | whether to send a push message when a user subscribed. |
 
 #### Plausible
 | Name | Default | Description |
@@ -111,7 +111,7 @@ The following is a commented excerpt (note that comments are not supported in th
       "title": "Schüler*innen",
       "description": "Schüler*innen-Vertretungsplan für das Gymnasium am Wall Verden",
       "keywords": "Gymnasium am Wall, GaW Verden, Vertretung, Vertretungsplan, Schule, Schüler, Klassen, Schüler*innen",
-      // wheather to show the timetables section on the website:
+      // whether to show the timetables section on the website:
       "supports_timetables": true,
       "table_headers": [
         "Kla",
