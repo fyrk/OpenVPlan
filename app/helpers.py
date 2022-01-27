@@ -56,7 +56,7 @@ async def render_template(name: str, app: web.Application, **kwargs):
         ferien = False
 
     return await app["jinja2_env"].get_template(name).render_async(
-        static=lambda path,cb=True: static_url(app, path, cb), plausible=settings.plausible, ferien=ferien, news=settings.news, 
+        static=lambda path,cb=True: static_url(app, path, cb), plausible=settings.plausible, ferien=ferien, news=settings.news,
         json_dumps=partial(json.dumps, separators=(",", ":")),
         options=settings.template_options,
         **kwargs)

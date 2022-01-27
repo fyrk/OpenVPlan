@@ -30,14 +30,14 @@ class SubstitutionStorage:
         self._days: SortedDict = SortedDict()
 
     def add_day(self, day: "SubstitutionDay"):
-        assert day.expiry_time not in self._days
-        self._days[day.expiry_time] = day
+        assert day.date not in self._days
+        self._days[day.date] = day
 
-    def get_day(self, expiry_time: int):
-        return self._days[expiry_time]
+    def get_day(self, date: datetime.date):
+        return self._days[date]
 
-    def has_day(self, expiry_time: int):
-        return expiry_time in self._days
+    def has_day(self, date: datetime.date):
+        return date in self._days
 
     def iter_days(self):
         yield from self._days.values()
@@ -49,26 +49,26 @@ class SubstitutionStorage:
         {"name": "<day name">, "groups": list of group names which are affected by new substitutions from this day}}
         """
         if old_storage is None:
-            return {day.expiry_time: {"name": day.name, "groups": day.get_new_affected_groups(None)}
+            return {day.date: {"name": day.name, "groups": day.get_new_affected_groups(None)}
                     for day in self._days.values()}
         affected_groups = {}
         for day in self._days.values():
             try:
-                old_day = old_storage.get_day(day.expiry_time)
+                old_day = old_storage.get_day(day.date)
             except KeyError:
-                affected_groups[day.expiry_time] = {"name": day.name, "groups": day.get_new_affected_groups(None)}
+                affected_groups[day.date] = {"name": day.name, "groups": day.get_new_affected_groups(None)}
             else:
                 if g := day.get_new_affected_groups(old_day):
-                    affected_groups[day.expiry_time] = {"name": day.name, "groups": g}
+                    affected_groups[day.date] = {"name": day.name, "groups": g}
         return affected_groups
 
     def remove_old_days(self) -> bool:
-        current_timestamp = datetime.datetime.now().timestamp()
+        current_date = datetime.date.today()
         # noinspection PyTypeChecker
-        expiry_times: SortedKeysView = self._days.keys()
+        dates: SortedKeysView = self._days.keys()
         changed = False
-        while expiry_times and expiry_times[0] <= current_timestamp:
-            del expiry_times[0]
+        while dates and dates[0] < current_date:
+            del dates[0]
             changed = True
         return changed
 
@@ -78,11 +78,10 @@ class SubstitutionStorage:
 
 @dataclasses.dataclass
 class SubstitutionDay:
-    timestamp: int
-    expiry_time: int
-    name: Optional[str]
-    date: Optional[str]
-    week: Optional[str]
+    date: datetime.date
+    name: str
+    datestr: str
+    week: str
     news: List[str] = dataclasses.field(init=False, default_factory=list)
     info: List[Tuple[str, str]] = dataclasses.field(init=False, default_factory=list)
     _groups: SortedList = dataclasses.field(init=False, default_factory=SortedList)
@@ -97,7 +96,7 @@ class SubstitutionDay:
         return self._id2group.get(group_id, default)
 
     def __lt__(self, other: "SubstitutionDay"):
-        return self.expiry_time < other.expiry_time
+        return self.date < other.date
 
     @property
     def groups(self):
@@ -119,10 +118,9 @@ class SubstitutionDay:
         return res
 
     def to_data(self, selection=None):
-        return {key: value for key, value in (("timestamp", self.timestamp),
-                                              ("expiry_time", self.expiry_time),
+        return {key: value for key, value in (("date", self.date),
                                               ("name", self.name),
-                                              ("date", self.date),
+                                              ("datestr", self.datestr),
                                               ("week", self.week),
                                               ("news", self.news),
                                               ("info", self.info),

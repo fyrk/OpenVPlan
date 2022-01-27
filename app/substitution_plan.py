@@ -127,7 +127,7 @@ class SubstitutionPlan:
             app["logger"].info("Substitutions have changed")
             self._index_site = await self._render_func(storage=self._crawler.storage)
             await get_scheduler_from_app(app).spawn(self._on_new_substitutions(app, affected_groups))
-        elif app["settings"].debug:
+        elif app["settings"].debug or self._index_site is None:
             self._index_site = await self._render_func(storage=self._crawler.storage)
 
     # ===================
@@ -219,6 +219,8 @@ class SubstitutionPlan:
 
         self._websockets.add(ws)
         try:
+            if not self._crawler.storage:
+                await self.update_substitutions(request.app)
             await ws.send_json({"type": "status", "status": self._crawler.storage.status})
             msg: WSMessage
             async for msg in ws:
@@ -345,14 +347,14 @@ class SubstitutionPlan:
                         selection = row["selection"]
                         if selection is None:
                             # selection is None when all groups are selected
-                            yield row["subscription"], affected_groups
+                            yield row["subscription"], {int(time.mktime(date.timetuple())): day for date, day in affected_groups.items()}
                         else:
                             intersection = {}
-                            for expiry_time, day in affected_groups.items():
+                            for date, day in affected_groups.items():
                                 groups = day["groups"]
                                 common_groups = [s for s in selection if any(s in g for g in groups)]
                                 if common_groups:
-                                    intersection[expiry_time] = {"name": day["name"], "groups": common_groups}
+                                    intersection[int(time.mktime(date.timetuple()))] = {"name": day["name"], "groups": common_groups}
                             if intersection:
                                 yield row["subscription"], intersection
 

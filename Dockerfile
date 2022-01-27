@@ -9,16 +9,16 @@ RUN apk add --no-cache --virtual .build-deps gcc musl-dev libffi-dev openssl-dev
 
 ARG mode
 COPY requirements-dev.txt /app/requirements-dev.txt
-RUN if [ "$mode" = "dev" ] ; then pip3 install -r /app/requirements-dev.txt ; fi
+RUN if [ "$mode" = "dev" ] ; then pip3 install -r /app/requirements-dev.txt && pip install debugpy -t /tmp ; fi
 
 # thanks, nginx
 RUN mkdir /var/log/openvplan && ln -sf /dev/stdout /var/log/openvplan/openvplan.log
 
+COPY LICENSE /app/
+COPY entrypoint.sh /
+COPY config/ /config/
 COPY app/ /app/app/
 COPY static/ /app/static/
-COPY LICENSE /app/
-COPY config/ /config/
-COPY entrypoint.sh /
 
 EXPOSE 8000
 CMD [ "/entrypoint.sh" ]

@@ -22,7 +22,7 @@ from typing import Optional, Tuple, List
 
 from ..parsers.base import BaseMultiPageSubstitutionParser, Stream
 from ..storage import Substitution, SubstitutionDay, SubstitutionGroup, SubstitutionStorage
-from ..utils import create_date_timestamp, get_lesson_num, split_class_name
+from ..utils import get_lesson_num, split_class_name
 
 _LOGGER = logging.getLogger("openvplan")
 
@@ -58,12 +58,12 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
             return status, datetime.datetime.strptime(status, "%d.%m.%Y %H:%M")
         raise ValueError(f"Did not find status in {repr(text)}")
 
-    def __init__(self, storage: SubstitutionStorage, current_timestamp: int, stream: Stream, site_num: int,
+    def __init__(self, storage: SubstitutionStorage, current_date: datetime.date, stream: Stream, site_num: int,
                  encoding: str = "utf-8",
                  group_name_column: int = 0, lesson_column: int = None, class_column: int = None,
                  group_name_is_class: bool = True, affected_groups_columns: List[int] = None):
         HTMLParser.__init__(self)
-        BaseMultiPageSubstitutionParser.__init__(self, storage, current_timestamp, stream, site_num)
+        BaseMultiPageSubstitutionParser.__init__(self, storage, current_date, stream, site_num)
         self._is_parsing_until_next_site = False
         self._encoding = encoding
         self._group_name_column = group_name_column
@@ -223,16 +223,15 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
         elif self._current_section == "title":
             match = _REGEX_TITLE.search(data)
             if match:
-                date = match.group(1)
-                day_timestamp = create_date_timestamp(datetime.datetime.strptime(date, "%d.%m.%Y"))
-                if day_timestamp < self._current_timestamp:
+                datestr = match.group(1)
+                date = datetime.datetime.strptime(datestr, "%d.%m.%Y").date()
+                if date < self._current_date:
                     raise SubstitutionsTooOldException
-                expiry_time = day_timestamp + 86400  # 86400 seconds = 1 day
-                if self._storage.has_day(expiry_time):
-                    self._current_substitution_day = self._storage.get_day(expiry_time)
+                if self._storage.has_day(date):
+                    self._current_substitution_day = self._storage.get_day(date)
                 else:
-                    self._current_substitution_day = SubstitutionDay(day_timestamp, expiry_time,
-                                                                     match.group(2), date,
+                    self._current_substitution_day = SubstitutionDay(date,
+                                                                     match.group(2), datestr,
                                                                      match.group(3))
                     self._storage.add_day(self._current_substitution_day)
                 self._current_section = None

@@ -26,7 +26,7 @@ from aiohttp import hdrs
 from ..crawlers.base import BaseSubstitutionCrawler
 from ..parsers.base import AsyncBytesIOWrapper, BaseMultiPageSubstitutionParser, Stream
 from ..storage import SubstitutionStorage
-from ..utils import create_date_timestamp
+
 
 _LOGGER = logging.getLogger("openvplan")
 
@@ -125,7 +125,7 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
         async def load_from_stream(num, stream: Stream, request=None):
             nonlocal next_waiting_result, last_site_num
             _LOGGER.debug(f"[multipage-crawler] {num} Parsing")
-            parser = self._parser_class(storage, current_timestamp, stream, num, **self._parser_options)
+            parser = self._parser_class(storage, current_date, stream, num, **self._parser_options)
             next_site = await parser.parse_next_site()
             if next_site == "001":
                 _LOGGER.debug(f"[multipage-crawler] {num} is last site")
@@ -165,7 +165,7 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
         first_etag = None
 
         last_site_num = None
-        current_timestamp = create_date_timestamp(datetime.datetime.now())
+        current_date = datetime.date.today()
         # storage.status and storage.status_datetime are set later, in case first_site is None and these values aren't
         # available yet
         # noinspection PyTypeChecker

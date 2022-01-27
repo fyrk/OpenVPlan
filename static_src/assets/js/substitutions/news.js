@@ -26,19 +26,22 @@ try {
 const props = {};
 let hasNews = false;
 for (const newsBox of document.getElementsByClassName("news")) {
-    hasNews = true;
-    const newsId = newsBox.dataset.newsId;
-    if (seenNews.includes(newsId)) {
-        newsBox.hidden = true;
-        props[newsId] = "hidden";
-    } else {
-        newsBox.querySelector(".btn-close").addEventListener("click", () => {
+    const closeBtn = newsBox.querySelector(".btn-close");
+    if (closeBtn) {
+        hasNews = true;
+        const newsId = newsBox.dataset.newsId;
+        if (seenNews.includes(newsId)) {
             newsBox.hidden = true;
-            seenNews.push(newsId);
-            localStorage.setItem("seen-news", JSON.stringify(seenNews));
-            plausible("News: Dismiss", {props: {[newsId]: "Close"}})
-        });
-        props[newsId] = "visible";
+            props[newsId] = "hidden";
+        } else {
+            closeBtn.addEventListener("click", () => {
+                newsBox.hidden = true;
+                seenNews.push(newsId);
+                localStorage.setItem("seen-news", JSON.stringify(seenNews));
+                plausible("News: Dismiss", {props: {[newsId]: "Close"}})
+            });
+            props[newsId] = "visible";
+        }
     }
 }
 if (hasNews)

@@ -21,10 +21,6 @@ from functools import lru_cache
 from typing import List, Tuple, Optional, Set
 
 
-def create_date_timestamp(date: datetime.datetime):
-    return int(time.mktime(date.date().timetuple()))
-
-
 REGEX_GROUP_NAME = re.compile(r"^(\()?(\d+)(.*)(?(1)\)|)")
 
 def split_class_name(class_name: str) -> Tuple[str, str]:

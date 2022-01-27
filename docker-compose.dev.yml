@@ -7,7 +7,7 @@ services:
       dockerfile: ./Dockerfile
       args:
         mode: dev
-    command: ["sh", "-c", "mkdir /static && cp -r /app/static/* /static && find /static -mindepth 1 -mtime +1 -delete && pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m aiohttp_devtools runserver /app/app --verbose --static /app/static/"]
+    command: ["sh", "-c", "mkdir /static || cp -r /app/static/* /static && find /static -mindepth 1 -mtime +1 -delete && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m aiohttp_devtools runserver /app/app --verbose --static /app/static/"]
     ports:
       - "5678:5678"
       - "8000:8000"

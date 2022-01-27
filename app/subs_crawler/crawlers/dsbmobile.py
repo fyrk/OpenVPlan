@@ -25,7 +25,6 @@ import aiohttp
 from ..crawlers.base import BaseSubstitutionCrawler
 from ..parsers.base import BaseMultiPageSubstitutionParser
 from ..storage import SubstitutionStorage
-from ..utils import create_date_timestamp
 
 _LOGGER = logging.getLogger("openvplan")
 
@@ -97,7 +96,7 @@ class DsbmobileSubstitutionCrawler(BaseSubstitutionCrawler):
             _LOGGER.debug(f"[multipage-crawler] {num} Got {r.status}")
             if r.status == 200:
                 _LOGGER.debug(f"[multipage-crawler] {num} Parsing")
-                await self._parser_class(storage, current_timestamp, r.content, num, **self._parser_options).parse()
+                await self._parser_class(storage, current_date, r.content, num, **self._parser_options).parse()
                 _LOGGER.debug(f"[multipage-crawler] {num} Finished parsing")
 
         if self._load_substitutions_lock.locked():
@@ -107,7 +106,7 @@ class DsbmobileSubstitutionCrawler(BaseSubstitutionCrawler):
                 return None
         async with self._load_substitutions_lock:
             _LOGGER.debug("[dsbmobile-crawler] Loading substitution data...")
-            current_timestamp = create_date_timestamp(datetime.datetime.now())
+            current_date = datetime.date.today()
             storage = SubstitutionStorage(status, status_datetime)
             tasks = [asyncio.create_task(load_data(url, num))
                      for num, url in enumerate((site["Detail"] for site in data["Childs"]), 1)]

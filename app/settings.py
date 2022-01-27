@@ -24,8 +24,10 @@ import traceback
 from typing import Optional, Union, Any, Dict, List, Tuple, TypedDict
 
 from aiohttp import hdrs, http
-from pydantic import BaseSettings, Field, validator
+from pydantic import BaseModel, BaseSettings, Field, validator
 from pydantic.env_settings import SettingsSourceCallable, SettingsError
+
+from .news import news_from_setting
 
 
 __version__ = "5.0"
@@ -40,6 +42,12 @@ class SubsPlanDefinition(TypedDict):
     crawler: _CrawlerParserDefinition
     parser: _CrawlerParserDefinition
     template_options: Dict[str, Any]
+
+
+class _NewsDefinition(BaseModel):
+    html: Union[str, list]
+    date: Optional[datetime.date] = None
+    dismissable: Optional[bool] = True
 
 
 def config_settings(settings: BaseSettings):
@@ -116,6 +124,8 @@ class Settings(BaseSettings):
                                 title=self.title, title_big=self.title_big, title_middle=self.title_middle, title_small=self.title_small,
                                 html_head=self.html_head, footer_html=self.footer_html,
                                 plans=[{"id": plan_id, "name": config["template_options"]["title"]} for plan_id, config in self.substitution_plans.items()]))
+        
+        object.__setattr__(self, "news", [news_from_setting(news_id, news) for news_id, news in (self.news or {}).items()])
 
     debug: bool = False
 
@@ -161,7 +171,7 @@ class Settings(BaseSettings):
     default_plan_id: str = None  # can be set through substitution_plans.json with key "default"
     substitution_plans: Dict[str, Union[SubsPlanDefinition, str]] = Field(default_factory=dict, filename="substitution_plans.json")
 
-    news: Optional[Dict[str, str]] = Field(None, filename="news.json")
+    news: Optional[Dict[str, Union[str, _NewsDefinition, list]]] = Field(None, filename="news.json")
 
     html_head: str = Field("", filename="head.html")
 

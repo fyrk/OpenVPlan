@@ -24,10 +24,10 @@
 {% endblock %}
 
 {% block content %}
-{% for news_id, news in (news or {}).items() if ":" not in news_id or news_id.startswith(plan_id+":") %}
-    <div class="box news" data-news-id="{{ news_id }}">
-        <button type="button" class="btn-close float-end" aria-label="Schließen"></button>
-        {{ news|safe }}
+{% for news in news if (news.plan_id == "*" or news.plan_id == plan_id) and news.type == "general" %}
+    <div class="box news" data-news-id="{{ news.news_id }}">
+        {% if news.is_dismissable %}<button type="button" class="btn-close float-end" aria-label="Schließen"></button>{% endif %}
+        {{ news.get_html()|safe }}
     </div>
 {% endfor %}
 
@@ -45,9 +45,21 @@
             <div class="{% if day.news %}col-md-6{% else %}col{% endif %}">
                 <div class="day-heading">
                     <span class="day-name pe-1">{{ day.name }}</span>
-                    <span class="text-muted date">{{ day.date }}</span>
+                    <span class="text-muted date">{{ day.datestr }}</span>
                 </div>
                 Woche {{ day.week }}
+
+                {% set news_for_day %}
+                    {%- for news in news if (news.plan_id == "*" or news.plan_id == plan_id) and news.type == "day" and news.date == day.date -%}
+                        <div class="news" data-news-id="{{ news.news_id }}">
+                            {{- news.get_html()|safe -}}
+                        </div>
+                    {%- endfor -%}
+                {% endset %}
+                {% if news_for_day %}
+                    <div class="day-info">{{ news_for_day }}</div>
+                {% endif %}
+
                 {% if day.news %}
                     <div class="day-info">
                         <span class="day-info-heading">Nachrichten: </span>
@@ -59,7 +71,7 @@
                 <div class="{% if day.news %}col-md-6{% else %}col-md-7 col-lg-8 col-xl-9{% endif %}">
                     {% for title, text in day.info %}
                         <div class="day-info">
-                            {% set id %}day-info-checkbox-{{ day.date|replace(".", "_") }}-{{ loop.index0 }}{% endset %}
+                            {% set id %}day-info-checkbox-{{ day.date.isoformat() }}-{{ loop.index0 }}{% endset %}
                             <input type="checkbox" class="day-info-checkbox" id="{{ id }}" aria-hidden="true">
                             <label class="day-info-label" for="{{ id }}">
                                 <span class="day-info-heading">{{ title }}: </span>

@@ -45,9 +45,9 @@ class BaseSubstitutionParser(ABC):
         ...
 
     @abstractmethod
-    def __init__(self, storage: SubstitutionStorage, current_timestamp: int, stream: Stream, **kwargs):
+    def __init__(self, storage: SubstitutionStorage, current_date: datetime.date, stream: Stream, **kwargs):
         self._storage = storage
-        self._current_timestamp = current_timestamp
+        self._current_date = current_date
         self._stream = stream
 
     @abstractmethod
@@ -65,8 +65,8 @@ class BaseMultiPageSubstitutionParser(BaseSubstitutionParser):
     An instance of a subclass of this class is always used to parse a single site only.
     """
     @abstractmethod
-    def __init__(self, storage: SubstitutionStorage, current_timestamp: int, stream: Stream, site_num: int, **kwargs):
-        super().__init__(storage, current_timestamp, stream)
+    def __init__(self, storage: SubstitutionStorage, current_date: datetime.date, stream: Stream, site_num: int, **kwargs):
+        super().__init__(storage, current_date, stream)
         self._site_num = site_num
 
     @abstractmethod
