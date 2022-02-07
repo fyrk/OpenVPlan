@@ -92,12 +92,15 @@ if (selection) {
                         newGroupSubstitutions();
                     groupSubstitutions = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
                     groupName = groupNameCell.textContent;
-                    teacherName = row.children[1].textContent.toUpperCase();
-                    lessonString = row.children[3].textContent;
+                    teacherName = row.children[3].textContent.toUpperCase();
+                    lessonString = row.children[1].textContent;
                 } else {
-                    teacherName = row.children[0].textContent.toUpperCase();
-                    lessonString = row.children[2].textContent;
+                    teacherName = row.children[2].textContent.toUpperCase();
+                    lessonString = row.children[0].textContent;
                 }
+                let teacherNameMatch = teacherName.match(/\((\w+)\)/);
+                if (teacherNameMatch)
+                    teacherName = teacherNameMatch[1];
                 for (let lesson of lessonString.match(/(\d+)/g)) {
                     lesson = parseInt(lesson);
                     if (1 <= lesson && lesson <= 10) {

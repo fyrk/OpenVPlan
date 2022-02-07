@@ -56,7 +56,7 @@ def _strip_html(html: str, allowed_tags=_ALLOWED_FORMATTING_TAGS) -> str:
 
 class WebuntisCrawler(BaseSubstitutionCrawler):
     def __init__(self, last_version_id,
-                 url: str, format_name: str, max_day_count: int = 5,
+                 url: str, format_name: str, max_day_count: int = 5, reorder: List[int] = None,
                  lesson_column: int = None, group_name_is_class: bool = True, affected_groups_columns: List[int] = None,
                  timeout_total: float = None, timeout_connect: float = None, timeout_sock_read: float = None,
                  timeout_sock_connect: float = None):
@@ -64,6 +64,7 @@ class WebuntisCrawler(BaseSubstitutionCrawler):
         self._url = url
         self._format_name = format_name
         self._max_day_count = max_day_count
+        self._reorder = reorder
         self._lesson_column = lesson_column
         self._group_name_is_class = group_name_is_class
         self._affected_groups_columns = affected_groups_columns
@@ -217,6 +218,8 @@ class WebuntisCrawler(BaseSubstitutionCrawler):
                         lesson_num = get_lesson_num(subs_data[self._lesson_column])
                     else:
                         lesson_num = None
+                    if self._reorder:
+                        subs_data = tuple(subs_data[i] for i in self._reorder)
                     substitution = Substitution(
                         data=subs_data,
                         lesson_num=lesson_num,
