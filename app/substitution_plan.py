@@ -15,9 +15,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import crypt
 import datetime
+import hmac
 import json
 import sqlite3
+from tabnanny import check
 import time
 from _weakrefset import WeakSet
 from email.utils import formatdate
@@ -58,6 +61,8 @@ class SubstitutionPlan:
         self._crawler = crawler
         self._render_func = partial(render_func, "substitution-plan.min.html",
                                     app=app, plan_id=plan_id, subs_options=subs_options)
+        self._render_login_func = partial(render_func, "login.min.html",
+                                          app=app, plan_id=plan_id, subs_options=subs_options)
 
         self._index_site = None
         self._websockets: MutableSet[web.WebSocketResponse] = WeakSet()
@@ -73,6 +78,13 @@ class SubstitutionPlan:
             **app["settings"].additional_webmanifest_content
         }, separators=(",", ":"))
 
+        if "auth" in subs_options:
+            self.use_auth = True
+            self.auth_username = subs_options["auth"]["username"]
+            self.auth_password = subs_options["auth"]["password"]
+        else:
+            self.use_auth = False
+
     def on_db_init(self, app: web.Application):
         self._crawler.last_version_id = app["db"].get_substitutions_version_id(self._plan_id)
         log_helper.PLAN_NAME_CONTEXTVAR.set(self._plan_id)
@@ -83,6 +95,8 @@ class SubstitutionPlan:
         app = web.Application()
         app.add_routes([
             web.get("/", self._root_handler),
+            web.get("/login", self._login_handler),
+            web.post("/login", self._login_handler),
             web.get("/app.webmanifest", self._webmanifest),
             web.get("/api/wait-for-updates", self._wait_for_updates_handler),
             web.post("/api/subscribe-push", self._subscribe_push_handler)
@@ -130,6 +144,37 @@ class SubstitutionPlan:
         elif app["settings"].debug or self._index_site is None:
             self._index_site = await self._render_func(storage=self._crawler.storage)
 
+    async def _check_auth(self, request, check_form=True):
+        if not self.use_auth:
+            return True, False, None
+        form = await request.post()
+        if check_form and form:
+            username = form["username"]
+            password = form["password"]
+            save_login = "save-login" in form  # checkbox
+        else:
+            if "auth" not in request.cookies:
+                return False, False, None
+            try:
+                auth = json.loads(request.cookies["auth"])
+                assert "username" in auth and "password" in auth and type(auth["username"]) == type(auth["password"]) == str
+            except Exception:
+                return False, False
+            username = auth["username"]
+            password = auth["password"]
+        if (hmac.compare_digest(crypt.crypt(username, self.auth_username), self.auth_username) and
+            hmac.compare_digest(crypt.crypt(password, self.auth_password), self.auth_password)):
+            if check_form and form:
+                auth_cookie = dict(name="auth", value=json.dumps({"username": username, "password": password}),
+                                   expires=SELECTION_COOKIE_EXPIRE if save_login else None, path="/" + self._plan_id + "/",
+                                   secure=not request.app["settings"].debug,  # secure in non-development mode
+                                   httponly=True, samesite="Lax")
+            else:
+                auth_cookie = None
+            return True, False, auth_cookie
+        else:
+            return False, check_form and form, None
+
     # ===================
     # REQUEST HANDLERS
 
@@ -138,6 +183,10 @@ class SubstitutionPlan:
     async def _root_handler(self, request: web.Request) -> web.Response:
         # noinspection PyBroadException
         try:
+            logged_in, invalid, auth_cookie = await self._check_auth(request, False)
+            if not logged_in:
+                raise web.HTTPSeeOther(location=yarl.URL.build(path="/"+self._plan_id+"/login", query={"return": request.path_qs}))
+
             redirect = False
             new_url = request.rel_url
 
@@ -183,6 +232,9 @@ class SubstitutionPlan:
             headers = request.app["response_headers"]
             if not selection:
                 text = self._index_site
+                if self.use_auth:
+                    headers = headers.copy()
+                    headers["X-Robots-Tag"] = "noindex"
             else:
                 text = await self._render_func(storage=self._crawler.storage,
                                                selection=selection, selection_str=selection_str)
@@ -197,6 +249,9 @@ class SubstitutionPlan:
                                     expires=SELECTION_COOKIE_EXPIRE, path="/" + self._plan_id + "/",
                                     secure=not request.app["settings"].debug,  # secure in non-development mode
                                     httponly=True, samesite="Lax")
+
+            if auth_cookie:
+                response.set_cookie(**auth_cookie)
         except web.HTTPException:
             raise
         except Exception:
@@ -205,6 +260,21 @@ class SubstitutionPlan:
             raise
         return response
     
+    # /login
+    async def _login_handler(self, request: web.Request):
+        logged_in, invalid, auth_cookie = await self._check_auth(request)
+        if logged_in:
+            return_url = yarl.URL(request.query.get("return", "/"+self._plan_id+"/"))
+            if return_url.is_absolute():
+                return_url = return_url.relative()
+            response = web.HTTPSeeOther(return_url)
+            if auth_cookie:
+                response.set_cookie(**auth_cookie)
+            return response
+            
+        text = await self._render_login_func(invalid=invalid)
+        return web.Response(text=text, content_type="text/html", charset="utf-8", headers=request.app["response_headers"])
+
     # /app.webmanifest
     async def _webmanifest(self, request: web.Request):
         return web.Response(text=self._webmanifest_text, content_type="application/manifest+json", charset="utf-8")

@@ -8,7 +8,6 @@
 {% block og_title %}{{ subs_options.og_title or subs_options.title }}{% endblock %}
 {% block breadcrumb_list %}{{ breadcrumb_list(subs_options.title, plan_id + "/") }}{% endblock %}
 {% block additional_meta %}
-    <!--suppress HtmlUnknownTarget -->
     <link rel="manifest" href="app.webmanifest">
     <link rel="canonical" href="/{{ plan_id }}/">
 {% endblock %}

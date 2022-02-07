@@ -244,3 +244,31 @@ $day-info-heading-font-size: 1.1rem;
         display: none;
     }
 }
+
+
+
+// ========================
+// LOGIN PAGE
+
+.login-form {
+    max-width: 400px;
+    text-align: center;
+    margin: auto;
+}
+
+#save-login-label {
+    text-align: left;
+}
+
+.form-controls {
+    max-width: 330px;
+    margin: auto;
+}
+
+.invalid-login {
+    color: $form-feedback-invalid-color;
+    background-image: escape-svg($form-feedback-icon-invalid);
+    background-repeat: no-repeat;
+    background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+    background-position: left calc(.375em + .1875rem) center;
+}

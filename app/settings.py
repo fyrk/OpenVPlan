@@ -15,12 +15,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import datetime
-import json
 import logging
-import os.path
 from pathlib import Path
-import sys
-import traceback
+import warnings
 from typing import Optional, Union, Any, Dict, List, Tuple, TypedDict
 
 from aiohttp import hdrs, http
