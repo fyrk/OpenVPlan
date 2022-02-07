@@ -5,15 +5,14 @@
     "crawler": {
       "name": "multipage",
       "options": {
-        "url": "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm"
+        "url": "https://gaw-verden.de/images/vertretung/klassen/subst_{:03}.htm",
+        "parser_name": "untis",
+        "parser_options": {
+          "encoding": "iso-8859-1"
+        }
       }
     },
-    "parser": {
-      "name": "untis",
-      "options": {
-        "encoding": "iso-8859-1"
-      }
-    },
+    
     "template_options": {
       "title": "Schüler*innen",
       "description": "Schüler*innen-Vertretungsplan für das Gymnasium am Wall Verden",
@@ -43,15 +42,13 @@
     "crawler": {
       "name": "multipage",
       "options": {
-        "url": "https://gaw-verden.de/images/vertretung/lehrer/subst_{:03}.htm"
-      }
-    },
-    "parser": {
-      "name": "untis",
-      "options": {
-        "encoding": "iso-8859-1",
-        "class_column": 2,
-        "group_name_is_class": false
+        "url": "https://gaw-verden.de/images/vertretung/lehrer/subst_{:03}.htm",
+        "parser_name": "untis",
+        "parser_options": {
+          "encoding": "iso-8859-1",
+          "class_column": 2,
+          "group_name_is_class": false
+        }
       }
     },
     "template_options": {

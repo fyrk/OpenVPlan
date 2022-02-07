@@ -16,15 +16,24 @@
 
 from .crawlers.dsbmobile import DsbmobileSubstitutionCrawler
 from .crawlers.multipage import MultiPageSubstitutionCrawler
+from .crawlers.webuntis import WebuntisCrawler
 from .parsers.untis import UntisSubstitutionParser
 
 __all__ = ["CRAWLERS", "PARSERS"]
 
 CRAWLERS = {
     "multipage": MultiPageSubstitutionCrawler,
-    "dsbmobile": DsbmobileSubstitutionCrawler
+    "dsbmobile": DsbmobileSubstitutionCrawler,
+    "webuntis": WebuntisCrawler
 }
 
 PARSERS = {
     "untis": UntisSubstitutionParser
 }
+
+
+def get_crawler(name: str):
+    try:
+        return CRAWLERS[name]
+    except KeyError:
+        raise ValueError(f"Invalid crawler name '{name}")

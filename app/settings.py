@@ -33,14 +33,13 @@ from .news import news_from_setting
 __version__ = "5.0"
 
 
-class _CrawlerParserDefinition(TypedDict):
+class _CrawlerDefinition(TypedDict):
     name: str
     options: dict
 
 
 class SubsPlanDefinition(TypedDict):
-    crawler: _CrawlerParserDefinition
-    parser: _CrawlerParserDefinition
+    crawler: _CrawlerDefinition
     template_options: Dict[str, Any]
 
 

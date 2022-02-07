@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import datetime
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
@@ -31,11 +32,8 @@ class BaseSubstitutionCrawler(ABC):
 
     _storage: "SubstitutionStorage"
 
-    def __init__(self, last_version_id,
-                 parser_class: Type[BaseSubstitutionParser], parser_options: Dict[str, Any]):
+    def __init__(self, last_version_id):
         self.last_version_id = last_version_id
-        self._parser_class = parser_class
-        self._parser_options = parser_options
 
         self._storage: Optional[SubstitutionStorage] = None
 
@@ -45,5 +43,5 @@ class BaseSubstitutionCrawler(ABC):
 
     @abstractmethod
     async def update(self, session: aiohttp.ClientSession) \
-            -> Tuple[bool, Optional[Dict[int, Dict[str, Union[str, List[str]]]]]]:
+            -> Tuple[bool, Optional[Dict[datetime.date, Dict[str, Union[str, List[str]]]]]]:
         ...

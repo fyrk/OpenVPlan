@@ -190,21 +190,11 @@ async def create_app():
 
     for plan_id, plan_config in settings.substitution_plans.items():
         plan_config: SubsPlanDefinition
-        crawler_id = plan_config["crawler"]["name"]
-        try:
-            crawler_class = subs_crawler.CRAWLERS[crawler_id]
-        except KeyError:
-            raise ValueError(f"Invalid crawler name '{crawler_id}")
-        parser_id = plan_config["parser"]["name"]
-        try:
-            parser_class = subs_crawler.PARSERS[parser_id]
-        except KeyError:
-            raise ValueError(f"Invalid parser name '{parser_id}'")
+        crawler = subs_crawler.get_crawler(plan_config["crawler"]["name"])
         crawler_options = plan_config["crawler"]["options"]
-        parser_options = plan_config["parser"]["options"]
         template_options = plan_config["template_options"]
-        crawler = crawler_class(None,  # last_version_id will be set in SubstitutionPlan.set_db
-                                parser_class, parser_options, **crawler_options)
+        crawler = crawler(None,  # last_version_id will be set in SubstitutionPlan.set_db
+                          **crawler_options)
         plan = SubstitutionPlan(app, plan_id, crawler, render_template, template_options)
 
         subapp = plan.create_app(BACKGROUND_UPDATES)

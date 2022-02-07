@@ -23,8 +23,10 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 import aiohttp
 from aiohttp import hdrs
 
+
 from ..crawlers.base import BaseSubstitutionCrawler
 from ..parsers.base import AsyncBytesIOWrapper, BaseMultiPageSubstitutionParser, Stream
+from ..parsers.untis import UntisSubstitutionParser
 from ..storage import SubstitutionStorage
 
 
@@ -35,11 +37,18 @@ class MultiPageSubstitutionCrawler(BaseSubstitutionCrawler):
     _parser_class: Type[BaseMultiPageSubstitutionParser]
 
     def __init__(self, last_version_id,
-                 parser_class: Type[BaseMultiPageSubstitutionParser], parser_options: Dict[str, Any],
+                 parser_name: str, parser_options: Dict[str, Any],
                  url: str, site_load_count: int = 5, max_site_load_num: int = 99,
                  timeout_total: float = None, timeout_connect: float = None, timeout_sock_read: float = None,
                  timeout_sock_connect: float = None):
-        super().__init__(last_version_id, parser_class, parser_options)
+        super().__init__(last_version_id)
+        """try:
+            self._parser_class = PARSERS[parser_name]
+        except KeyError:
+            raise ValueError(f"Invalid parser name '{parser_name}'")"""
+        self._parser_class = UntisSubstitutionParser  # TODO: follow the parser_name setting
+
+        self._parser_options = parser_options
         self._url = url
         self._site_load_count = site_load_count
         self._max_site_load_num = max_site_load_num

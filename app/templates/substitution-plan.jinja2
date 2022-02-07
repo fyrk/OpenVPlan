@@ -47,7 +47,7 @@
                     <span class="day-name pe-1">{{ day.name }}</span>
                     <span class="text-muted date">{{ day.datestr }}</span>
                 </div>
-                Woche {{ day.week }}
+                {% if day.week %}Woche {{ day.week }}{% endif %}
 
                 {% set news_for_day %}
                     {%- for news in news if (news.plan_id == "*" or news.plan_id == plan_id) and news.type == "day" and news.date == day.date -%}
