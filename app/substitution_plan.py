@@ -147,18 +147,23 @@ class SubstitutionPlan:
     async def _check_auth(self, request, check_form=True):
         if not self.use_auth:
             return True, False, None
-        form = await request.post()
-        if check_form and form:
-            username = form["username"]
-            password = form["password"]
-            save_login = "save-login" in form  # checkbox
-        else:
+
+        username = None
+        if check_form:
+            form = await request.post()
+            if form:
+                username = form["username"]
+                password = form["password"]
+                save_login = "save-login" in form  # checkbox
+        if username is None:
             if "auth" not in request.cookies:
+                request.app["logger"].debug(f"auth: missing cookie")
                 return False, False, None
             try:
                 auth = json.loads(request.cookies["auth"])
                 assert "username" in auth and "password" in auth and type(auth["username"]) == type(auth["password"]) == str
             except Exception:
+                request.app["logger"].exception(f"auth: parsing cookie failed")
                 return False, False
             username = auth["username"]
             password = auth["password"]
@@ -173,6 +178,7 @@ class SubstitutionPlan:
                 auth_cookie = None
             return True, False, auth_cookie
         else:
+            request.app["logger"].info(f"auth: wrong credentials")
             return False, check_form and form, None
 
     # ===================
@@ -261,6 +267,7 @@ class SubstitutionPlan:
         return response
     
     # /login
+    @log_helper.plan_name_wrapper
     async def _login_handler(self, request: web.Request):
         logged_in, invalid, auth_cookie = await self._check_auth(request)
         if logged_in:
@@ -276,6 +283,7 @@ class SubstitutionPlan:
         return web.Response(text=text, content_type="text/html", charset="utf-8", headers=request.app["response_headers"])
 
     # /app.webmanifest
+    @log_helper.plan_name_wrapper
     async def _webmanifest(self, request: web.Request):
         return web.Response(text=self._webmanifest_text, content_type="application/manifest+json", charset="utf-8")
 
