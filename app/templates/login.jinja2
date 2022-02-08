@@ -8,6 +8,12 @@
     <link rel="canonical" href="/{{ plan_id }}/">
 {% endblock %}
 
+{% block scripts %}
+{% if invalid %}
+    <script>plausible("Login failed",{props:{plan:"{{ plan_id }}"}})</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="box">
     <div class="login-form">

@@ -23,3 +23,4 @@ The following custom goal events are defined:
  * News
  * News: Dismiss
  * Ferien
+ * Login failed
