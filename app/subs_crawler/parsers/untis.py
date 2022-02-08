@@ -22,7 +22,7 @@ from typing import Optional, Tuple, List
 
 from ..parsers.base import BaseMultiPageSubstitutionParser, Stream
 from ..storage import Substitution, SubstitutionDay, SubstitutionGroup, SubstitutionStorage
-from ..utils import get_lesson_num, split_class_name
+from ..utils import get_lesson_num, simplify_class_name, split_class_name
 
 _LOGGER = logging.getLogger("openvplan")
 
@@ -171,20 +171,7 @@ class UntisSubstitutionParser(HTMLParser, BaseMultiPageSubstitutionParser):
                     return
                 group_id = (subs_data[self._group_name_column].strip(), striked)
                 if self._class_column is not None:
-                    class_name = subs_data[self._class_column]
-                    if "," in class_name:
-                        if class_name.startswith("(") and class_name.endswith(")"):
-                            has_brackets = True
-                            new_class_name = class_name[1:-1]
-                        else:
-                            has_brackets = False
-                            new_class_name = class_name
-                        classes = [split_class_name(name.strip()) for name in new_class_name.split(",")]
-                        if classes[0][0] and all(classes[0][0] == class_[0] for class_ in classes):
-                            class_name = classes[0][0] + "".join(class_[1] for class_ in classes)
-                            if has_brackets:
-                                class_name = "(" + class_name + ")"
-                            subs_data[self._class_column] = class_name
+                    subs_data[self._class_column] = simplify_class_name(subs_data[self._class_column])
                 if self._lesson_column:
                     lesson_num = get_lesson_num(subs_data[self._lesson_column])
                 else:
