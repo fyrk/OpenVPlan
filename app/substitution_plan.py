@@ -282,6 +282,9 @@ class SubstitutionPlan:
     # /api/wait-for-updates
     @log_helper.plan_name_wrapper
     async def _wait_for_updates_handler(self, request: web.Request):
+        if not (await self._check_auth(request, False))[0]:
+            raise web.HTTPForbidden()
+
         ws = web.WebSocketResponse()
         if not ws.can_prepare(request):
             raise web.HTTPNotFound()
@@ -317,6 +320,9 @@ class SubstitutionPlan:
     # /api/subscribe-push
     @log_helper.plan_name_wrapper
     async def _subscribe_push_handler(self, request: web.Request):
+        if not (await self._check_auth(request, False))[0]:
+            raise web.HTTPForbidden()
+
         db: SubstitutionPlanDB = request.app["db"]
         # noinspection PyBroadException
         try:
