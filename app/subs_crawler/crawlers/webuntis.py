@@ -84,9 +84,8 @@ class WebuntisCrawler(BaseSubstitutionCrawler):
             t1 = time.perf_counter_ns()
             _LOGGER.info(f"Updating substitutions (last_version_id: {self.last_version_id!r})")
             storage = SubstitutionStorage(None, None)
-            affected_groups: Dict[int, Dict[str, Union[str, List[str]]]] = {}
             today = datetime.date.today()
-            tasks = [asyncio.ensure_future(self._load_format(session, storage, affected_groups, self._format_name, today, i))
+            tasks = [asyncio.ensure_future(self._load_format(session, storage, self._format_name, today, i))
                      for i in range(self._max_day_count)]
             try:
                 await asyncio.gather(*tasks)
@@ -97,47 +96,43 @@ class WebuntisCrawler(BaseSubstitutionCrawler):
 
             storage.status = tasks[0].result()
             storage.status_datetime = datetime.datetime.strptime(storage.status, "%d.%m.%Y %H:%M:%S")
-            if self._storage is None:
-                # if self._storage is None, this means substitutions haven't necessarily changed, but this is the first
-                # time they are updated since the server started
-                if storage.status == (self.last_version_id and self.last_version_id.get("status")):
-                    # substitutions have not changed
-                    affected_groups = None
-                else:
-                    # substitutions have changed
-                    self.last_version_id = {"status": storage.status}
-                self._storage = storage
-                reload_required = True
-            else:
-                if storage.status == (self.last_version_id and self.last_version_id.get("status")):
-                    # substitutions have not changed
-                    affected_groups = None
-                    reload_required = self._storage.remove_old_days()
-                else:
-                    # substitutions have changed
+
+            if storage.status == (self.last_version_id and self.last_version_id.get("status")):
+                # substitutions have not changed
+                if self._storage is None:
+                    # if self._storage is None, this means substitutions haven't necessarily changed,
+                    # but this is the first time they are updated since the server started
                     reload_required = True
                     self._storage = storage
-                    self.last_version_id = {"status": storage.status}
-            assert self._storage is not None
+                else:
+                    reload_required = self._storage.remove_old_days()
+                affected_groups = None
+            else:
+                # substitutions have changed
+                affected_groups = storage.get_new_affected_groups(self._storage)
+                self.last_version_id = {"status": storage.status}
+                reload_required = True
+                self._storage = storage
 
             if not all(t.result() == storage.status for t in tasks):
                 _LOGGER.error(f"[webuntis-crawler] WARNING: Different status for formats: {[t.result() for t in tasks]}")
                 reload_required = True
-            
-            _LOGGER.debug(f"[webuntis-crawler] Loaded data in {time.perf_counter_ns() - t1}ns")
+
+            t = time.perf_counter_ns() - t1
+            _LOGGER.debug(f"[webuntis-crawler] Loaded data in {t}ns (~{t/1e9:.2f}s); affected groups: {affected_groups!r}")
             return reload_required, affected_groups
     
     async def _load_format(self,
                            session: aiohttp.ClientSession,
                            storage: SubstitutionStorage,
-                           affected_groups: Dict[datetime.date, Dict[str, Union[str, List[str]]]],
                            format_name: str,
                            date: datetime.date,
                            date_offset: int) -> str:
-        _LOGGER.debug(f"[webuntis-crawler] {format_name} loading ...")
+        _LOGGER.debug(f"[webuntis-crawler] {date_offset} loading ...")
         t1 = time.perf_counter_ns()
         def log_finish(msg):
-            _LOGGER.debug(f"[webuntis-crawler] {format_name} Finished in {time.perf_counter_ns()-t1}ns: {msg}")
+            t = time.perf_counter_ns() - t1
+            _LOGGER.debug(f"[webuntis-crawler] {date_offset} Finished in {t}ns (~{t/1e9:.2f}s): {msg}")
         async with session.post(self._url, json={
                 "formatName": format_name,
                 "schoolName": "Gymnasium am Wall",
@@ -183,7 +178,7 @@ class WebuntisCrawler(BaseSubstitutionCrawler):
             try:
                 data = await r.json()
             except Exception as e:
-                _LOGGER.error(f"[webuntis-crawler] {format_name} Failed to parse response: {r._body}")
+                _LOGGER.error(f"[webuntis-crawler] {date_offset} Failed to parse response: {r._body}")
                 raise e from None
         try:
             data: dict = data["payload"]
@@ -196,7 +191,7 @@ class WebuntisCrawler(BaseSubstitutionCrawler):
                 # date is None when there are no substitutions
                 return last_update
             
-            _LOGGER.debug(f"[webuntis-crawler] {format_name} lastUpdate: {last_update!r}; date: {date}; name: {data['weekDay']}")
+            _LOGGER.debug(f"[webuntis-crawler] {date_offset} lastUpdate: {last_update!r}; date: {date}; name: {data['weekDay']}")
             if (self.last_version_id and self.last_version_id.get("status")) == last_update and self._storage is not None:
                 log_finish("no new update and storage exists")
                 return last_update
@@ -240,15 +235,8 @@ class WebuntisCrawler(BaseSubstitutionCrawler):
                     else:
                         day.news.append(body)
                 if data["messageData"]:
-                    _LOGGER.error(f"WARNING: More messageData found: {data['messageData']!r}")
-
-                groups = data["affectedElements"]["1"]
-                _LOGGER.debug(f"[webuntis-crawler] {format_name} affected groups: {groups!r}")
-                if day.date in affected_groups:
-                    affected_groups[day.date]["groups"].extend(groups)
-                else:
-                    affected_groups[day.date] = {"name": day.name, "groups": groups}
+                    _LOGGER.error(f"[webuntis-crawler] {date_offset} WARNING: More messageData found: {data['messageData']!r}")
                 return last_update
         except Exception as e:
-            _LOGGER.error(f"[webuntis-crawler] {format_name} Failed to parse data: {data}")
+            _LOGGER.error(f"[webuntis-crawler] {date_offset} Failed to parse data: {data}")
             raise e from None
