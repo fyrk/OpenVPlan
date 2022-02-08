@@ -132,8 +132,14 @@ async def logging_middleware(request: web.Request, handler):
         url = url.update_query(s="***")
     _logger.info(f"{request.method} {url.path_qs}")
     t1 = time.perf_counter_ns()
-    response: web.Response = await handler(request)
-    _logger.info(f"Response status={response.status}, "
-                 f"{'length=' + str(response.content_length) + ', ' if response.content_length else ''}"
-                 f"time={time.perf_counter_ns()-t1}ns")
+    def log(response):
+        _logger.info(f"Response status={response.status}, "
+                     f"{'length=' + str(response.content_length) + ', ' if response.content_length else ''}"
+                     f"time={time.perf_counter_ns()-t1}ns")
+    try:
+        response: web.Response = await handler(request)
+    except web.HTTPException as e:
+        log(e)
+        raise e from None
+    log(response)
     return response
