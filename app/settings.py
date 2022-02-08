@@ -113,7 +113,8 @@ class Settings(BaseSettings):
         
         object.__setattr__(self, "plausible",
                            dict(domain=self.plausible_domain, js=self.plausible_js,
-                                endpoint=self.plausible_endpoint))
+                                endpoint=self.plausible_endpoint,
+                                embed_link=self.plausible_embed_link, embed_js=self.plausible_embed_js))
         
         object.__setattr__(self, "template_options",
                            dict(domain=self.domain, 
@@ -144,6 +145,8 @@ class Settings(BaseSettings):
     plausible_domain: Optional[str] = None
     plausible_js: str = "https://plausible.io/js/plausible.outbound-links.js"
     plausible_endpoint: Optional[str] = None
+    plausible_embed_link: Optional[str] = None
+    plausible_embed_js: Optional[str] = None
 
     telegram_bot_logger_token: Optional[str] = None
     telegram_bot_logger_chat_id: Optional[Union[int, str]] = None

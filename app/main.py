@@ -213,10 +213,13 @@ async def create_app():
         web.get("/", root_handler),
         web.get("/privacy", redirect_handler("/about")),
         web.get("/about", get_template_handler(app, "about.min.html",
-                                               render_args=dict(about_html=settings.about_html))),
-        web.get("/plausible", get_template_handler(app, "plausible.min.html",
-                                                   {"X-Robots-Tag": "noindex"}))
+                                               render_args=dict(about_html=settings.about_html)))
     ])
+    if settings.plausible_embed_link:
+        app.add_routes([
+            web.get("/plausible", get_template_handler(app, "plausible.min.html",
+                                                       {"X-Robots-Tag": "noindex"}))
+        ])
 
     if settings.debug:
         async def test500_handler(request: web.Request):
